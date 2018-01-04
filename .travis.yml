@@ -1,0 +1,18 @@
+language: scala
+cache:
+  directories:
+    - $HOME/.ivy2/cache
+    - $HOME/.sbt
+before_cache:
+  - find $HOME/.sbt -name "*.lock" | xargs rm
+  - find $HOME/.ivy2 -name "ivydata-*.properties" | xargs rm
+before_script:
+- sudo chmod +x /usr/local/bin/sbt
+scala:
+- 2.11.11
+- 2.12.3
+script:
+- sbt clean test
+jdk:
+- oraclejdk8
+sudo: required
