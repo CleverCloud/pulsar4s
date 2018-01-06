@@ -1,6 +1,6 @@
 package com.sksamuel.pulsar4s.jackson
 
-import com.sksamuel.pulsar4s.{MessageReader, MessageWriter, SMessage}
+import com.sksamuel.pulsar4s.{MessageReader, MessageWriter, Message}
 
 object Jackson {
 
@@ -9,7 +9,7 @@ object Jackson {
   }
 
   implicit def reader[T: Manifest]: MessageReader[T] = new MessageReader[T] {
-    override def read(msg: SMessage): T = JacksonSupport.mapper.readValue[T](msg.data)
+    override def read(msg: Message): T = JacksonSupport.mapper.readValue[T](msg.data)
   }
 
 }

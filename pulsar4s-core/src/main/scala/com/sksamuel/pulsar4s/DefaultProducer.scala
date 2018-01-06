@@ -23,10 +23,10 @@ class DefaultProducer(producer: JProducer, override val topic: Topic)
     f.map { id => MessageId(id) }
   }
 
-  override def send(msg: SMessage): MessageId = MessageId(producer.send(SMessage.toJava(msg)))
+  override def send(msg: Message): MessageId = MessageId(producer.send(Message.toJava(msg)))
 
-  override def sendAsync(msg: SMessage): Future[MessageId] = {
-    val f = producer.sendAsync(SMessage.toJava(msg))
+  override def sendAsync(msg: Message): Future[MessageId] = {
+    val f = producer.sendAsync(Message.toJava(msg))
     f.map(MessageId.apply)
   }
 

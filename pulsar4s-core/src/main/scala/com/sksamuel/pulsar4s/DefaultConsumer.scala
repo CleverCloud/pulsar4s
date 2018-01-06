@@ -2,7 +2,7 @@ package com.sksamuel.pulsar4s
 
 import java.util.concurrent.{CompletableFuture, TimeUnit}
 
-import org.apache.pulsar.client.api.{Message, Consumer => JConsumer}
+import org.apache.pulsar.client.api.{Consumer => JConsumer}
 import org.apache.pulsar.client.impl.{ConsumerStats, MessageIdImpl}
 
 import scala.compat.java8.FutureConverters
@@ -13,25 +13,27 @@ import scala.language.implicitConversions
 class DefaultConsumer(consumer: JConsumer, override val topic: Topic, override val subscription: Subscription)
                      (implicit context: ExecutionContext) extends Consumer {
 
+  import Message._
+
   implicit def completableToFuture[T](f: CompletableFuture[T]): Future[T] = FutureConverters.toScala(f)
   implicit def voidCompletableToFuture(f: CompletableFuture[Void]): Future[Unit] = f.map(_ => ())
 
   override def unsubscribe(): Unit = consumer.unsubscribe()
   override def unsubscribeAsync: Future[Unit] = consumer.unsubscribeAsync()
 
-  override def receive: SMessage = {
+  override def receive: Message = {
     val msg = consumer.receive()
-    SMessage.fromJava(msg)
+    Message.fromJava(msg)
   }
 
-  override def receiveAsync: Future[SMessage] = {
+  override def receiveAsync: Future[Message] = {
     val f = consumer.receiveAsync()
-    f.map { msg => SMessage.fromJava(msg) }
+    f.map { msg => Message.fromJava(msg) }
   }
 
-  override def receive(duration: Duration): SMessage = {
+  override def receive(duration: Duration): Message = {
     val msg = consumer.receive(duration.toNanos.toInt, TimeUnit.NANOSECONDS)
-    SMessage.fromJava(msg)
+    Message.fromJava(msg)
   }
 
   override def acknowledge(message: Message): Unit = {

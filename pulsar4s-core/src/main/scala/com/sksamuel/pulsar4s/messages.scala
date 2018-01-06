@@ -6,19 +6,17 @@ import org.apache.pulsar.client.impl.MessageIdImpl
 import scala.collection.JavaConverters._
 import scala.language.implicitConversions
 
-trait SMessage {
-  def data: Array[Byte]
-  def key: Option[String]
-  def properties: Map[String, String]
-  def messageId: Option[MessageId]
-  def publishTime: Long
-  def eventTime: Long
-}
+case class Message(key: Option[String],
+                   data: Array[Byte],
+                   properties: Map[String, String],
+                   messageId: Option[MessageId],
+                   publishTime: Long,
+                   eventTime: Long)
 
-object SMessage {
+object Message {
 
-  def fromJava(message: JMessage): SMessage = {
-    DefaultMessage(
+  implicit def fromJava(message: JMessage): Message = {
+    Message(
       Option(message.getKey),
       message.getData,
       message.getProperties.asScala.toMap,
@@ -28,7 +26,7 @@ object SMessage {
     )
   }
 
-  def toJava(message: SMessage): JMessage = {
+  implicit def toJava(message: Message): JMessage = {
     val builder = MessageBuilder.create()
       .setContent(message.data)
     message.key.foreach(builder.setKey)
@@ -38,19 +36,12 @@ object SMessage {
   }
 }
 
-case class DefaultMessage(key: Option[String],
-                          data: Array[Byte],
-                          properties: Map[String, String],
-                          messageId: Option[MessageId],
-                          publishTime: Long,
-                          eventTime: Long) extends SMessage
-
 trait MessageWriter[T] {
-  def write(t: T): SMessage
+  def write(t: T): Message
 }
 
 trait MessageReader[T] {
-  def read(msg: SMessage): T
+  def read(msg: Message): T
 }
 
 case class MessageId(bytes: Array[Byte])

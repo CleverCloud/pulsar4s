@@ -2,7 +2,7 @@ package com.sksamuel.pulsar4s
 
 import java.io.Closeable
 
-import org.apache.pulsar.client.api.{Message, Consumer => JConsumer}
+import org.apache.pulsar.client.api.{Consumer => JConsumer}
 import org.apache.pulsar.client.impl.ConsumerStats
 
 import scala.concurrent.Future
@@ -16,9 +16,9 @@ trait Consumer extends Closeable {
   def unsubscribe(): Unit
   def unsubscribeAsync: Future[Unit]
 
-  def receive: SMessage
-  def receiveAsync: Future[SMessage]
-  def receive(duration: Duration): SMessage
+  def receive: Message
+  def receiveAsync: Future[Message]
+  def receive(duration: Duration): Message
 
   def acknowledge(message: Message): Unit
   def acknowledge(messageId: MessageId): Unit
