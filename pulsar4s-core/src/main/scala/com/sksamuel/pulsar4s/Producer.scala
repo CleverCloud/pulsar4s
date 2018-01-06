@@ -2,11 +2,12 @@ package com.sksamuel.pulsar4s
 
 import java.io.Closeable
 
-import org.apache.pulsar.client.api.{Message => JMessage}
-import org.apache.pulsar.client.impl.ProducerStats
+import org.apache.pulsar.client.api.{MessageBuilder, Message => JMessage}
+import org.apache.pulsar.client.impl.{MessageIdImpl, ProducerStats}
 
 import scala.collection.JavaConverters._
 import scala.concurrent.Future
+import scala.language.implicitConversions
 
 trait SMessage {
   def data: Array[Byte]
@@ -30,13 +31,25 @@ object SMessage {
     )
   }
 
-  def toJava(message: SMessage): JMessage = ???
+  def toJava(message: SMessage): JMessage = {
+    val builder = MessageBuilder.create()
+      .setContent(message.data)
+    message.key.foreach(builder.setKey)
+    message.properties.foreach { case (k, v) => builder.setProperty(k, v) }
+    builder.setEventTime(message.eventTime)
+    builder.build()
+  }
 }
 
 case class MessageId(bytes: Array[Byte])
 
 object MessageId {
-  def apply(messageId: org.apache.pulsar.client.api.MessageId): MessageId = MessageId(messageId.toByteArray)
+
+  implicit def toJava(messageId: MessageId): org.apache.pulsar.client.api.MessageId = {
+    MessageIdImpl.fromByteArray(messageId.bytes)
+  }
+
+  implicit def apply(messageId: org.apache.pulsar.client.api.MessageId): MessageId = MessageId(messageId.toByteArray)
 }
 
 case class ProducerName(name: String)
