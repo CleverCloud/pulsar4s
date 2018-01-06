@@ -9,6 +9,7 @@ case class Topic(name: String)
 
 trait PulsarClient {
   def close(): Unit
+  def producer(topic: Topic): Producer
   def send(topic: Topic): Unit
   def subscribe(topic: Topic, name: String): Consumer
 }
@@ -50,6 +51,8 @@ object PulsarClient {
     }
 
     override def close(): Unit = client.close()
+
+    override def producer(topic: Topic) = new DefaultProducer(client, topic)
   }
 }
 
