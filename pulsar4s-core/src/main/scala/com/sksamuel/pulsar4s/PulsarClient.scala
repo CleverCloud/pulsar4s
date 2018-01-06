@@ -53,6 +53,7 @@ object PulsarClient {
     override def close(): Unit = client.close()
 
     override def producer(topic: Topic) = new DefaultProducer(client, topic)
+    override def consumer(topic: Topic) = new DefaultProducer(client, topic)
   }
 }
 
