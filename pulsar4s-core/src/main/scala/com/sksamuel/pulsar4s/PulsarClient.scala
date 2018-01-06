@@ -22,8 +22,13 @@ object PulsarClient {
 
     override def close(): Unit = client.close()
 
-    override def producer(topic: Topic): Producer = new DefaultProducer(client.createProducer(topic.name), topic)
-    override def consumer(topic: Topic, subscription: Subscription): Consumer = new DefaultConsumer(client.subscribe(topic.name, subscription.name), topic, subscription)
+    override def producer(topic: Topic): Producer = {
+      new Producer(client.createProducer(topic.name), topic)
+    }
+
+    override def consumer(topic: Topic, subscription: Subscription): Consumer = {
+      new DefaultConsumer(client.subscribe(topic.name, subscription.name), topic, subscription)
+    }
   }
 }
 

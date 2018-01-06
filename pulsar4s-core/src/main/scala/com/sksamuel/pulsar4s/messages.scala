@@ -15,6 +15,8 @@ case class Message(key: Option[String],
 
 object Message {
 
+  def apply(data: Array[Byte]): Message = Message(None, data, Map.empty, None, 0, System.currentTimeMillis())
+
   implicit def fromJava(message: JMessage): Message = {
     Message(
       Option(message.getKey),
@@ -37,11 +39,11 @@ object Message {
 }
 
 trait MessageWriter[T] {
-  def write(t: T): Message
+  def write(t: T): Either[Throwable, Message]
 }
 
 trait MessageReader[T] {
-  def read(msg: Message): T
+  def read(msg: Message): Either[Throwable, T]
 }
 
 case class MessageId(bytes: Array[Byte])
