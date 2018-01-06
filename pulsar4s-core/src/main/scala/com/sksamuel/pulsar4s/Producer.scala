@@ -15,6 +15,8 @@ trait Producer extends Closeable {
   def name: ProducerName
   def send(msg: Array[Byte]): MessageId
   def sendAsync(msg: Array[Byte]): Future[MessageId]
+  def send(msg: String): MessageId
+  def sendAsync(msg: String): Future[MessageId]
   def send(msg: SMessage): MessageId
   def sendAsync(msg: SMessage): Future[MessageId]
   def send[T: MessageWriter](t: T): MessageId

@@ -46,4 +46,8 @@ class DefaultProducer(producer: JProducer, override val topic: Topic)
 
   override def close(): Unit = producer.close()
   override def closeAsync: Future[Unit] = producer.closeAsync().map(_ => ())
+
+  override def send(msg: String): MessageId = send(msg.getBytes("UTF8"))
+
+  override def sendAsync(msg: String): Future[MessageId] = sendAsync(msg.getBytes("UTF8"))
 }

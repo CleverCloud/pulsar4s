@@ -22,15 +22,21 @@ trait Consumer extends Closeable {
 
   def acknowledge(message: Message): Unit
   def acknowledge(messageId: MessageId): Unit
+
   def acknowledgeCumulative(message: Message): Unit
   def acknowledgeCumulative(messageId: MessageId): Unit
+
   def acknowledgeAsync(message: Message): Future[Unit]
   def acknowledgeAsync(messageId: MessageId): Future[Unit]
+
   def acknowledgeCumulativeAsync(message: Message): Future[Unit]
   def acknowledgeCumulativeAsync(messageId: MessageId): Future[Unit]
+
   def stats: ConsumerStats
+
   def hasReachedEndOfTopic: Boolean
   def redeliverUnacknowledgedMessages(): Unit
+
   def seek(messageId: MessageId): Unit
   def seekAsync(messageId: MessageId): Future[Unit]
 

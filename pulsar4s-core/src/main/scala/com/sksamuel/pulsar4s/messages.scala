@@ -61,5 +61,8 @@ object MessageId {
     MessageIdImpl.fromByteArray(messageId.bytes)
   }
 
+  val earliest: MessageId = org.apache.pulsar.client.api.MessageId.earliest
+  val latest: MessageId = org.apache.pulsar.client.api.MessageId.latest
+
   implicit def apply(messageId: org.apache.pulsar.client.api.MessageId): MessageId = MessageId(messageId.toByteArray)
 }

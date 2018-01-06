@@ -13,6 +13,7 @@ The official Java client can of course be used in Scala, but this client provide
 * Supports scala.Future, monix.Task, cats.Effect, scalaz.Task
 * Uses scala.concurrent.duration.Duration
 * Provides case classes rather than Java beans
-* Reactive Streams implementation
+* Better type safety
+* Reactive Streams implementation for streaming data in and out of Pulsar
 * Typeclasses for marshalling to/from Pulsar messages
 * Circe and Jackson implementations of said typeclasses
