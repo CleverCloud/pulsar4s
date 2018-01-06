@@ -27,7 +27,7 @@ object PulsarClient {
     }
 
     override def consumer(topic: Topic, subscription: Subscription): Consumer = {
-      new DefaultConsumer(client.subscribe(topic.name, subscription.name), topic, subscription)
+      new Consumer(client.subscribe(topic.name, subscription.name), topic, subscription)
     }
   }
 }
