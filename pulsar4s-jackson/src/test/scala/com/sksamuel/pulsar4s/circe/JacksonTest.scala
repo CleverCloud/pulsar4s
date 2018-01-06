@@ -1,4 +1,4 @@
-package com.sksamuel.pulsar4s.jackson
+package com.sksamuel.pulsar4s.circe
 
 import org.scalatest.FunSuite
 
