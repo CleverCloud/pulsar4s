@@ -10,10 +10,11 @@ object Build extends AutoPlugin {
 
   object autoImport {
     val org = "com.sksamuel.elastic4s"
-    val CatsVersion = "0.9.0"
+    val CatsVersion = "1.0.1"
+    val CirceVersion = "0.9.0"
     val CommonsIoVersion = "2.4"
     val ExtsVersion = "1.44.0"
-    val JacksonVersion = "2.8.8"
+    val JacksonVersion = "2.9.2"
     val Log4jVersion = "2.6.2"
     val PulsarVersion = "1.21.0-incubating"
     val ReactiveStreamsVersion = "1.0.0"
@@ -46,7 +47,7 @@ object Build extends AutoPlugin {
     javacOptions := Seq("-source", "1.8", "-target", "1.8"),
     libraryDependencies ++= Seq(
       "com.sksamuel.exts"                     %% "exts"                     % ExtsVersion,
-      "org.typelevel"                         %% "cats"                     % CatsVersion,
+      "org.typelevel"                         %% "cats-core"                % CatsVersion,
       "org.slf4j"                             % "slf4j-api"                 % Slf4jVersion,
       "org.scalatest"                         %% "scalatest"                % ScalatestVersion      % "test"
     ),

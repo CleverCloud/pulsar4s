@@ -25,19 +25,32 @@ lazy val core = Project("pulsar4s-core", file("pulsar4s-core"))
 lazy val cats_effect = Project("pulsar4s-cats-effect", file("pulsar4s-cats-effect"))
   .settings(name := "pulsar4s-cats-effect")
   .settings(libraryDependencies ++= Seq(
+    "org.typelevel" %% "cats-effect" % "0.8"
   ))
+  .dependsOn(core)
 
 lazy val streams = Project("pulsar4s-streams", file("pulsar4s-streams"))
   .settings(name := "pulsar4s-streams")
   .settings(libraryDependencies ++= Seq(
+    "org.reactivestreams" % "reactive-streams"      % ReactiveStreamsVersion,
+    "org.reactivestreams" % "reactive-streams-tck"  % ReactiveStreamsVersion % "test"
   ))
+  .dependsOn(core)
 
 lazy val jackson = Project("pulsar4s-jackson", file("pulsar4s-jackson"))
   .settings(name := "pulsar4s-jackson")
   .settings(libraryDependencies ++= Seq(
+    "com.fasterxml.jackson.core"    % "jackson-core"          % JacksonVersion,
+    "com.fasterxml.jackson.core"    % "jackson-databind"      % JacksonVersion,
+    "com.fasterxml.jackson.module" %% "jackson-module-scala"  % JacksonVersion
   ))
+  .dependsOn(core)
 
 lazy val circe = Project("pulsar4s-circe", file("pulsar4s-circe"))
   .settings(name := "pulsar4s-circe")
   .settings(libraryDependencies ++= Seq(
+    "io.circe" %% "circe-core"     % CirceVersion,
+    "io.circe" %% "circe-generic"  % CirceVersion,
+    "io.circe" %% "circe-parser"   % CirceVersion
   ))
+  .dependsOn(core)
