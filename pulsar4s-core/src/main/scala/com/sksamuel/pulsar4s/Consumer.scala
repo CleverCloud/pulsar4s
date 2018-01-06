@@ -8,7 +8,7 @@ import org.apache.pulsar.client.impl.ConsumerStats
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 
-trait Consumer2 extends Closeable {
+trait Consumer extends Closeable {
 
   def topic: Topic
   def subscription: Subscription

@@ -11,7 +11,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.language.implicitConversions
 
 class DefaultConsumer(consumer: JConsumer, override val topic: Topic, override val subscription: Subscription)
-                     (implicit context: ExecutionContext) extends Consumer2 {
+                     (implicit context: ExecutionContext) extends Consumer {
 
   implicit def completableToFuture[T](f: CompletableFuture[T]): Future[T] = FutureConverters.toScala(f)
   implicit def voidCompletableToFuture(f: CompletableFuture[Void]): Future[Unit] = f.map(_ => ())
