@@ -1,5 +1,7 @@
 package com.sksamuel.pulsar4s
 
+import java.nio.charset.Charset
+
 import org.apache.pulsar.client.api.{MessageBuilder, Message => JMessage}
 import org.apache.pulsar.client.impl.MessageIdImpl
 
@@ -16,6 +18,7 @@ case class Message(key: Option[String],
 object Message {
 
   def apply(data: Array[Byte]): Message = Message(None, data, Map.empty, None, 0, System.currentTimeMillis())
+  def apply(data: String)(implicit charset: Charset = Charset.forName("UTF8")): Message = apply(data.getBytes(charset))
 
   implicit def fromJava(message: JMessage): Message = {
     Message(
