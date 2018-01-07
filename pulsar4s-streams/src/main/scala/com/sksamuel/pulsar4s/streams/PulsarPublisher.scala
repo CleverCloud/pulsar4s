@@ -29,7 +29,7 @@ class PulsarPublisher(client: PulsarClient, topic: Topic) extends Publisher[Mess
 
 }
 
-class PulsarSubscription(consumer: Consumer) extends org.reactivestreams.Subscription[Message] {
+class PulsarSubscription(consumer: Consumer) extends org.reactivestreams.Subscription {
 
   private var requested = 0L
 

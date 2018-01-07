@@ -29,6 +29,6 @@ class MessageReaderTest extends FunSuite with Matchers {
     val consumer = client.consumer(topic, Subscription("wibble"))
     consumer.seek(MessageId.earliest)
     val t = consumer.receiveT
-    t shouldBe Person("jon snow", "the wall")
+    t.right.get shouldBe Person("jon snow", "the wall")
   }
 }

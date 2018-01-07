@@ -11,6 +11,8 @@ class PulsarPublisherVerificationTest
     PUBLISHER_REFERENCE_CLEANUP_TIMEOUT_MILLIS
   ) with TestNGSuiteLike {
 
+  import scala.concurrent.ExecutionContext.Implicits.global
+
   val client = PulsarClient("pulsar://localhost:6650", "sample/standalone/ns1")
   val topic = Topic("persistent://sample/standalone/ns1/reactivepub")
 

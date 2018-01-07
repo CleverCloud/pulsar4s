@@ -6,10 +6,9 @@ import org.apache.pulsar.client.api.{Consumer => JConsumer}
 import org.apache.pulsar.client.impl.ConsumerStats
 
 import scala.compat.java8.FutureConverters
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.implicitConversions
-import scala.util.Try
 
 class Consumer(consumer: JConsumer, val topic: Topic, val subscription: Subscription)
               (implicit context: ExecutionContext) {
@@ -29,31 +28,36 @@ class Consumer(consumer: JConsumer, val topic: Topic, val subscription: Subscrip
 
   def receiveAsync: Future[Message] = {
     val f = consumer.receiveAsync()
-    f.map { msg => Message.fromJava(msg) }
+    f.map(Message.fromJava)
   }
 
-  def receive(duration: Duration): Message = {
+  def receive(duration: FiniteDuration): Message = {
     val msg = consumer.receive(duration.toNanos.toInt, TimeUnit.NANOSECONDS)
     Message.fromJava(msg)
   }
 
-  def receiveT[T: MessageReader]: Either[Throwable, Message] = {
-    Try {
-      val msg = consumer.receive()
-      Message.fromJava(msg)
-    }.toEither
+  def receiveT[T](implicit reader: MessageReader[T]): Either[Throwable, T] = {
+    try {
+      reader.read(receive)
+    } catch {
+      case t: Throwable => Left(t)
+    }
   }
 
-  def receiveAsyncT[T: MessageReader]: Future[Message] = {
-    val f = consumer.receiveAsync()
-    f.map { msg => Message.fromJava(msg) }
+  def receiveAsyncT[T](implicit reader: MessageReader[T]): Future[T] = {
+    receiveAsync.map(reader.read).map {
+      case Left(e) => throw e
+      case Right(t) => t
+    }
   }
 
-  def receiveT[T: MessageReader](duration: Duration): Either[Throwable, Message] = {
-    Try {
-      val msg = consumer.receive(duration.toNanos.toInt, TimeUnit.NANOSECONDS)
-      Message.fromJava(msg)
-    }.toEither
+  def receiveT[T](duration: FiniteDuration)(implicit reader: MessageReader[T]): Either[Throwable, T] = {
+    try {
+      val msg = receive(duration)
+      reader.read(msg)
+    } catch {
+      case t: Throwable => Left(t)
+    }
   }
 
   def acknowledge(message: Message): Unit = {
