@@ -10,7 +10,10 @@ pulsar4s - Apache Pulsar Scala Client
 pulsar4s is a concise, idiomatic, reactive, type safe Scala client for Apache Pulsar.
 The official Java client can of course be used in Scala, but this client provides better integration with Scala.
 
-* Supports differente effects - scala.concurrent.Future, monix.eval.Task, cats.effect.IO, scalaz.concurrent.Task
+* Supports different effects - [scala.concurrent.Future](https://docs.scala-lang.org/overviews/core/futures.html),
+[monix.eval.Task](https://monix.io/docs/2x/eval/task.html),
+[cats.effect.IO](https://typelevel.org/blog/2017/05/02/io-monad-for-cats.html),
+[scalaz.concurrent.Task](https://github.com/indyscala/scalaz-task-intro/blob/master/presentation.md)
 * Uses scala.concurrent.duration.Duration
 * Provides case classes rather than Java beans
 * Better type safety
