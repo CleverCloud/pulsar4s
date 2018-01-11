@@ -26,21 +26,25 @@ lazy val core = Project("pulsar4s-core", file("pulsar4s-core"))
 lazy val cats_effect = Project("pulsar4s-cats-effect", file("pulsar4s-cats-effect"))
   .settings(name := "pulsar4s-cats-effect")
   .settings(libraryDependencies ++= Seq(
-    "org.typelevel" %% "cats-effect" % "0.8"
+    "org.typelevel" %% "cats-effect" % "0.8",
+    "org.apache.pulsar" % "pulsar-common" % PulsarVersion % "test"
   ))
   .dependsOn(core)
 
 lazy val scalaz = Project("pulsar4s-scalaz", file("pulsar4s-scalaz"))
   .settings(name := "pulsar4s-scalaz")
   .settings(libraryDependencies ++= Seq(
-    "org.typelevel" %% "cats-effect" % "0.8"
+    "org.scalaz" %% "scalaz-core" % "7.2.18",
+    "org.scalaz" %% "scalaz-concurrent" % "7.2.18",
+    "org.apache.pulsar" % "pulsar-common" % PulsarVersion % "test"
   ))
   .dependsOn(core)
 
 lazy val monix = Project("pulsar4s-monix", file("pulsar4s-monix"))
   .settings(name := "pulsar4s-monix")
   .settings(libraryDependencies ++= Seq(
-    "org.typelevel" %% "cats-effect" % "0.8"
+    "io.monix" %% "monix" % "2.3.2",
+    "org.apache.pulsar" % "pulsar-common" % PulsarVersion % "test"
   ))
   .dependsOn(core)
 

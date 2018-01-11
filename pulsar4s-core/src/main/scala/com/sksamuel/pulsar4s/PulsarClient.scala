@@ -4,8 +4,6 @@ import com.sksamuel.exts.Logging
 import org.apache.pulsar.client.api
 import org.apache.pulsar.client.api.{ConsumerConfiguration, ProducerConfiguration}
 
-import scala.concurrent.ExecutionContext
-
 case class Topic(name: String)
 case class Subscription(name: String)
 
@@ -19,8 +17,7 @@ trait PulsarClient {
 
 object PulsarClient {
 
-  def apply(url: String, namespace: String)
-           (implicit ec: ExecutionContext): PulsarClient = new PulsarClient with Logging {
+  def apply(url: String, namespace: String): PulsarClient = new PulsarClient with Logging {
 
     val client: api.PulsarClient = org.apache.pulsar.client.api.PulsarClient.create(url)
 
@@ -48,8 +45,6 @@ object PulsarClient {
 }
 
 object Test extends App {
-
-  import ExecutionContext.Implicits.global
 
   val client = PulsarClient("pulsar://localhost:6650", "sample/standalone/ns1")
   val topic = Topic("persistent://sample/standalone/ns1/my-topic")
