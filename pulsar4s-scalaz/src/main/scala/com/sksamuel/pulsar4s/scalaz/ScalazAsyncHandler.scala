@@ -12,18 +12,7 @@ import scalaz.concurrent.Task
 
 class ScalazAsyncHandler extends AsyncHandler[Task] {
 
-  implicit def completableVoidToTask(f: CompletableFuture[Void]): Task[Unit] =
-    Task.async[Unit] { k =>
-      f.whenCompleteAsync(new BiConsumer[Void, Throwable] {
-        override def accept(t: Void, e: Throwable): Unit = {
-          if (e != null)
-            k.apply(scalaz.\/.left(e))
-          else
-            k.apply(scalaz.\/.right(()))
-        }
-      })
-    }
-
+  implicit def completableVoidToTask(f: CompletableFuture[Void]): Task[Unit] = completableToTask(f).map(_ => ())
   implicit def completableToTask[T](f: CompletableFuture[T]): Task[T] = {
     Task.async[T] { k =>
       f.whenCompleteAsync(new BiConsumer[T, Throwable] {
