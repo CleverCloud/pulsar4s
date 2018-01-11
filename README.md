@@ -10,7 +10,7 @@ pulsar4s - Apache Pulsar Scala Client
 pulsar4s is a concise, idiomatic, reactive, type safe Scala client for Apache Pulsar.
 The official Java client can of course be used in Scala, but this client provides better integration with Scala.
 
-* Supports scala.Future, monix.Task, cats.Effect, scalaz.Task
+* Supports differente effects - scala.concurrent.Future, monix.eval.Task, cats.effect.IO, scalaz.concurrent.Task
 * Uses scala.concurrent.duration.Duration
 * Provides case classes rather than Java beans
 * Better type safety
@@ -36,9 +36,11 @@ For example:
 case class Person(name: String, location: String)
 
 // how you turn the type into a message is up to you
+```scala
 implicit object PersonWriter extends MessageWriter[Person] {
-  override def write(p: Person): Message = Message(person.name + "/" + person.location)
+  override def write(p: Person): Try[Message] = Success(Message(p.name + "/" + p.location))
 }
+```
 
 // now the send reads much cleaner
 val jon = Person("jon snow", "the wall")
@@ -55,9 +57,8 @@ you can now pass any type you like to the send methods and a MessageWriter will 
 
 | Library | Elastic4s Module | Import |
 |---------|------------------|--------|
-|[Jackson](https://github.com/FasterXML/jackson-module-scala)|[elastic4s-jackson](http://search.maven.org/#search%7Cga%7C1%7Celastic4s-jackson)|import ElasticJackson.Implicits._|
-|[Json4s](http://json4s.org/)|[elastic4s-json4s](http://search.maven.org/#search%7Cga%7C1%7Celastic4s-json4s)|import ElasticJson4s.Implicits._|
 |[Circe](https://github.com/travisbrown/circe)|[elastic4s-circe](http://search.maven.org/#search%7Cga%7C1%7Celastic4s-circe)|import io.circe.generic.auto._ <br/>import com.sksamuel.elastic4s.circe._|
+|[Jackson](https://github.com/FasterXML/jackson-module-scala)|[elastic4s-jackson](http://search.maven.org/#search%7Cga%7C1%7Celastic4s-jackson)|import ElasticJackson.Implicits._|
 
 ### Receiving
 
@@ -72,15 +73,17 @@ For example:
 case class Person(name: String, location: String)
 
 // how you read the message is up to you
+```scala
 implicit object PersonReader extends MessageReader[Person] {
-  override def read(msg: Message): Either[Throwable, Person] = {
-    val str = new String(msg.data)
-    str.split('/') match {
-      case Array(name, location) => Right(Person(name, location))
-      case _ => Left(s"Unable to parse $str")
+    override def read(msg: Message): Try[Person] = {
+      val str = new String(msg.data)
+      str.split('/') match {
+        case Array(name, location) => Success(Person(name, location))
+        case _ => Failure(new RuntimeException(s"Unable to parse $str"))
+      }
     }
-  }
 }
+```
 
 // now the receive reads much cleaner
 val f = producer.receiveAsyncT[Person](jon)
