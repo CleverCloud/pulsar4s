@@ -4,6 +4,8 @@ import java.util.UUID
 
 import org.scalatest.{FunSuite, Matchers}
 
+import scala.util.{Success, Try}
+
 class MessageWriterTest extends FunSuite with Matchers {
 
   import scala.concurrent.ExecutionContext.Implicits.global
@@ -11,7 +13,7 @@ class MessageWriterTest extends FunSuite with Matchers {
   case class Person(name: String, location: String)
 
   implicit object PersonWriter extends MessageWriter[Person] {
-    override def write(p: Person): Either[Throwable, Message] = Right(Message(p.name + "/" + p.location))
+    override def write(p: Person): Try[Message] = Success(Message(p.name + "/" + p.location))
   }
 
   test("message writer should be used to create a message") {

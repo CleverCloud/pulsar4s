@@ -12,7 +12,7 @@ class ProducerConsumerTest extends FunSuite with Matchers {
   test("producer should return messageId when sending a synchronous messsage") {
     val producer = client.producer(topic)
     val messageId = producer.send("wibble")
-    messageId.right.get.bytes.length > 0 shouldBe true
+    messageId.bytes.length > 0 shouldBe true
   }
 
   test("producer and consumer synchronous round trip") {
@@ -21,7 +21,7 @@ class ProducerConsumerTest extends FunSuite with Matchers {
     val messageId = producer.send("wibble")
 
     val consumer = client.consumer(topic, Subscription("sub1"))
-    consumer.seek(messageId.right.get)
+    consumer.seek(messageId)
 
     val msg = consumer.receive
     new String(msg.data) shouldBe "wibble"

@@ -7,6 +7,7 @@ import org.apache.pulsar.client.impl.MessageIdImpl
 
 import scala.collection.JavaConverters._
 import scala.language.implicitConversions
+import scala.util.Try
 
 case class Message(key: Option[String],
                    data: Array[Byte],
@@ -42,11 +43,11 @@ object Message {
 }
 
 trait MessageWriter[T] {
-  def write(t: T): Either[Throwable, Message]
+  def write(t: T): Try[Message]
 }
 
 trait MessageReader[T] {
-  def read(msg: Message): Either[Throwable, T]
+  def read(msg: Message): Try[T]
 }
 
 case class MessageId(bytes: Array[Byte])

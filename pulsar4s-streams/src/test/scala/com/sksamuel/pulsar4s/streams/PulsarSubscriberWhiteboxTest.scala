@@ -46,25 +46,6 @@ class BulkIndexingSubscriberWhiteboxTest
   }
 
   override def createElement(element: Int): Message = castles(element)
-
-  val castles = Array(
-    Message("bodium"),
-    Message("hever"),
-    Message("tower of london"),
-    Message("canarvon"),
-    Message("conwy"),
-    Message("beaumaris"),
-    Message("bolsover"),
-    Message("conningsbrough"),
-    Message("tintagel"),
-    Message("rochester"),
-    Message("dover"),
-    Message("hexham"),
-    Message("harleigh"),
-    Message("white"),
-    Message("radley"),
-    Message("berkeley")
-  )
 }
 
 case class Item(name: String)

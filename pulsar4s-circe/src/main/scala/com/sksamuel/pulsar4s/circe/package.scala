@@ -27,14 +27,14 @@ package object circe {
   @implicitNotFound(
     "No Decoder for type ${T} found. Use 'import io.circe.generic.auto._' or provide an implicit Decoder instance ")
   implicit def circeReader[T](implicit decoder: Decoder[T]): MessageReader[T] = new MessageReader[T] {
-    override def read(msg: Message): Either[Throwable, T] = decode[T](new String(msg.data, "UTF8"))
+    override def read(msg: Message): Try[T] = decode[T](new String(msg.data, "UTF8")).toTry
   }
 
   @implicitNotFound(
     "No Encoder for type ${T} found. Use 'import io.circe.generic.auto._' or provide an implicit Encoder instance ")
   implicit def circeWriter[T](implicit encoder: Encoder[T], printer: Json => String = Printer.noSpaces.pretty): MessageWriter[T] = new MessageWriter[T] {
-    override def write(t: T): Either[Throwable, Message] = Try {
+    override def write(t: T): Try[Message] = Try {
       Message(printer(encoder(t)).getBytes("UTF8"))
-    }.toEither
+    }
   }
 }

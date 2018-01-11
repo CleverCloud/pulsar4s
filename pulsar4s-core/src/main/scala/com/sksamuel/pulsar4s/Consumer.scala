@@ -9,6 +9,7 @@ import scala.compat.java8.FutureConverters
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.implicitConversions
+import scala.util.{Failure, Success, Try}
 
 class Consumer(consumer: JConsumer, val topic: Topic, val subscription: Subscription)
               (implicit context: ExecutionContext) {
@@ -26,39 +27,37 @@ class Consumer(consumer: JConsumer, val topic: Topic, val subscription: Subscrip
     Message.fromJava(msg)
   }
 
-  def receiveAsync: Future[Message] = {
-    val f = consumer.receiveAsync()
-    f.map(Message.fromJava)
-  }
-
   def receive(duration: FiniteDuration): Message = {
     val msg = consumer.receive(duration.toNanos.toInt, TimeUnit.NANOSECONDS)
     Message.fromJava(msg)
   }
 
-  def receiveT[T](implicit reader: MessageReader[T]): Either[Throwable, T] = {
-    try {
-      reader.read(receive)
-    } catch {
-      case t: Throwable => Left(t)
+  def tryReceive: Try[Message] = Try(receive)
+  def tryReceive(duration: FiniteDuration): Try[Message] = Try(receive(duration))
+
+  def receiveAsync: Future[Message] = {
+    val f = consumer.receiveAsync()
+    f.map(Message.fromJava)
+  }
+
+  def receiveT[T](implicit reader: MessageReader[T]): T = {
+    reader.read(receive) match {
+      case Failure(e) => throw e
+      case Success(t) => t
     }
   }
+
+  def tryReceiveT[T](implicit reader: MessageReader[T]): Try[T] = tryReceive.flatMap(reader.read)
 
   def receiveAsyncT[T](implicit reader: MessageReader[T]): Future[T] = {
     receiveAsync.map(reader.read).map {
-      case Left(e) => throw e
-      case Right(t) => t
+      case Success(t) => t
+      case Failure(t) => throw t
     }
   }
 
-  def receiveT[T](duration: FiniteDuration)(implicit reader: MessageReader[T]): Either[Throwable, T] = {
-    try {
-      val msg = receive(duration)
-      reader.read(msg)
-    } catch {
-      case t: Throwable => Left(t)
-    }
-  }
+  def tryReceiveT[T](duration: FiniteDuration)(implicit reader: MessageReader[T]): Try[T] =
+    tryReceive(duration).flatMap(reader.read)
 
   def acknowledge(message: Message): Unit = {
     consumer.acknowledge(message)
@@ -99,6 +98,8 @@ class Consumer(consumer: JConsumer, val topic: Topic, val subscription: Subscrip
   def redeliverUnacknowledgedMessages(): Unit = consumer.redeliverUnacknowledgedMessages()
 
   def seek(messageId: MessageId): Unit = consumer.seek(messageId)
+  def seekEarliest(): Unit = seek(MessageId.earliest)
+  def seekLatest(): Unit = seek(MessageId.latest)
 
   def seekAsync(messageId: MessageId): Future[Unit] = {
     consumer.seekAsync(messageId)

@@ -4,6 +4,8 @@ import java.util.UUID
 
 import org.scalatest.{FunSuite, Matchers}
 
+import scala.util.{Failure, Success, Try}
+
 class MessageReaderTest extends FunSuite with Matchers {
 
   import scala.concurrent.ExecutionContext.Implicits.global
@@ -11,11 +13,11 @@ class MessageReaderTest extends FunSuite with Matchers {
   case class Person(name: String, location: String)
 
   implicit object PersonReader extends MessageReader[Person] {
-    override def read(msg: Message): Either[Throwable, Person] = {
+    override def read(msg: Message): Try[Person] = {
       val str = new String(msg.data)
       str.split('/') match {
-        case Array(name, location) => Right(Person(name, location))
-        case _ => Left(new RuntimeException(s"Unable to parse $str"))
+        case Array(name, location) => Success(Person(name, location))
+        case _ => Failure(new RuntimeException(s"Unable to parse $str"))
       }
     }
   }
@@ -28,7 +30,6 @@ class MessageReaderTest extends FunSuite with Matchers {
 
     val consumer = client.consumer(topic, Subscription("wibble"))
     consumer.seek(MessageId.earliest)
-    val t = consumer.receiveT
-    t.right.get shouldBe Person("jon snow", "the wall")
+    consumer.receiveT shouldBe Person("jon snow", "the wall")
   }
 }
