@@ -39,11 +39,9 @@ For example:
 case class Person(name: String, location: String)
 
 // how you turn the type into a message is up to you
-```scala
 implicit object PersonWriter extends MessageWriter[Person] {
   override def write(p: Person): Try[Message] = Success(Message(p.name + "/" + p.location))
 }
-```
 
 // now the send reads much cleaner
 val jon = Person("jon snow", "the wall")
@@ -76,7 +74,6 @@ For example:
 case class Person(name: String, location: String)
 
 // how you read the message is up to you
-```scala
 implicit object PersonReader extends MessageReader[Person] {
     override def read(msg: Message): Try[Person] = {
       val str = new String(msg.data)
@@ -86,7 +83,6 @@ implicit object PersonReader extends MessageReader[Person] {
       }
     }
 }
-```
 
 // now the receive reads much cleaner
 val f = producer.receiveAsyncT[Person](jon)
