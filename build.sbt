@@ -5,6 +5,8 @@ lazy val root = Project("pulsar4s", file("."))
   .aggregate(
     core,
     cats_effect,
+    scalaz,
+    monix,
     streams,
     jackson,
     circe
@@ -13,9 +15,7 @@ lazy val root = Project("pulsar4s", file("."))
 lazy val core = Project("pulsar4s-core", file("pulsar4s-core"))
   .settings(name := "pulsar4s-core")
   .settings(libraryDependencies ++= Seq(
-    "org.apache.pulsar" % "pulsar-client" % PulsarVersion,
-    "org.apache.pulsar" % "pulsar-common" % PulsarVersion,
-    "org.apache.pulsar" % "pulsar-client-admin" % PulsarVersion,
+
     "org.scala-lang.modules" %% "scala-java8-compat" % Java8CompatVersion,
     "com.fasterxml.jackson.core"    % "jackson-core"            % JacksonVersion        % "test",
     "com.fasterxml.jackson.core"    % "jackson-databind"        % JacksonVersion        % "test",
@@ -24,6 +24,20 @@ lazy val core = Project("pulsar4s-core", file("pulsar4s-core"))
 
 lazy val cats_effect = Project("pulsar4s-cats-effect", file("pulsar4s-cats-effect"))
   .settings(name := "pulsar4s-cats-effect")
+  .settings(libraryDependencies ++= Seq(
+    "org.typelevel" %% "cats-effect" % "0.8"
+  ))
+  .dependsOn(core)
+
+lazy val scalaz = Project("pulsar4s-scalaz", file("pulsar4s-scalaz"))
+  .settings(name := "pulsar4s-scalaz")
+  .settings(libraryDependencies ++= Seq(
+    "org.typelevel" %% "cats-effect" % "0.8"
+  ))
+  .dependsOn(core)
+
+lazy val monix = Project("pulsar4s-monix", file("pulsar4s-monix"))
+  .settings(name := "pulsar4s-monix")
   .settings(libraryDependencies ++= Seq(
     "org.typelevel" %% "cats-effect" % "0.8"
   ))

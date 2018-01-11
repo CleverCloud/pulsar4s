@@ -46,9 +46,13 @@ object Build extends AutoPlugin {
     scalacOptions := Seq("-unchecked", "-deprecation", "-encoding", "utf8"),
     javacOptions := Seq("-source", "1.8", "-target", "1.8"),
     libraryDependencies ++= Seq(
+      "org.apache.pulsar"                     % "pulsar-client"             % PulsarVersion,
+      "org.apache.pulsar"                     % "pulsar-common"             % PulsarVersion,
+      "org.apache.pulsar"                     % "pulsar-client-admin"       % PulsarVersion,
       "com.sksamuel.exts"                     %% "exts"                     % ExtsVersion,
       "org.typelevel"                         %% "cats-core"                % CatsVersion,
       "org.slf4j"                             % "slf4j-api"                 % Slf4jVersion,
+      "org.apache.logging.log4j"              % "log4j-api"                 % Log4jVersion  % "test",
       "org.scalatest"                         %% "scalatest"                % ScalatestVersion      % "test"
     ),
     publishTo := {
