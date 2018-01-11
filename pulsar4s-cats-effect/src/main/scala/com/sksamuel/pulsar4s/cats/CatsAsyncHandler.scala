@@ -1,4 +1,4 @@
-package com.sksamuel.pulsar4s.monix
+package com.sksamuel.pulsar4s.cats
 
 import java.util.concurrent.CompletableFuture
 import java.util.function.BiConsumer
