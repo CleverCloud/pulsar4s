@@ -10,7 +10,7 @@ class CirceMarshallerTest extends WordSpec with Matchers {
 
   "A derived MessageWriter instance" should {
     "create a message from a class" in {
-      val msg = implicitly[MessageWriter[Cafe]].write(Cafe("le table", Place(1, "Paris"))).right.get
+      val msg = implicitly[MessageWriter[Cafe]].write(Cafe("le table", Place(1, "Paris"))).get
       msg.key shouldBe None
       msg.messageId shouldBe None
       new String(msg.data) shouldBe """{"name":"le table","place":{"id":1,"name":"Paris"}}"""

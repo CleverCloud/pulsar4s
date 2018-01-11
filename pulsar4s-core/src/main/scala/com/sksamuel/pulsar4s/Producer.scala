@@ -1,22 +1,14 @@
 package com.sksamuel.pulsar4s
 
-import java.util.concurrent.CompletableFuture
-
 import org.apache.pulsar.client.api.{Producer => JProducer}
 import org.apache.pulsar.client.impl.ProducerStats
 
-import scala.compat.java8.FutureConverters
-import scala.concurrent.{ExecutionContext, Future}
-import scala.language.implicitConversions
+import scala.language.{higherKinds, implicitConversions}
 import scala.util.{Failure, Success, Try}
 
 case class ProducerName(name: String)
 
-class Producer(producer: JProducer, val topic: Topic)
-              (implicit context: ExecutionContext) {
-
-  implicit def completableToFuture[U](f: CompletableFuture[U]): Future[U] = FutureConverters.toScala(f)
-  implicit def voidCompletableToFuture(f: CompletableFuture[Void]): Future[Unit] = f.map(_ => ())
+class Producer(producer: JProducer, val topic: Topic) {
 
   def name: ProducerName = ProducerName(producer.getProducerName)
 
@@ -37,19 +29,14 @@ class Producer(producer: JProducer, val topic: Topic)
     }
   }
 
-  def sendAsync(msg: String): Future[MessageId] = sendAsync(msg.getBytes("UTF8"))
-  def sendAsync(bytes: Array[Byte]): Future[MessageId] = {
-    val f = producer.sendAsync(bytes)
-    f.map(MessageId.apply)
-  }
-  def sendAsync(msg: Message): Future[MessageId] = {
-    val f = producer.sendAsync(Message.toJava(msg))
-    f.map(MessageId.apply)
-  }
-  def sendAsync[T](t: T)(implicit writer: MessageWriter[T]): Future[MessageId] = {
-    writer.write(t) match {
-      case Failure(e) => Future.failed(e)
-      case Success(msg) => sendAsync(msg)
+  def sendAsync[F[_] : AsyncHandler](msg: String): F[MessageId] = sendAsync(msg.getBytes("UTF8"))
+  def sendAsync[F[_] : AsyncHandler](bytes: Array[Byte]): F[MessageId] = sendAsync(Message(bytes))
+  def sendAsync[F[_] : AsyncHandler](msg: Message): F[MessageId] = AsyncHandler[F].send(msg, producer)
+
+  def sendAsync[T: MessageWriter, F[+ _] : AsyncHandler](t: T): F[MessageId] = {
+    implicitly[MessageWriter[T]].write(t) match {
+      case Failure(e) => implicitly[AsyncHandler[F]].failed(e)
+      case Success(msg) => sendAsync[F](msg)
     }
   }
 
@@ -57,5 +44,5 @@ class Producer(producer: JProducer, val topic: Topic)
   def stats: ProducerStats = producer.getStats
 
   def close(): Unit = producer.close()
-  def closeAsync: Future[Unit] = producer.closeAsync().map(_ => ())
+  def closeAsync[F[_] : AsyncHandler]: F[Unit] = AsyncHandler[F].close(producer)
 }
