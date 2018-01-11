@@ -1,4 +1,4 @@
-package com.sksamuel.pulsar4s.circe
+package com.sksamuel.pulsar4s.jackson
 
 import com.sksamuel.pulsar4s.{Message, MessageReader, MessageWriter}
 

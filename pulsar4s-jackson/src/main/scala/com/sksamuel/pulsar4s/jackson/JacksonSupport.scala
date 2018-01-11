@@ -1,4 +1,4 @@
-package com.sksamuel.pulsar4s.circe
+package com.sksamuel.pulsar4s.jackson
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.core.JsonParser
