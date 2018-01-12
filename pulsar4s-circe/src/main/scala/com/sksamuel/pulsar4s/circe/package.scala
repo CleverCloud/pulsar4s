@@ -4,7 +4,7 @@ import io.circe.jawn.decode
 import io.circe.{Decoder, Encoder, Json, Printer}
 
 import scala.annotation.implicitNotFound
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
 /**
   * Automatic MessageWriter and MessageReader derivation
@@ -27,7 +27,10 @@ package object circe {
   @implicitNotFound(
     "No Decoder for type ${T} found. Use 'import io.circe.generic.auto._' or provide an implicit Decoder instance ")
   implicit def circeReader[T](implicit decoder: Decoder[T]): MessageReader[T] = new MessageReader[T] {
-    override def read(msg: Message): Try[T] = decode[T](new String(msg.data, "UTF8")).toTry
+    override def read(msg: Message): Try[T] = decode[T](new String(msg.data, "UTF8")) match {
+      case Left(e) => Failure(e)
+      case Right(t) => Success(t)
+    }
   }
 
   @implicitNotFound(

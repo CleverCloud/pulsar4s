@@ -18,7 +18,7 @@ object Build extends AutoPlugin {
     val Log4jVersion = "2.10.0"
     val PulsarVersion = "1.21.0-incubating"
     val ReactiveStreamsVersion = "1.0.1"
-    val ScalaVersion = "2.12.2"
+    val ScalaVersion = "2.11.8"
     val ScalatestVersion = "3.0.1"
     val Slf4jVersion = "1.7.12"
     val Java8CompatVersion = "0.8.0"
@@ -33,7 +33,7 @@ object Build extends AutoPlugin {
     // appending everything from 'compileonly' to unmanagedClasspath
     unmanagedClasspath in Compile ++= update.value.select(configurationFilter("compileonly")),
     scalaVersion := ScalaVersion,
-    crossScalaVersions := Seq("2.11.8", scalaVersion.value),
+    crossScalaVersions := Seq("2.11.8", "2.12.2"),
     publishMavenStyle := true,
     resolvers += Resolver.mavenLocal,
     fork in Test := true,
