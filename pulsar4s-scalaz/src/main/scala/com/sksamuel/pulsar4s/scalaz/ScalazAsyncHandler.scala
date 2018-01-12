@@ -5,6 +5,7 @@ import java.util.function.BiConsumer
 
 import com.sksamuel.pulsar4s.{AsyncHandler, Message, MessageId}
 import org.apache.pulsar.client.api
+import org.apache.pulsar.client.api.Reader
 
 import scala.language.implicitConversions
 import scala.util.{Failure, Success, Try}
@@ -60,6 +61,10 @@ class ScalazAsyncHandler extends AsyncHandler[Task] {
 
   override def acknowledgeCumulativeAsync(consumer: api.Consumer, messageId: MessageId): Task[Unit] =
     consumer.acknowledgeCumulativeAsync(messageId)
+
+  override def close(reader: Reader): Task[Unit] = reader.closeAsync()
+
+  override def nextAsync(reader: Reader): Task[Message] = reader.readNextAsync().map(Message.fromJava)
 }
 
 object ScalazAsyncHandler {

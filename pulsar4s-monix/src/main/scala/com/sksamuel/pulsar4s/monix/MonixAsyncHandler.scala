@@ -5,6 +5,7 @@ import java.util.concurrent.CompletableFuture
 import com.sksamuel.pulsar4s.{AsyncHandler, Message, MessageId}
 import monix.eval.Task
 import org.apache.pulsar.client.api
+import org.apache.pulsar.client.api.Reader
 
 import scala.compat.java8.FutureConverters
 import scala.concurrent.Future
@@ -61,6 +62,10 @@ class MonixAsyncHandler extends AsyncHandler[Task] {
 
   override def acknowledgeCumulativeAsync(consumer: api.Consumer, messageId: MessageId): Task[Unit] =
     consumer.acknowledgeCumulativeAsync(messageId)
+
+  override def close(reader: Reader): Task[Unit] = reader.closeAsync()
+
+  override def nextAsync(reader: Reader): Task[Message] = Task.deferFuture(reader.readNextAsync()).map(Message.fromJava)
 }
 
 object MonixAsyncHandler {

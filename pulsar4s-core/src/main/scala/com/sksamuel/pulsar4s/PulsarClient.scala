@@ -2,7 +2,7 @@ package com.sksamuel.pulsar4s
 
 import com.sksamuel.exts.Logging
 import org.apache.pulsar.client.api
-import org.apache.pulsar.client.api.{ConsumerConfiguration, ProducerConfiguration}
+import org.apache.pulsar.client.api.{ConsumerConfiguration, ProducerConfiguration, ReaderConfiguration}
 
 case class Topic(name: String)
 case class Subscription(name: String)
@@ -13,6 +13,7 @@ trait PulsarClient {
   def producer(topic: Topic, conf: ProducerConfiguration): Producer
   def consumer(topic: Topic, subscription: Subscription): Consumer
   def consumer(topic: Topic, subscription: Subscription, conf: ConsumerConfiguration): Consumer
+  def reader(topic: Topic, subscription: Subscription, seek: MessageId, conf: ReaderConfiguration): Reader
 }
 
 object PulsarClient {
@@ -25,6 +26,10 @@ object PulsarClient {
 
     override def producer(topic: Topic): Producer = {
       new Producer(client.createProducer(topic.name), topic)
+    }
+
+    override def reader(topic: Topic, subscription: Subscription, seek: MessageId, conf: ReaderConfiguration): Reader = {
+      new Reader(client.createReader(subscription.name, seek, conf), topic, subscription)
     }
 
     override def producer(topic: Topic, conf: ProducerConfiguration): Producer = {
@@ -40,14 +45,5 @@ object PulsarClient {
       logger.info(s"Creating consumer on $topic with susbcription $subscription")
       new Consumer(client.subscribe(topic.name, subscription.name, conf), topic, subscription)
     }
-
   }
-}
-
-object Test extends App {
-
-  val client = PulsarClient("pulsar://localhost:6650", "sample/standalone/ns1")
-  val topic = Topic("persistent://sample/standalone/ns1/my-topic")
-  //client.send(topic)
-  //client.subscribe(topic, "mysub").consume(new Listener {})
 }

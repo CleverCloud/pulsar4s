@@ -6,6 +6,7 @@ import java.util.function.BiConsumer
 import cats.effect.IO
 import com.sksamuel.pulsar4s.{AsyncHandler, Message, MessageId}
 import org.apache.pulsar.client.api
+import org.apache.pulsar.client.api.Reader
 
 import scala.language.implicitConversions
 import scala.util.{Failure, Success, Try}
@@ -54,6 +55,10 @@ class CatsAsyncHandler extends AsyncHandler[IO] {
 
   override def acknowledgeCumulativeAsync(consumer: api.Consumer, messageId: MessageId): IO[Unit] =
     consumer.acknowledgeCumulativeAsync(messageId)
+
+  override def close(reader: Reader): IO[Unit] = reader.closeAsync()
+
+  override def nextAsync(reader: Reader): IO[Message] = reader.readNextAsync().map(Message.fromJava)
 }
 
 object CatsAsyncHandler {
