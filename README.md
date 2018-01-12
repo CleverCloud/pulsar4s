@@ -1,5 +1,3 @@
-# pulsar4s
-
 pulsar4s - Apache Pulsar Scala Client
 ==================================================
 
