@@ -1,4 +1,4 @@
-package com.sksamuel.pulsar4s.jackson
+package com.sksamuel.pulsar4s.jacksontest
 
 import com.sksamuel.pulsar4s.Message
 import org.scalatest.{Matchers, WordSpec}
@@ -8,7 +8,7 @@ case class Cafe(name: String, place: Place)
 
 class JacksonTest extends WordSpec with Matchers {
 
-  import Jackson._
+  import com.sksamuel.pulsar4s.jackson._
   import com.sksamuel.pulsar4s.{MessageReader, MessageWriter}
 
   "A derived MessageWriter instance" should {

@@ -1,11 +1,8 @@
-package com.sksamuel.pulsar4s.jackson
-
-import com.sksamuel.pulsar4s.{Message, MessageReader, MessageWriter}
+package com.sksamuel.pulsar4s
 
 import scala.util.Try
 
-object Jackson {
-
+package object jackson {
   implicit def writer[T: Manifest]: MessageWriter[T] = new MessageWriter[T] {
     override def write(t: T): Try[Message] = {
       Try {
@@ -22,5 +19,4 @@ object Jackson {
       }
     }
   }
-
 }
