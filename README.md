@@ -54,10 +54,10 @@ is a JSON representation of the class.
 Simply add the import for your chosen library below and then with those implicits in scope,
 you can now pass any type you like to the send methods and a MessageWriter will be derived automatically.
 
-| Library | Elastic4s Module | Import |
+| Library | Module | Import |
 |---------|------------------|--------|
-|[Circe](https://github.com/travisbrown/circe)|[elastic4s-circe](http://search.maven.org/#search%7Cga%7C1%7Celastic4s-circe)|import io.circe.generic.auto._ <br/>import com.sksamuel.elastic4s.circe._|
-|[Jackson](https://github.com/FasterXML/jackson-module-scala)|[elastic4s-jackson](http://search.maven.org/#search%7Cga%7C1%7Celastic4s-jackson)|import ElasticJackson.Implicits._|
+|[Circe](https://github.com/travisbrown/circe)|[pulsar4s-circe](http://search.maven.org/#search%7Cga%7C1%7Cpulsar4s-circe)|import io.circe.generic.auto._ <br/>import com.sksamuel.pulsar4s.circe._|
+|[Jackson](https://github.com/FasterXML/jackson-module-scala)|[pulsar4s-jackson](http://search.maven.org/#search%7Cga%7C1%7Cpulsar4s-jackson)|import com.sksamuel.pulsar4s.jackson.Jackson._|
 
 ### Receiving
 
