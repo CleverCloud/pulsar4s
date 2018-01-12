@@ -19,8 +19,8 @@ class CirceMarshallerTest extends WordSpec with Matchers {
 
   "A derived MessageReader instance" should {
     "read a class from a message" in {
-      implicitly[MessageReader[Cafe]].read(Message("""{"name":"le table","place":{"id":1,"name":"Paris"}}""")) shouldBe
-        Right(Cafe("le table", Place(1, "Paris")))
+      implicitly[MessageReader[Cafe]].read(Message("""{"name":"le table","place":{"id":1,"name":"Paris"}}""")).get shouldBe
+        Cafe("le table", Place(1, "Paris"))
     }
   }
 }

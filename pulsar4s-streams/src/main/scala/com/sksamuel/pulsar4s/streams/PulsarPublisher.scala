@@ -94,7 +94,7 @@ class PulsarSubscription(consumer: Consumer,
             // we are looping if more requests come in; that's fine we'll process them all
             while (sent.get < requested.get && sent.get < max) {
               val msg = consumer.receive
-              logger.debug(s"Message received $msg")
+              logger.trace(s"Message received $msg")
               subscriber.onNext(msg)
               sent.incrementAndGet()
             }
