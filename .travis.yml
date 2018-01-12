@@ -15,8 +15,10 @@ before_cache:
   - find $HOME/.ivy2 -name "ivydata-*.properties" | xargs rm
 
 before_script:
-- sudo chmod +x /usr/local/bin/sbt
-- docker run -it -p 6650:6650 -p 8080:8080 -v $PWD/data:/pulsar/data apachepulsar/pulsar:1.21.0-incubating bin/pulsar standalone --advertised-address 127.0.0.1
+  - sudo chmod +x /usr/local/bin/sbt
+
+before_install:
+  - docker run -it -p 6650:6650 -p 8080:8080 -v $PWD/data:/pulsar/data apachepulsar/pulsar:1.21.0-incubating bin/pulsar standalone --advertised-address 127.0.0.1
 
 scala:
 - 2.11.11
