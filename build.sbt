@@ -51,8 +51,11 @@ lazy val monix = Project("pulsar4s-monix", file("pulsar4s-monix"))
 lazy val streams = Project("pulsar4s-streams", file("pulsar4s-streams"))
   .settings(name := "pulsar4s-streams")
   .settings(libraryDependencies ++= Seq(
-    "org.reactivestreams" % "reactive-streams"      % ReactiveStreamsVersion,
-    "org.reactivestreams" % "reactive-streams-tck"  % ReactiveStreamsVersion % "test"
+    "org.apache.pulsar"         % "pulsar-common"             % PulsarVersion,
+    "org.apache.logging.log4j"  % "log4j-api"                 % Log4jVersion  % "test",
+    "org.apache.logging.log4j"  % "log4j-slf4j-impl"          % Log4jVersion  % "test",
+    "org.reactivestreams"       % "reactive-streams"          % ReactiveStreamsVersion,
+    "org.reactivestreams"       % "reactive-streams-tck"      % ReactiveStreamsVersion % "test"
   ))
   .dependsOn(core)
 

@@ -22,9 +22,11 @@ class PulsarPublisherVerificationTest
 
   // we need to pump some messages into pulsar
   private val producer = client.producer(topic)
-  for (castle <- castles ++ castles ++ castles) {
+  for (castle <- castles) {
     producer.send(castle)
   }
+
+  override def maxElementsFromPublisher(): Long = castles.length
 
   override def boundedDepthOfOnNextAndRequestRecursion: Long = 1
 

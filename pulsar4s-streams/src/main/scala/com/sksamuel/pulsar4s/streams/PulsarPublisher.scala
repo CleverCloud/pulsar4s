@@ -33,11 +33,12 @@ class PulsarPublisher(client: PulsarClient,
 
     val consumer = client.consumer(topic, Subscription("pulsar_subscription_" + UUID.randomUUID))
     consumer.seek(messageId)
+
     val subscription = new PulsarSubscription(consumer, subscriber, max)
 
     // rule 1.03 the subscription should not invoke any onNext's until the onSubscribe call has returned.
     // Therefore we have to handle the situation where a user calls request(n) as part of the onSubscribe
-    // callback. We can do this by having a ready flag which we set once the callback returns
+    // callback. We can do this by delaying the sending of message until the onSubscribe callback returns
     subscriber.onSubscribe(subscription)
     subscription.start()
   }
@@ -55,7 +56,7 @@ class PulsarSubscription(consumer: Consumer,
   private val cancelled = new AtomicBoolean(false)
 
   override def cancel(): Unit = {
-    // rule 3.7 after first cancel, rest must be no-opss
+    // rule 3.7 after first cancel, rest must be no-ops
     if (cancelled.compareAndSet(false, true)) {
       executor.shutdownNow()
     }
@@ -81,6 +82,14 @@ class PulsarSubscription(consumer: Consumer,
       override def run(): Unit = {
         try {
           while (!Thread.currentThread.isInterrupted && sent.get() < max) {
+
+            // at this point, we've sent everything requested, so we should sleep until more
+            // requests come in. It's possible that a request came in after we exited the loop
+            // but before we go to sleep, so we need to handle that by only sleeping if
+            // there are no permits pending
+            if (mutex.drainPermits() == 0)
+              mutex.acquire()
+
             // send up to the amount requested; the requested total may increase while
             // we are looping if more requests come in; that's fine we'll process them all
             while (sent.get < requested.get && sent.get < max) {
@@ -89,23 +98,23 @@ class PulsarSubscription(consumer: Consumer,
               subscriber.onNext(msg)
               sent.incrementAndGet()
             }
-            // at this point, we've sent everything requested, so we should sleep until more
-            // requests come in. It's possible that a request came in after we exited the loop
-            // but before we go to sleep, so we need to handle that by only sleeping if
-            // there are no permits pending
-            if (mutex.drainPermits() == 0)
-              mutex.acquire()
           }
         } catch {
-          case _: InterruptedException =>
-            logger.debug("Subscription cancellation, consumer thread will now exit")
-          case NonFatal(e) =>
-            logger.error("Error receiving message", e)
-            error.set(e)
+          case _: InterruptedException => logger.debug("Subscription cancellation, consumer thread will now exit")
+          case NonFatal(e) => error.set(e)
         } finally {
           error.get match {
-            case null => subscriber.onComplete()
-            case t => subscriber.onError(t)
+            // rule 1.08 and https://github.com/reactive-streams/reactive-streams-jvm/issues/113
+            // not clear from spec, but after cancel don't send onComplete
+            case null if !cancelled.get =>
+              logger.debug("Signalling oncomplete")
+              // rule 1.05
+              subscriber.onComplete()
+            case null =>
+              // nothing to do
+            case t =>
+              logger.error("Signalling onError", t)
+              subscriber.onError(t)
           }
         }
       }

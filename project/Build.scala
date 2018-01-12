@@ -15,9 +15,9 @@ object Build extends AutoPlugin {
     val CommonsIoVersion = "2.4"
     val ExtsVersion = "1.44.0"
     val JacksonVersion = "2.9.2"
-    val Log4jVersion = "2.6.2"
+    val Log4jVersion = "2.10.0"
     val PulsarVersion = "1.21.0-incubating"
-    val ReactiveStreamsVersion = "1.0.0"
+    val ReactiveStreamsVersion = "1.0.1"
     val ScalaVersion = "2.12.2"
     val ScalatestVersion = "3.0.1"
     val Slf4jVersion = "1.7.12"
@@ -53,6 +53,7 @@ object Build extends AutoPlugin {
       "org.typelevel"                         %% "cats-core"                % CatsVersion,
       "org.slf4j"                             % "slf4j-api"                 % Slf4jVersion,
       "org.apache.logging.log4j"              % "log4j-api"                 % Log4jVersion  % "test",
+      "org.apache.logging.log4j"              % "log4j-slf4j-impl"          % Log4jVersion  % "test",
       "org.scalatest"                         %% "scalatest"                % ScalatestVersion      % "test"
     ),
     publishTo := {
