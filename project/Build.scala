@@ -50,7 +50,6 @@ object Build extends AutoPlugin {
       "org.apache.pulsar"                     % "pulsar-common"             % PulsarVersion,
       "org.apache.pulsar"                     % "pulsar-client-admin"       % PulsarVersion,
       "com.sksamuel.exts"                     %% "exts"                     % ExtsVersion,
-      "org.typelevel"                         %% "cats-core"                % CatsVersion,
       "org.slf4j"                             % "slf4j-api"                 % Slf4jVersion,
       "org.apache.logging.log4j"              % "log4j-api"                 % Log4jVersion  % "test",
       "org.apache.logging.log4j"              % "log4j-slf4j-impl"          % Log4jVersion  % "test",
