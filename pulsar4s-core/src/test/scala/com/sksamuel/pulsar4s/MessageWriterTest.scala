@@ -21,10 +21,13 @@ class MessageWriterTest extends FunSuite with Matchers {
     val topic = Topic("persistent://sample/standalone/ns1/" + UUID.randomUUID())
     val producer = client.producer(topic)
     producer.send(Person("jon snow", "the wall"))
+    producer.close()
 
     val consumer = client.consumer(topic, Subscription("wibble"))
     consumer.seek(MessageId.earliest)
     val msg = consumer.receive
     msg.data shouldBe "jon snow/the wall".getBytes
+    consumer.close()
+    client.close()
   }
 }

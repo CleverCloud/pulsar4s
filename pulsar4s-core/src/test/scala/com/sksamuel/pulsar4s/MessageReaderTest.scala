@@ -25,11 +25,16 @@ class MessageReaderTest extends FunSuite with Matchers {
   ignore("message reader should be used to read a message") {
     val client = PulsarClient("pulsar://localhost:6650", "sample/standalone/ns1")
     val topic = Topic("persistent://sample/standalone/ns1/" + UUID.randomUUID())
+
     val producer = client.producer(topic)
     producer.send("jon snow/the wall")
+    producer.close()
 
     val consumer = client.consumer(topic, Subscription("wibble"))
     consumer.seek(MessageId.earliest)
     consumer.receiveT shouldBe Person("jon snow", "the wall")
+
+    consumer.close()
+    client.close()
   }
 }
