@@ -12,13 +12,13 @@ class CatsAsyncHandlerTest extends FunSuite with Matchers {
   val client = PulsarClient("pulsar://localhost:6650", "sample/standalone/ns1")
   val topic = Topic("persistent://sample/standalone/ns1/async_" + UUID.randomUUID())
 
-  test("async producer should use cats") {
+  ignore("async producer should use cats") {
     val producer = client.producer(topic)
     val t = producer.sendAsync("wibble")
     t.unsafeRunSync() should not be null
   }
 
-  test("async consumer should use cats") {
+  ignore("async consumer should use cats") {
     val consumer = client.consumer(topic, Subscription("mysub_" + UUID.randomUUID()))
     consumer.seekEarliest()
     val t = consumer.receiveAsync
