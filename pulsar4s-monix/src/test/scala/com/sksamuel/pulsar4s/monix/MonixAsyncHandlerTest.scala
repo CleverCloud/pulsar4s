@@ -19,7 +19,8 @@ class MonixAsyncHandlerTest extends FunSuite with Matchers {
   test("async producer should use monix") {
     val producer = client.producer(topic)
     val t = producer.sendAsync("wibble")
-    t.runSyncMaybe.right.get should not be null
+    val f = t.runAsync
+    Await.result(f, Duration.Inf) should not be null
   }
 
   test("async consumer should use monix") {
