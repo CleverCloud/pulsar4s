@@ -16,9 +16,11 @@ class MessageWriterTest extends FunSuite with Matchers {
     override def write(p: Person): Try[Message] = Success(Message(p.name + "/" + p.location))
   }
 
-  ignore("message writer should be used to create a message") {
+  test("message writer should be used to create a message") {
+
     val client = PulsarClient("pulsar://localhost:6650", "sample/standalone/ns1")
     val topic = Topic("persistent://sample/standalone/ns1/" + UUID.randomUUID())
+
     val producer = client.producer(topic)
     producer.send(Person("jon snow", "the wall"))
     producer.close()
