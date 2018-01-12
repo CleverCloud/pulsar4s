@@ -20,7 +20,7 @@ class ProducerConsumerTest extends FunSuite with Matchers {
     val producer = client.producer(topic)
     val messageId = producer.send("wibble")
 
-    val consumer = client.consumer(topic, Subscription("sub1"))
+    val consumer = client.consumer(topic, Subscription.generate)
     consumer.seek(messageId)
 
     val msg = consumer.receive
@@ -34,13 +34,13 @@ class ProducerConsumerTest extends FunSuite with Matchers {
     producer.send("wobble")
     producer.send("wubble")
 
-    val consumer1 = client.consumer(topic, Subscription("sub1"))
+    val consumer1 = client.consumer(topic, Subscription.generate)
     consumer1.seek(MessageId.earliest)
     consumer1.receive.data shouldBe "wibble".getBytes
     consumer1.receive.data shouldBe "wobble".getBytes
     consumer1.receive.data shouldBe "wubble".getBytes
 
-    val consumer2 = client.consumer(topic, Subscription("sub2"))
+    val consumer2 = client.consumer(topic, Subscription.generate)
     consumer2.seek(MessageId.earliest)
     consumer2.receive.data shouldBe "wibble".getBytes
     consumer2.receive.data shouldBe "wobble".getBytes

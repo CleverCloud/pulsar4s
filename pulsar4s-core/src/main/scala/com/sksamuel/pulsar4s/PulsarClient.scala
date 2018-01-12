@@ -1,11 +1,16 @@
 package com.sksamuel.pulsar4s
 
+import java.util.UUID
+
 import com.sksamuel.exts.Logging
 import org.apache.pulsar.client.api
 import org.apache.pulsar.client.api.{ConsumerConfiguration, ProducerConfiguration, ReaderConfiguration}
 
 case class Topic(name: String)
 case class Subscription(name: String)
+object Subscription {
+  def generate = Subscription(UUID.randomUUID.toString)
+}
 
 trait PulsarClient {
   def close(): Unit
