@@ -2,7 +2,6 @@ package com.sksamuel.pulsar4s
 
 import java.util.concurrent.TimeUnit
 
-import cats.Functor
 import org.apache.pulsar.client.api.{Consumer => JConsumer}
 import org.apache.pulsar.client.impl.ConsumerStats
 
@@ -42,7 +41,7 @@ class Consumer(consumer: JConsumer, val topic: Topic, val subscription: Subscrip
     tryReceive(duration).flatMap(reader.read)
 
   def receiveAsync[F[_] : AsyncHandler]: F[Message] = implicitly[AsyncHandler[F]].receive(consumer)
-  def receiveAsyncT[T: MessageReader, F[_] : AsyncHandler : Functor]: F[T] =
+  def receiveAsyncT[T: MessageReader, F[_] : AsyncHandler]: F[T] =
     implicitly[AsyncHandler[F]].transform(receiveAsync)(implicitly[MessageReader[T]].read)
 
   def acknowledge(message: Message): Unit = consumer.acknowledge(message)
