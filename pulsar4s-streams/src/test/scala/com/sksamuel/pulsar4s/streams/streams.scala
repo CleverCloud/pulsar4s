@@ -6,21 +6,25 @@ package object streams {
   val PUBLISHER_REFERENCE_CLEANUP_TIMEOUT_MILLIS = 2000L
 
   val castles = Array(
-    Message("bodium"),
-    Message("hever"),
-    Message("tower of london"),
-    Message("canarvon"),
-    Message("conwy"),
     Message("beaumaris"),
+    Message("berkeley"),
+    Message("bodium"),
     Message("bolsover"),
+    Message("caernarfon"),
+    Message("carisbrooke"),
     Message("conningsbrough"),
-    Message("tintagel"),
-    Message("rochester"),
+    Message("conwy"),
     Message("dover"),
-    Message("hexham"),
     Message("harleigh"),
-    Message("white"),
+    Message("hexham"),
+    Message("hever"),
+    Message("leeds"),
+    Message("raby"),
     Message("radley"),
-    Message("berkeley")
+    Message("rochester"),
+    Message("tintagel"),
+    Message("tower of london"),
+    Message("warwick"),
+    Message("white")
   )
 }

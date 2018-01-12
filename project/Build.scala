@@ -9,7 +9,7 @@ object Build extends AutoPlugin {
   override def requires = JvmPlugin
 
   object autoImport {
-    val org = "com.sksamuel.elastic4s"
+    val org = "com.sksamuel.pulsar4s"
     val CatsVersion = "1.0.1"
     val CirceVersion = "0.9.0"
     val CommonsIoVersion = "2.4"
