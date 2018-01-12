@@ -2,6 +2,7 @@ package com.sksamuel.pulsar4s
 
 import java.util.concurrent.TimeUnit
 
+import com.sksamuel.exts.Logging
 import org.apache.pulsar.client.api.{Consumer => JConsumer}
 import org.apache.pulsar.client.impl.ConsumerStats
 
@@ -9,7 +10,7 @@ import scala.concurrent.duration.FiniteDuration
 import scala.language.{higherKinds, implicitConversions}
 import scala.util.{Failure, Success, Try}
 
-class Consumer(consumer: JConsumer, val topic: Topic, val subscription: Subscription) {
+class Consumer(consumer: JConsumer, val topic: Topic, val subscription: Subscription) extends Logging{
 
   import Message._
 
@@ -17,11 +18,13 @@ class Consumer(consumer: JConsumer, val topic: Topic, val subscription: Subscrip
   def unsubscribeAsync[F[_] : AsyncHandler]: F[Unit] = implicitly[AsyncHandler[F]].unsubscribeAsync(consumer)
 
   def receive: Message = {
+    logger.trace("About to block until a message is received..")
     val msg = consumer.receive()
     Message.fromJava(msg)
   }
 
   def receive(duration: FiniteDuration): Message = {
+    logger.trace(s"About to block for duration $duration or until a message is received..")
     val msg = consumer.receive(duration.toNanos.toInt, TimeUnit.NANOSECONDS)
     Message.fromJava(msg)
   }
