@@ -43,17 +43,18 @@ object Build extends AutoPlugin {
     testForkedParallel in Test := true,
     sbtrelease.ReleasePlugin.autoImport.releasePublishArtifactsAction := PgpKeys.publishSigned.value,
     sbtrelease.ReleasePlugin.autoImport.releaseCrossBuild := true,
+    credentials += Credentials(Path.userHome / ".sbt" / "pgp.credentials"),
     scalacOptions := Seq("-unchecked", "-deprecation", "-encoding", "utf8"),
     javacOptions := Seq("-source", "1.8", "-target", "1.8"),
     libraryDependencies ++= Seq(
-      "org.apache.pulsar"                     % "pulsar-client"             % PulsarVersion,
-      "org.apache.pulsar"                     % "pulsar-common"             % PulsarVersion,
-      "org.apache.pulsar"                     % "pulsar-client-admin"       % PulsarVersion,
-      "com.sksamuel.exts"                     %% "exts"                     % ExtsVersion,
-      "org.slf4j"                             % "slf4j-api"                 % Slf4jVersion,
-      "org.apache.logging.log4j"              % "log4j-api"                 % Log4jVersion  % "test",
-      "org.apache.logging.log4j"              % "log4j-slf4j-impl"          % Log4jVersion  % "test",
-      "org.scalatest"                         %% "scalatest"                % ScalatestVersion      % "test"
+      "org.apache.pulsar" % "pulsar-client" % PulsarVersion,
+      "org.apache.pulsar" % "pulsar-common" % PulsarVersion,
+      "org.apache.pulsar" % "pulsar-client-admin" % PulsarVersion,
+      "com.sksamuel.exts" %% "exts" % ExtsVersion,
+      "org.slf4j" % "slf4j-api" % Slf4jVersion,
+      "org.apache.logging.log4j" % "log4j-api" % Log4jVersion % "test",
+      "org.apache.logging.log4j" % "log4j-slf4j-impl" % Log4jVersion % "test",
+      "org.scalatest" %% "scalatest" % ScalatestVersion % "test"
     ),
     publishTo := {
       val nexus = "https://oss.sonatype.org/"
