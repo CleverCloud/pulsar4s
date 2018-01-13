@@ -151,6 +151,35 @@ val f = producer.receiveAsyncT[Person](jon)
 // f contains a success of Person or a failure if it could not be unmarshalled
 ```
 
+## Reactive Streams
+
+This library also provides a [reactive-streams](http://www.reactive-streams.org) implementation for both publisher and subscriber.
+To use this, you need to add a dependency on the `pulsar4s-streams` module.
+
+There are two things you can do with the reactive streams implementation.
+You can create a subscriber, and stream data into pulsar, or you can create a publisher and stream data out of pulsar.
+For those who are new to reactive streams, the terminology might seem the wrong way round, ie why does a subscriber send data _into_ pulsar? This is because
+a subscriber subscribes to _another_ stream, and the endpoint is pulsar. And a publisher publishes _from_ pulsar to another subscriber.
+
+### Publisher
+
+To create a publisher, simply create your client, and then create an instance of `PulsarPublisher` passing in the topic, and the maximum number of messages to publish.
+If you wish the publisher to be unbounded, then set max to `Long.MaxValue`.
+The constructor also requires an instance of a `MessageId` to seek for a message. If you wish to stream from the start, then pass in `MessageId.earliest`, or if you
+want to start after all current messages then use `MessageId.latest`. Or of course you can pass in an absolute message id.
+
+```scala
+val client = PulsarClient("pulsar://localhost:6650", "sample/standalone/ns1")
+val topic = Topic("persistent://sample/standalone/ns1/mytopic")
+val publisher = new PulsarPublisher(client, topic, MessageId.earliest, Long.MaxValue)
+```
+
+Now you can add subscribers to this publisher. They can of course be from any library that implements the reactive-streams api, o you could stream out to a mongo database, or a filesystem, or whatever you want.
+
+```scala
+publisher.subscribe(someSubscriber)
+```
+
 ## Contributions
 Contributions to pulsar4s are always welcome. Good ways to contribute include:
 
