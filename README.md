@@ -14,7 +14,6 @@ The official Java client can of course be used, but this client provides better 
 [scalaz.concurrent.Task](https://github.com/indyscala/scalaz-task-intro/blob/master/presentation.md)
 * Uses scala.concurrent.duration.Duration
 * Provides case classes rather than Java beans
-* Better type safety
 * Reactive Streams implementation for streaming data in and out of Pulsar
 * Typeclasses for marshalling to/from Pulsar messages
 * Circe and Jackson implementations of said typeclasses
@@ -37,14 +36,14 @@ val topic = Topic("persistent://sample/standalone/ns1/b")
 val consumer = client.consumer(topic, Subscription("mysub"))
 ```
 
-The producer and consumer methods also accept a configuration argument. Note that the consumer requires a subscription argument.
+The producer and consumer methods also accept a configuration argument. Note that the consumer requires a `subscription` argument.
 
-Note: Call `close` on the client, producer, and consumer once you are finished.
+Note: Call `close()` on the client, producer, and consumer once you are finished.
 
 ### Sending
 
 To send a message, take a producer and invoke either the `send` method, which is synchronous, or the `sendAsync` method which is asynchronous. The methods
-will return the message id of the message produced. For example:
+will return the `MessageId` of the message produced. For example:
 
 ```scala
 val messageId: MessageId = producer.send("wibble")
@@ -56,8 +55,15 @@ or
 val messageId: Future[MessageId] = producer.sendAsync("wibble")
 ```
 
-Note that the async method returns a scala Future. If you are using another effect library, such as cats or monix, then
-this can be changed. See the section on #effects.
+Note that the async method returns a `scala.concurrent.Future`. If you are using another effect library, such as cats or monix, then pulsar4s
+also supports those effects. See the section on #effects.
+
+If an exception is generated, then in the synchronous methods, the exception will simply be thrown. In the asynchronous
+methods the exception will be surfaced as a failed Future.
+
+If you prefer to have explicit error handling, then you can use the `trySend` methods which, instead of
+throwing exceptions, will return a `Try[MessageId]`. The asynchronous methods don't need this of course, as the error
+handling is already present as the failed state.
 
 ### Receiving
 
@@ -74,10 +80,14 @@ or
 val message: Future[Message] = producer.receiveAsync
 ```
 
-## Marshalling to/from Classes
+Error handling is the same as for sending, with the methods called `tryReceive`.
+
+
+## Marshalling to/from classes
 
 Sometimes it is useful to send / receive messages directly using classes from your domain model.
-For this, pulsar4s provides the `MessageWriter` and `MessageReader` typeclasses.
+For this, pulsar4s provides the `MessageWriter` and `MessageReader` typeclasses, which are used to generate
+pulsar `Message`s from ordinary classes.
 
 ### Sending
 
