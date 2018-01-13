@@ -150,3 +150,30 @@ implicit object PersonReader extends MessageReader[Person] {
 val f = producer.receiveAsyncT[Person](jon)
 // f contains a success of Person or a failure if it could not be unmarshalled
 ```
+
+## Contributions
+Contributions to pulsar4s are always welcome. Good ways to contribute include:
+
+* Raising bugs and feature requests
+* Fixing bugs and enhancing the DSL
+* Improving the performance of elastic4s
+* Adding to the documentation
+
+## License
+```
+This software is licensed under the Apache 2 license, quoted below.
+
+Copyright 2018 Stephen Samuel
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not
+use this file except in compliance with the License. You may obtain a copy of
+the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations under
+the License.
+```
