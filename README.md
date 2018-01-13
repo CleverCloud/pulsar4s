@@ -184,8 +184,7 @@ publisher.subscribe(someSubscriber)
 Contributions to pulsar4s are always welcome. Good ways to contribute include:
 
 * Raising bugs and feature requests
-* Fixing bugs and enhancing the DSL
-* Improving the performance of elastic4s
+* Improving the performance of pulsar4s
 * Adding to the documentation
 
 ## License
