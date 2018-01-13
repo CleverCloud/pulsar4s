@@ -19,6 +19,60 @@ The official Java client can of course be used, but this client provides better 
 * Typeclasses for marshalling to/from Pulsar messages
 * Circe and Jackson implementations of said typeclasses
 
+## Using the client
+
+The first step is to create a client attached to the pulsar cluster.
+
+`val client = PulsarClient("pulsar://localhost:6650", "sample/standalone/ns1")`
+
+Then we can create either a producer or a consumer by passing in a topic.
+
+```scala
+val topic = Topic("persistent://sample/standalone/ns1/b")
+val producer = client.producer(topic)
+```
+
+```scala
+val topic = Topic("persistent://sample/standalone/ns1/b")
+val consumer = client.consumer(topic, Subscription("mysub"))
+```
+
+The producer and consumer methods also accept a configuration argument. Note that the consumer requires a subscription argument.
+
+Note: Call `close` on the client, producer, and consumer once you are finished.
+
+### Sending
+
+To send a message, take a producer and invoke either the `send` method, which is synchronous, or the `sendAsync` method which is asynchronous. The methods
+will return the message id of the message produced. For example:
+
+```scala
+val messageId: MessageId = producer.send("wibble")
+```
+
+or
+
+```scala
+val messageId: Future[MessageId] = producer.sendAsync("wibble")
+```
+
+Note that the async method returns a scala Future. If you are using another effect library, such as cats or monix, then
+this can be changed. See the section on #effects.
+
+### Receiving
+
+To recieve a message, take a consumer and invoke either the `receive`, `receive(Duration)`, or the `receiveAsync` methods.
+The first two are synchronous and the latter is asynchronous.
+
+```scala
+val message: Message = consumer.receive
+```
+
+or
+
+```scala
+val message: Future[Message] = producer.receiveAsync
+```
 
 ## Marshalling to/from Classes
 
