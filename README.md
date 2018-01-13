@@ -14,8 +14,8 @@ The official Java client can of course be used, but this client provides better 
 [scalaz.concurrent.Task](https://github.com/indyscala/scalaz-task-intro/blob/master/presentation.md)
 * Uses scala.concurrent.duration.Duration
 * Provides case classes rather than Java beans
-* Reactive Streams implementation for streaming data in and out of Pulsar
-* Typeclasses for marshalling to/from Pulsar messages
+* [Reactive Streams](https://github.com/sksamuel/pulsar4s#reactive-streams) implementation for streaming data in and out of Pulsar
+* [Typeclasses](https://github.com/sksamuel/pulsar4s#marshalling-tofrom-classes) for marshalling to/from Pulsar messages
 * Circe and Jackson implementations of said typeclasses
 
 ## Using the client
