@@ -1,5 +1,7 @@
 package com.sksamuel.pulsar4s
 
+import java.util.UUID
+
 import org.scalatest.{FunSuite, Matchers}
 
 class ProducerConsumerTest extends FunSuite with Matchers {
@@ -8,7 +10,7 @@ class ProducerConsumerTest extends FunSuite with Matchers {
 
   test("producer should return messageId when sending a synchronous messsage") {
     val client = PulsarClient("pulsar://localhost:6650", "sample/standalone/ns1")
-    val topic = Topic("persistent://sample/standalone/ns1/a")
+    val topic = Topic("persistent://sample/standalone/ns1/test_" + UUID.randomUUID())
 
     val producer = client.producer(topic)
     val messageId = producer.send("wibble")
@@ -21,7 +23,7 @@ class ProducerConsumerTest extends FunSuite with Matchers {
   test("producer and consumer synchronous round trip") {
 
     val client = PulsarClient("pulsar://localhost:6650", "sample/standalone/ns1")
-    val topic = Topic("persistent://sample/standalone/ns1/b")
+    val topic = Topic("persistent://sample/standalone/ns1/test_" + UUID.randomUUID())
 
     val producer = client.producer(topic)
     val messageId = producer.send("wibble")
@@ -39,7 +41,7 @@ class ProducerConsumerTest extends FunSuite with Matchers {
   test("consumers on separate subscriptions should have replay") {
 
     val client = PulsarClient("pulsar://localhost:6650", "sample/standalone/ns1")
-    val topic = Topic("persistent://sample/standalone/ns1/c")
+    val topic = Topic("persistent://sample/standalone/ns1/test_" + UUID.randomUUID())
 
     val producer = client.producer(topic)
     producer.send("wibble")
