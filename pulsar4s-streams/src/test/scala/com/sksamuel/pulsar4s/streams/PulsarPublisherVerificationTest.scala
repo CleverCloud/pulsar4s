@@ -5,13 +5,18 @@ import java.util.UUID
 import com.sksamuel.pulsar4s.{Message, MessageId, PulsarClient, Topic}
 import org.reactivestreams.{Publisher, Subscriber, Subscription}
 import org.reactivestreams.tck.{PublisherVerification, TestEnvironment}
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.testng.TestNGSuiteLike
 
 class PulsarPublisherVerificationTest
   extends PublisherVerification[Message](
     new TestEnvironment(DEFAULT_TIMEOUT_MILLIS),
     PUBLISHER_REFERENCE_CLEANUP_TIMEOUT_MILLIS
-  ) with TestNGSuiteLike {
+  ) with TestNGSuiteLike with BeforeAndAfterAll {
+
+  override def afterAll(): Unit = {
+    client.close()
+  }
 
   import scala.concurrent.ExecutionContext.Implicits.global
 

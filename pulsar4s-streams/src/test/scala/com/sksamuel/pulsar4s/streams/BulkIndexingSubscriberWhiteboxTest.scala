@@ -6,11 +6,16 @@ import com.sksamuel.pulsar4s.{Message, PulsarClient, Topic}
 import org.reactivestreams.tck.SubscriberWhiteboxVerification.{SubscriberPuppet, WhiteboxSubscriberProbe}
 import org.reactivestreams.tck.{SubscriberWhiteboxVerification, TestEnvironment}
 import org.reactivestreams.{Subscriber, Subscription}
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.testng.TestNGSuiteLike
 
 class BulkIndexingSubscriberWhiteboxTest
   extends SubscriberWhiteboxVerification[Message](new TestEnvironment(DEFAULT_TIMEOUT_MILLIS))
-    with TestNGSuiteLike {
+    with TestNGSuiteLike with BeforeAndAfterAll {
+
+  override def afterAll(): Unit = {
+    client.close()
+  }
 
   private val client = PulsarClient("pulsar://localhost:6650", "sample/standalone/ns1")
   // we use a random topic so that previous runs don't affect us
