@@ -9,7 +9,8 @@ lazy val root = Project("pulsar4s", file("."))
     monix,
     streams,
     jackson,
-    circe
+    circe,
+    playjson
   )
 
 lazy val core = Project("pulsar4s-core", file("pulsar4s-core"))
@@ -74,5 +75,12 @@ lazy val circe = Project("pulsar4s-circe", file("pulsar4s-circe"))
     "io.circe" %% "circe-core"     % CirceVersion,
     "io.circe" %% "circe-generic"  % CirceVersion,
     "io.circe" %% "circe-parser"   % CirceVersion
+  ))
+  .dependsOn(core)
+
+lazy val playjson = Project("pulsar4s-play-json", file("pulsar4s-play-json"))
+  .settings(name := "pulsar4s-play-json")
+  .settings(libraryDependencies ++= Seq(
+    "com.typesafe.play" %% "play-json" % PlayJsonVersion
   ))
   .dependsOn(core)
