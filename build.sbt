@@ -7,11 +7,12 @@ lazy val root = Project("pulsar4s", file("."))
     cats_effect,
     scalaz,
     monix,
-    streams,
+    reactive_streams,
     jackson,
     circe,
     playjson,
-    sprayjson
+    sprayjson,
+    akka_streams
   )
 
 lazy val core = Project("pulsar4s-core", file("pulsar4s-core"))
@@ -50,8 +51,8 @@ lazy val monix = Project("pulsar4s-monix", file("pulsar4s-monix"))
   ))
   .dependsOn(core)
 
-lazy val streams = Project("pulsar4s-streams", file("pulsar4s-streams"))
-  .settings(name := "pulsar4s-streams")
+lazy val reactive_streams = Project("pulsar4s-reactive-streams", file("pulsar4s-reactive-streams"))
+  .settings(name := "pulsar4s-reactive-streams")
   .settings(libraryDependencies ++= Seq(
     "org.apache.pulsar"         % "pulsar-common"             % PulsarVersion,
     "org.apache.logging.log4j"  % "log4j-api"                 % Log4jVersion  % "test",
@@ -90,5 +91,12 @@ lazy val sprayjson = Project("pulsar4s-spray-json", file("pulsar4s-spray-json"))
   .settings(name := "pulsar4s-spray-json")
   .settings(libraryDependencies ++= Seq(
     "io.spray" %% "spray-json" % SprayJsonVersion
+  ))
+  .dependsOn(core)
+
+lazy val akka_streams = Project("pulsar4s-akka-streams", file("pulsar4s-akka-streams"))
+  .settings(name := "pulsar4s-akka-streams")
+  .settings(libraryDependencies ++= Seq(
+    "com.typesafe.akka" %% "akka-stream" % "2.5.11"
   ))
   .dependsOn(core)
