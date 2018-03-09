@@ -15,6 +15,7 @@ The official Java client can of course be used, but this client provides better 
 * Uses scala.concurrent.duration.Duration
 * Provides case classes rather than Java beans
 * [Reactive Streams](https://github.com/sksamuel/pulsar4s#reactive-streams) implementation for streaming data in and out of Pulsar
+* [Akka Streams](https://github.com/sksamuel/pulsar4s#akka-streams) source and sink
 * [Typeclasses](https://github.com/sksamuel/pulsar4s#marshalling-tofrom-classes) for marshalling to/from Pulsar messages
 * Circe and Jackson implementations of said typeclasses
 
@@ -33,7 +34,7 @@ val producer = client.producer(topic)
 
 ```scala
 val topic = Topic("persistent://sample/standalone/ns1/b")
-val consumer = client.consumer(topic, Subscription("mysub"))
+val consumerFn = client.consumer(topic, Subscription("mysub"))
 ```
 
 The producer and consumer methods also accept a configuration argument. Note that the consumer requires a `subscription` argument.
@@ -179,6 +180,49 @@ Now you can add subscribers to this publisher. They can of course be from any li
 ```scala
 publisher.subscribe(someSubscriber)
 ```
+
+## Akka Streams
+
+Pulsar4s has a module that provides an [akka-streams](https://doc.akka.io/docs/akka/2.5.5/scala/stream/index.html) source and sink.
+To use this, you need to add a dependency on the `pulsar4s-akka-streams` module.
+
+### Sources
+
+To create a source all that is required is a function that will create a consumer on demand. The function must return a fresh consumer each time it is invoked. The consumer can be created in the normal way, for example.
+
+```scala
+val consumerFn = () => client.consumer(topic, subscription)
+```
+
+We pass that function into the source method. Note the imports.
+
+```scala
+import com.sksamuel.pulsar4s.akka.streams._
+val src = source(consumerFn)
+```
+
+The materialized value of the source is an instance of `Control` which provides a method called 'close' which can be used to stop consuming messages. Once the akka streams source is stopped the consumer will be automatically closed.
+
+### Full Example
+
+Here is a full example of consuming from a topic for 10 seconds, publising the messages back into another topic. Obviously this is a bit of a toy example but shows everything in one place.
+
+```scala
+import com.sksamuel.pulsar4s.akka.streams._
+
+val client = PulsarClient("pulsar://localhost:6650", "sample/standalone/ns1")
+
+val intopic = Topic("persistent://sample/standalone/ns1/in")
+val outtopic = Topic("persistent://sample/standalone/ns1/out")
+
+val consumerFn = () => client.consumer(intopic, Subscription("mysub"))
+val producerFn = () => client.producer(intopic)
+
+val src = source(consumerFn).to(sink(producerFn)).run()
+Thread.sleep(10000)
+src.close()
+```
+
 
 ## Contributions
 Contributions to pulsar4s are always welcome. Good ways to contribute include:
