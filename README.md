@@ -188,7 +188,7 @@ To use this, you need to add a dependency on the `pulsar4s-akka-streams` module.
 
 ### Sources
 
-To create a source all that is required is a function that will create a consumer on demand. The function must return a fresh consumer each time it is invoked. The consumer can be created in the normal way, for example.
+To create a source all that is required is a function that will create a consumer on demand. The function must return a fresh consumer each time it is invoked. The consumer is just a regular pulsar4s consumer and can be created in the normal way, for example.
 
 ```scala
 val consumerFn = () => client.consumer(topic, subscription)
@@ -198,10 +198,27 @@ We pass that function into the source method. Note the imports.
 
 ```scala
 import com.sksamuel.pulsar4s.akka.streams._
-val src = source(consumerFn)
+val pulsarsrc = source(consumerFn)
 ```
 
 The materialized value of the source is an instance of `Control` which provides a method called 'close' which can be used to stop consuming messages. Once the akka streams source is stopped the consumer will be automatically closed.
+
+### Sinks
+
+To create a sink, we need a producer function similar to the source's consumer function. Again, the producer used is just a regular pulsar4s producer like you would create in any other scenario. The function must return a fresh producer each time it is invoked. 
+
+```scala
+val producerFn = () => client.producer(topic)
+```
+
+We pass that function into the sink method. Once again, take note of the imports.
+
+```scala
+import com.sksamuel.pulsar4s.akka.streams._
+val pulsarsink = sink(producerFn)
+```
+
+A sink will run until the upstream source completes. In other words, to terminate the sink, the source must be cancelled or completed. Once the sink completes the producer will be automatically closed.
 
 ### Full Example
 
@@ -216,7 +233,7 @@ val intopic = Topic("persistent://sample/standalone/ns1/in")
 val outtopic = Topic("persistent://sample/standalone/ns1/out")
 
 val consumerFn = () => client.consumer(intopic, Subscription("mysub"))
-val producerFn = () => client.producer(intopic)
+val producerFn = () => client.producer(outtopic)
 
 val src = source(consumerFn).to(sink(producerFn)).run()
 Thread.sleep(10000)
