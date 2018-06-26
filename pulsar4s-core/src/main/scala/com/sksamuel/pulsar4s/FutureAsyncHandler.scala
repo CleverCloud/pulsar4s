@@ -15,22 +15,23 @@ class FutureAsyncHandler(implicit ec: ExecutionContext) extends AsyncHandler[Fut
   implicit def voidCompletableToFuture(f: CompletableFuture[Void]): Future[Unit] = f.map(_ => ())
 
   override def failed(e: Throwable): Future[Nothing] = Future.failed(e)
-  override def send(msg: Message, producer: api.Producer): Future[MessageId] = {
-    val future = producer.sendAsync(msg)
+
+  override def send[T](t: T, producer: api.Producer[T]): Future[MessageId] = {
+    val future = producer.sendAsync(t)
     FutureConverters.toScala(future).map { id => MessageId(id) }
   }
 
-  override def receive(consumer: api.Consumer): Future[Message] = {
+  override def receive[T](consumer: api.Consumer[T]): Future[Message[T]] = {
     val future = consumer.receiveAsync()
     FutureConverters.toScala(future).map { msg => Message.fromJava(msg) }
   }
 
-  def unsubscribeAsync(consumer: api.Consumer): Future[Unit] = consumer.unsubscribeAsync()
+  def unsubscribeAsync(consumer: api.Consumer[_]): Future[Unit] = consumer.unsubscribeAsync()
 
-  override def close(producer: api.Producer): Future[Unit] = producer.closeAsync()
-  override def close(consumer: api.Consumer): Future[Unit] = consumer.closeAsync()
+  override def close(producer: api.Producer[_]): Future[Unit] = producer.closeAsync()
+  override def close(consumer: api.Consumer[_]): Future[Unit] = consumer.closeAsync()
 
-  override def seekAsync(consumer: api.Consumer, messageId: MessageId): Future[Unit] = consumer.seekAsync(messageId)
+  override def seekAsync(consumer: api.Consumer[_], messageId: MessageId): Future[Unit] = consumer.seekAsync(messageId)
 
   override def transform[A, B](f: Future[A])(fn: A => Try[B]): Future[B] = f.flatMap { a =>
     fn(a) match {
@@ -39,19 +40,24 @@ class FutureAsyncHandler(implicit ec: ExecutionContext) extends AsyncHandler[Fut
     }
   }
 
-  override def acknowledgeAsync(consumer: api.Consumer, message: Message): Future[Unit] =
+  override def acknowledgeAsync[T](consumer: api.Consumer[T], message: Message[T]): Future[Unit] = {
     consumer.acknowledgeAsync(message)
+  }
 
-  override def acknowledgeAsync(consumer: api.Consumer, messageId: MessageId): Future[Unit] =
+  override def acknowledgeAsync[T](consumer: api.Consumer[T], messageId: MessageId): Future[Unit] = {
     consumer.acknowledgeAsync(messageId)
+  }
 
-  override def acknowledgeCumulativeAsync(consumer: api.Consumer, message: Message): Future[Unit] =
+  override def acknowledgeCumulativeAsync[T](consumer: api.Consumer[T],
+                                             message: Message[T]): Future[Unit] = {
     consumer.acknowledgeCumulativeAsync(message)
+  }
 
-  override def acknowledgeCumulativeAsync(consumer: api.Consumer, messageId: MessageId): Future[Unit] =
+  override def acknowledgeCumulativeAsync[T](consumer: api.Consumer[T],
+                                             messageId: MessageId): Future[Unit] =
     consumer.acknowledgeCumulativeAsync(messageId)
 
-  override def close(reader: api.Reader): Future[Unit] = reader.closeAsync()
+  override def close(reader: api.Reader[_]): Future[Unit] = reader.closeAsync()
 
-  override def nextAsync(reader: api.Reader): Future[Message] = reader.readNextAsync().map(Message.fromJava)
+  override def nextAsync[T](reader: api.Reader[T]): Future[Message[T]] = reader.readNextAsync().map(Message.fromJava)
 }

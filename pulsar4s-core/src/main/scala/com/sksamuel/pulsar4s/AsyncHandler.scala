@@ -11,23 +11,23 @@ trait AsyncHandler[F[_]] {
   def transform[A, B](f: F[A])(fn: A => Try[B]): F[B]
   def failed(e: Throwable): F[Nothing]
 
-  def send(msg: Message, producer: api.Producer): F[MessageId]
-  def receive(consumer: api.Consumer): F[Message]
+  def send[T](t: T, producer: api.Producer[T]): F[MessageId]
+  def receive[T](consumer: api.Consumer[T]): F[Message[T]]
 
-  def close(producer: api.Producer): F[Unit]
-  def close(consumer: api.Consumer): F[Unit]
-  def close(reader: api.Reader): F[Unit]
+  def close(producer: api.Producer[_]): F[Unit]
+  def close(consumer: api.Consumer[_]): F[Unit]
+  def close(reader: api.Reader[_]): F[Unit]
 
-  def seekAsync(consumer: api.Consumer, messageId: MessageId): F[Unit]
-  def nextAsync(reader: api.Reader): F[Message]
+  def seekAsync(consumer: api.Consumer[_], messageId: MessageId): F[Unit]
+  def nextAsync[T](reader: api.Reader[T]): F[Message[T]]
 
-  def unsubscribeAsync(consumer: api.Consumer): F[Unit]
+  def unsubscribeAsync(consumer: api.Consumer[_]): F[Unit]
 
-  def acknowledgeAsync(consumer: api.Consumer, message: Message): F[Unit]
-  def acknowledgeAsync(consumer: api.Consumer, messageId: MessageId): F[Unit]
+  def acknowledgeAsync[T](consumer: api.Consumer[T], message: Message[T]): F[Unit]
+  def acknowledgeAsync[T](consumer: api.Consumer[T], messageId: MessageId): F[Unit]
 
-  def acknowledgeCumulativeAsync(consumer: api.Consumer, message: Message): F[Unit]
-  def acknowledgeCumulativeAsync(consumer: api.Consumer, messageId: MessageId): F[Unit]
+  def acknowledgeCumulativeAsync[T](consumer: api.Consumer[T], message: Message[T]): F[Unit]
+  def acknowledgeCumulativeAsync[T](consumer: api.Consumer[T], messageId: MessageId): F[Unit]
 }
 
 object AsyncHandler {

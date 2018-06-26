@@ -12,14 +12,14 @@ object Build extends AutoPlugin {
   object autoImport {
     val org = "com.sksamuel.pulsar4s"
     val CatsVersion = "1.0.1"
-    val CirceVersion = "0.9.0"
+    val CirceVersion = "0.9.3"
     val CommonsIoVersion = "2.4"
-    val ExtsVersion = "1.44.0"
-    val JacksonVersion = "2.9.2"
+    val ExtsVersion = "1.60.0"
+    val JacksonVersion = "2.9.6"
     val Log4jVersion = "2.10.0"
     val PlayJsonVersion = "2.6.8"
-    val PulsarVersion = "1.22.0-incubating"
-    val ReactiveStreamsVersion = "1.0.1"
+    val PulsarVersion = "2.0.1-incubating"
+    val ReactiveStreamsVersion = "1.0.2"
     val ScalaVersion = "2.11.8"
     val ScalatestVersion = "3.0.1"
     val Slf4jVersion = "1.7.12"
@@ -36,7 +36,7 @@ object Build extends AutoPlugin {
     // appending everything from 'compileonly' to unmanagedClasspath
     unmanagedClasspath in Compile ++= update.value.select(configurationFilter("compileonly")),
     scalaVersion := ScalaVersion,
-    crossScalaVersions := Seq("2.11.8", "2.12.2"),
+    crossScalaVersions := Seq("2.11.8", "2.12.6"),
     publishMavenStyle := true,
     resolvers += Resolver.mavenLocal,
     fork in Test := true,
@@ -52,14 +52,15 @@ object Build extends AutoPlugin {
     scalacOptions := Seq("-unchecked", "-deprecation", "-encoding", "utf8"),
     javacOptions := Seq("-source", "1.8", "-target", "1.8"),
     libraryDependencies ++= Seq(
-      "org.apache.pulsar" % "pulsar-client" % PulsarVersion,
-      "org.apache.pulsar" % "pulsar-common" % PulsarVersion,
-      "org.apache.pulsar" % "pulsar-client-admin" % PulsarVersion,
-      "com.sksamuel.exts" %% "exts" % ExtsVersion,
-      "org.slf4j" % "slf4j-api" % Slf4jVersion,
-      "org.apache.logging.log4j" % "log4j-api" % Log4jVersion % "test",
-      "org.apache.logging.log4j" % "log4j-slf4j-impl" % Log4jVersion % "test",
-      "org.scalatest" %% "scalatest" % ScalatestVersion % "test"
+      "org.apache.pulsar" % "pulsar-client"             % PulsarVersion,
+      "org.apache.pulsar" % "pulsar-client-admin"       % PulsarVersion,
+      "org.apache.pulsar" % "pulsar-common"             % PulsarVersion,
+      "org.apache.pulsar" % "pulsar-client-admin"       % PulsarVersion,
+      "com.sksamuel.exts" %% "exts"                     % ExtsVersion,
+      "org.slf4j"         % "slf4j-api"                 % Slf4jVersion,
+      "org.apache.logging.log4j" % "log4j-api"          % Log4jVersion % "test",
+      "org.apache.logging.log4j" % "log4j-slf4j-impl"   % Log4jVersion % "test",
+      "org.scalatest"                                   %% "scalatest" % ScalatestVersion % "test"
     ),
     publishTo := {
       val nexus = "https://oss.sonatype.org/"

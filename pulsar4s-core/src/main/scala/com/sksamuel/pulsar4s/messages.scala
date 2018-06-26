@@ -7,21 +7,20 @@ import org.apache.pulsar.client.impl.MessageIdImpl
 
 import scala.collection.JavaConverters._
 import scala.language.implicitConversions
-import scala.util.Try
 
-case class Message(key: Option[String],
-                   data: Array[Byte],
-                   properties: Map[String, String],
-                   messageId: Option[MessageId],
-                   publishTime: Long,
-                   eventTime: Long)
+case class Message[T](key: Option[String],
+                      data: Array[Byte],
+                      properties: Map[String, String],
+                      messageId: Option[MessageId],
+                      publishTime: Long,
+                      eventTime: Long)
 
 object Message {
 
-  def apply(data: Array[Byte]): Message = Message(None, data, Map.empty, None, 0, System.currentTimeMillis())
-  def apply(data: String)(implicit charset: Charset = Charset.forName("UTF8")): Message = apply(data.getBytes(charset))
+  def apply[T](data: Array[Byte]): Message[T] = Message(None, data, Map.empty, None, 0, System.currentTimeMillis())
+  def apply[T](data: String)(implicit charset: Charset = Charset.forName("UTF8")): Message[T] = apply(data.getBytes(charset))
 
-  implicit def fromJava(message: JMessage): Message = {
+  implicit def fromJava[T](message: JMessage[T]): Message[T] = {
     Message(
       Option(message.getKey),
       message.getData,
@@ -32,7 +31,7 @@ object Message {
     )
   }
 
-  implicit def toJava(message: Message): JMessage = {
+  implicit def toJava[T](message: Message[T]): JMessage[T] = {
     val builder = MessageBuilder.create()
       .setContent(message.data)
     message.key.foreach(builder.setKey)
@@ -40,14 +39,6 @@ object Message {
     builder.setEventTime(message.eventTime)
     builder.build()
   }
-}
-
-trait MessageWriter[T] {
-  def write(t: T): Try[Message]
-}
-
-trait MessageReader[T] {
-  def read(msg: Message): Try[T]
 }
 
 case class MessageId(bytes: Array[Byte])

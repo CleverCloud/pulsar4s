@@ -19,7 +19,7 @@ lazy val core = Project("pulsar4s-core", file("pulsar4s-core"))
   .settings(name := "pulsar4s-core")
   .settings(libraryDependencies ++= Seq(
 
-    "org.scala-lang.modules"        %% "scala-java8-compat" % Java8CompatVersion,
+    "org.scala-lang.modules"        %% "scala-java8-compat"     % Java8CompatVersion,
     "com.fasterxml.jackson.core"    % "jackson-core"            % JacksonVersion,
     "com.fasterxml.jackson.core"    % "jackson-annotations"     % JacksonVersion,
     "com.fasterxml.jackson.core"    % "jackson-databind"        % JacksonVersion,

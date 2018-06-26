@@ -3,16 +3,13 @@ package com.sksamuel.pulsar4s
 import java.util.concurrent.TimeUnit
 
 import com.sksamuel.exts.Logging
-import org.apache.pulsar.client.api.{Consumer => JConsumer}
-import org.apache.pulsar.client.impl.ConsumerStats
+import org.apache.pulsar.client.api.{ConsumerStats, Consumer => JConsumer}
 
 import scala.concurrent.duration.FiniteDuration
 import scala.language.{higherKinds, implicitConversions}
 import scala.util.{Failure, Success, Try}
 
-class Consumer(consumer: JConsumer, val topic: Topic, val subscription: Subscription) extends Logging{
-
-  import Message._
+class Consumer[T](consumer: JConsumer[T]) extends Logging {
 
   def unsubscribe(): Unit = consumer.unsubscribe()
   def unsubscribeAsync[F[_] : AsyncHandler]: F[Unit] = implicitly[AsyncHandler[F]].unsubscribeAsync(consumer)
