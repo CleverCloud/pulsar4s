@@ -8,3 +8,7 @@ case class ProducerConfig(encryptionKey: Option[String],
 
 case class ConsumerConfig(consumerName: Option[String],
                           readCompacted: Option[Boolean])
+
+case class ReaderConfig(receiverQueueSize: Option[Int],
+                        reader: Option[String],
+                        readCompacted: Option[Boolean])

@@ -6,8 +6,7 @@ import scala.concurrent.duration.Duration
 import scala.language.higherKinds
 
 class Reader[T](reader: org.apache.pulsar.client.api.Reader[T],
-                val topic: Topic,
-                val subscription: Subscription) {
+                val topic: Topic) {
 
   def next: Message[T] = reader.readNext()
 

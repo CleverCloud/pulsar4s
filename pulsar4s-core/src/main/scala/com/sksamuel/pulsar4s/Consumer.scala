@@ -14,49 +14,49 @@ class Consumer[T](consumer: JConsumer[T]) extends Logging {
   def unsubscribe(): Unit = consumer.unsubscribe()
   def unsubscribeAsync[F[_] : AsyncHandler]: F[Unit] = implicitly[AsyncHandler[F]].unsubscribeAsync(consumer)
 
-  def receive: Message = {
+  def receive: Message[T] = {
     logger.trace("About to block until a message is received..")
     val msg = consumer.receive()
     Message.fromJava(msg)
   }
 
-  def receive(duration: FiniteDuration): Message = {
+  def receive(duration: FiniteDuration): Message[T] = {
     logger.trace(s"About to block for duration $duration or until a message is received..")
     val msg = consumer.receive(duration.toNanos.toInt, TimeUnit.NANOSECONDS)
     Message.fromJava(msg)
   }
 
-  def tryReceive: Try[Message] = Try(receive)
-  def tryReceive(duration: FiniteDuration): Try[Message] = Try(receive(duration))
+  def tryReceive: Try[Message[T]] = Try(receive)
+  def tryReceive(duration: FiniteDuration): Try[Message[T]] = Try(receive(duration))
 
-  def receiveT[T: MessageReader]: T = {
-    implicitly[MessageReader[T]].read(receive) match {
+  def receiveT: T = {
+    read(receive) match {
       case Failure(e) => throw e
       case Success(t) => t
     }
   }
 
-  def tryReceiveT[T: MessageReader]: Try[T] = tryReceive.flatMap(implicitly[MessageReader[T]].read)
-  def tryReceiveT[T](duration: FiniteDuration)(implicit reader: MessageReader[T]): Try[T] =
+  def tryReceiveT: Try[T] = tryReceive.flatMap(implicitly[MessageReader[T]].read)
+  def tryReceiveT[T](duration: FiniteDuration): Try[T] =
     tryReceive(duration).flatMap(reader.read)
 
-  def receiveAsync[F[_] : AsyncHandler]: F[Message] = implicitly[AsyncHandler[F]].receive(consumer)
-  def receiveAsyncT[T: MessageReader, F[_] : AsyncHandler]: F[T] =
+  def receiveAsync[F[_] : AsyncHandler]: F[Message[T]] = implicitly[AsyncHandler[F]].receive(consumer)
+  def receiveAsyncT[T, F[_] : AsyncHandler]: F[T] =
     implicitly[AsyncHandler[F]].transform(receiveAsync)(implicitly[MessageReader[T]].read)
 
-  def acknowledge(message: Message): Unit = consumer.acknowledge(message)
+  def acknowledge(message: Message[T]): Unit = consumer.acknowledge(message)
   def acknowledge(messageId: MessageId): Unit = consumer.acknowledge(messageId)
 
-  def acknowledgeCumulative(message: Message): Unit = consumer.acknowledgeCumulative(message)
+  def acknowledgeCumulative(message: Message[T]): Unit = consumer.acknowledgeCumulative(message)
   def acknowledgeCumulative(messageId: MessageId): Unit = consumer.acknowledgeCumulative(messageId)
 
-  def acknowledgeAsync[F[_] : AsyncHandler](message: Message): F[Unit] =
+  def acknowledgeAsync[F[_] : AsyncHandler](message: Message[T]): F[Unit] =
     implicitly[AsyncHandler[F]].acknowledgeAsync(consumer, message)
 
   def acknowledgeAsync[F[_] : AsyncHandler](messageId: MessageId): F[Unit] =
     implicitly[AsyncHandler[F]].acknowledgeAsync(consumer, messageId)
 
-  def acknowledgeCumulativeAsync[F[_] : AsyncHandler](message: Message): F[Unit] =
+  def acknowledgeCumulativeAsync[F[_] : AsyncHandler](message: Message[T]): F[Unit] =
     implicitly[AsyncHandler[F]].acknowledgeCumulativeAsync(consumer, message)
 
   def acknowledgeCumulativeAsync[F[_] : AsyncHandler](messageId: MessageId): F[Unit] =
