@@ -4,7 +4,7 @@ import java.nio.charset.StandardCharsets
 
 import io.circe.{Decoder, Encoder, Json, Printer}
 import org.apache.pulsar.client.api.Schema
-import org.apache.pulsar.shade.org.apache.pulsar.common.schema.{SchemaInfo, SchemaType}
+import org.apache.pulsar.common.schema.{SchemaInfo, SchemaType}
 
 import scala.annotation.implicitNotFound
 
