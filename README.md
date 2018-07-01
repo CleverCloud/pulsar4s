@@ -23,23 +23,54 @@ The official Java client can of course be used, but this client provides better 
 
 The first step is to create a client attached to the pulsar cluster.
 
-`val client = PulsarClient("pulsar://localhost:6650", "sample/standalone/ns1")`
+`val client = PulsarClient("pulsar://localhost:6650")`
 
 Then we can create either a producer or a consumer by passing in a topic.
 
 ```scala
 val topic = Topic("persistent://sample/standalone/ns1/b")
-val producer = client.producer(topic)
+val producer = client.producer[String](ProducerConfig(topic))
 ```
 
 ```scala
 val topic = Topic("persistent://sample/standalone/ns1/b")
-val consumerFn = client.consumer(topic, Subscription("mysub"))
+val consumerFn = client.consumer[String](ConsumerConfig(Seq(topic), Subscription("mysub"))
 ```
-
-The producer and consumer methods also accept a configuration argument. Note that the consumer requires a `subscription` argument.
+The producer and consumer methods accept a configuration argument. The producer's config must specify the topic, and the
+consumer's config must specify one or more topics (as as seq) and a subscription.
 
 Note: Call `close()` on the client, producer, and consumer once you are finished.
+
+### Schemas
+
+A message must be the correct type for the producer or consumer. When a producer or consumer is created,
+an implicit `Schema` typeclass must be available. There are built in schemas for bytes and strings, but other
+complex types required a custom schema.
+
+Some people prefer to write typeclasses manually for the types they need to support.
+Other people like to just have it done automagically. For those people, pulsar4s provides extensions
+for the well known Scala Json libraries that can be used to generate messages where the body
+is a JSON representation of the class.
+
+An example of creating a producer for a complex type:
+
+```scala
+import io.circe.generic.auto._
+
+val topic = Topic("persistent://sample/standalone/ns1/b")
+val producer = client.producer[Food](ProducerConfig(topic))
+producer.send(Food("pizza", "ham and pineapple"))
+```
+
+The following extension modules can be used for automatic schemas
+
+| Library | Module | Import |
+|---------|------------------|--------|
+|[Circe](https://github.com/travisbrown/circe)|[pulsar4s-circe](http://search.maven.org/#search%7Cga%7C1%7Cpulsar4s-circe)|import io.circe.generic.auto._ <br/>import com.sksamuel.pulsar4s.circe._|
+|[Jackson](https://github.com/FasterXML/jackson-module-scala)|[pulsar4s-jackson](http://search.maven.org/#search%7Cga%7C1%7Cpulsar4s-jackson)|import com.sksamuel.pulsar4s.jackson._|
+|Spray Json|[pulsar4s-spray-json](http://search.maven.org/#search%7Cga%7C1%7Cpulsar4s-spray-json)|import com.sksamuel.pulsar4s.sprayjson._|
+|Play Json|[pulsar4s-play-json](http://search.maven.org/#search%7Cga%7C1%7Cpulsar4s-play-json)|import com.sksamuel.pulsar4s.playjson._|
+
 
 ### Sending
 
@@ -78,79 +109,10 @@ val message: Message = consumer.receive
 or
 
 ```scala
-val message: Future[Message] = producer.receiveAsync
+val message: Future[T] = producer.receiveAsync
 ```
 
 Error handling is the same as for sending, with the methods called `tryReceive`.
-
-
-## Marshalling to/from classes
-
-Sometimes it is useful to send / receive messages directly using classes from your domain model.
-For this, pulsar4s provides the `MessageWriter` and `MessageReader` typeclasses, which are used to generate
-pulsar `Message`s from ordinary classes.
-
-### Sending
-
-When sending messages simply provide an implicit instance of `MessageWriter[T]` in scope for any class T
-that you wish to send a message for, and then use the `producer.send(t)` or `producer.sendAsync(t)` methods.
-
-For example:
-
-```scala
-// a simple example of a domain model
-case class Person(name: String, location: String)
-
-// how you turn the type into a message is up to you
-implicit object PersonWriter extends MessageWriter[Person] {
-  override def write(p: Person): Try[Message] = Success(Message(p.name + "/" + p.location))
-}
-
-// now the send reads much cleaner
-val jon = Person("jon snow", "the wall")
-producer.sendAsync(jon)
-```
-
-Some people prefer to write typeclasses manually for the types they need to support, as in the example above.
-Other people like to just have it done automagically. For those people, pulsar4s provides extensions
-for the well known Scala Json libraries that can be used to generate messages where the body
-is a JSON representation of the class.
-
-Simply add the import for your chosen library below and then with those implicits in scope,
-you can now pass any type you like to the send methods and a MessageWriter will be derived automatically.
-
-| Library | Module | Import |
-|---------|------------------|--------|
-|[Circe](https://github.com/travisbrown/circe)|[pulsar4s-circe](http://search.maven.org/#search%7Cga%7C1%7Cpulsar4s-circe)|import io.circe.generic.auto._ <br/>import com.sksamuel.pulsar4s.circe._|
-|[Jackson](https://github.com/FasterXML/jackson-module-scala)|[pulsar4s-jackson](http://search.maven.org/#search%7Cga%7C1%7Cpulsar4s-jackson)|import com.sksamuel.pulsar4s.jackson.Jackson._|
-
-### Receiving
-
-Just like sending, but in reverse, you can use the `MessageReader` typeclass to derive a type T from
-an incoming message. Bring the typeclass into scope, and then use the `receiveT` or `receiveAsyncT`
-methods on a consumer.
-
-For example:
-
-```scala
-// a simple example of a domain model
-case class Person(name: String, location: String)
-
-// how you read the message is up to you
-implicit object PersonReader extends MessageReader[Person] {
-    override def read(msg: Message): Try[Person] = {
-      val str = new String(msg.data)
-      str.split('/') match {
-        case Array(name, location) => Success(Person(name, location))
-        case _ => Failure(new RuntimeException(s"Unable to parse $str"))
-      }
-    }
-}
-
-// now the receive reads much cleaner
-val f = producer.receiveAsyncT[Person](jon)
-// f contains a success of Person or a failure if it could not be unmarshalled
-```
 
 ## Reactive Streams
 
@@ -172,7 +134,7 @@ want to start after all current messages then use `MessageId.latest`. Or of cour
 ```scala
 val client = PulsarClient("pulsar://localhost:6650", "sample/standalone/ns1")
 val topic = Topic("persistent://sample/standalone/ns1/mytopic")
-val publisher = new PulsarPublisher(client, topic, MessageId.earliest, Long.MaxValue)
+val publisher = new PulsarPublisher[T](client, topic, MessageId.earliest, Long.MaxValue)
 ```
 
 Now you can add subscribers to this publisher. They can of course be from any library that implements the reactive-streams api, o you could stream out to a mongo database, or a filesystem, or whatever you want.
@@ -227,13 +189,13 @@ Here is a full example of consuming from a topic for 10 seconds, publising the m
 ```scala
 import com.sksamuel.pulsar4s.akka.streams._
 
-val client = PulsarClient("pulsar://localhost:6650", "sample/standalone/ns1")
+val client = PulsarClient("pulsar://localhost:6650")
 
 val intopic = Topic("persistent://sample/standalone/ns1/in")
 val outtopic = Topic("persistent://sample/standalone/ns1/out")
 
-val consumerFn = () => client.consumer(intopic, Subscription("mysub"))
-val producerFn = () => client.producer(outtopic)
+val consumerFn = () => client.consumer(ConsumerConfig(intopic, Subscription("mysub"))
+val producerFn = () => client.producer(ProducerConfig(outtopic))
 
 val src = source(consumerFn).to(sink(producerFn)).run()
 Thread.sleep(10000)
