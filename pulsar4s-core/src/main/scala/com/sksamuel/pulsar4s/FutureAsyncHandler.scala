@@ -26,7 +26,7 @@ class FutureAsyncHandler(implicit ec: ExecutionContext) extends AsyncHandler[Fut
     FutureConverters.toScala(future).map { msg => Message.fromJava(msg) }
   }
 
-  def unsubscribeAsync(consumer: api.Consumer[_]): Future[Unit] = consumer.unsubscribeAsync()
+  override def unsubscribeAsync(consumer: api.Consumer[_]): Future[Unit] = consumer.unsubscribeAsync()
 
   override def close(producer: api.Producer[_]): Future[Unit] = producer.closeAsync()
   override def close(consumer: api.Consumer[_]): Future[Unit] = consumer.closeAsync()
@@ -40,17 +40,8 @@ class FutureAsyncHandler(implicit ec: ExecutionContext) extends AsyncHandler[Fut
     }
   }
 
-  override def acknowledgeAsync[T](consumer: api.Consumer[T], message: Message[T]): Future[Unit] = {
-    consumer.acknowledgeAsync(message)
-  }
-
   override def acknowledgeAsync[T](consumer: api.Consumer[T], messageId: MessageId): Future[Unit] = {
     consumer.acknowledgeAsync(messageId)
-  }
-
-  override def acknowledgeCumulativeAsync[T](consumer: api.Consumer[T],
-                                             message: Message[T]): Future[Unit] = {
-    consumer.acknowledgeCumulativeAsync(message)
   }
 
   override def acknowledgeCumulativeAsync[T](consumer: api.Consumer[T],

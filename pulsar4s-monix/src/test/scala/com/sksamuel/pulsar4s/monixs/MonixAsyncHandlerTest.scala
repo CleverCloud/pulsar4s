@@ -1,8 +1,9 @@
-package com.sksamuel.pulsar4s.monix
+package com.sksamuel.pulsar4s.monixs
 
 import java.util.UUID
 
-import com.sksamuel.pulsar4s.{PulsarClient, Subscription, Topic}
+import com.sksamuel.pulsar4s._
+import org.apache.pulsar.client.api.Schema
 import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
 
 import scala.concurrent.Await
@@ -10,10 +11,12 @@ import scala.concurrent.duration.Duration
 
 class MonixAsyncHandlerTest extends FunSuite with Matchers with BeforeAndAfterAll {
 
-  import MonixAsyncHandler._
   import monix.execution.Scheduler.Implicits.global
+  import MonixAsyncHandler._
 
-  val client = PulsarClient("pulsar://localhost:6650", "sample/standalone/ns1")
+  implicit val schema: Schema[String] = Schema.STRING
+
+  val client = PulsarClient("pulsar://localhost:6650")
   val topic = Topic("persistent://sample/standalone/ns1/monix_" + UUID.randomUUID())
 
   override def afterAll(): Unit = {
@@ -21,7 +24,7 @@ class MonixAsyncHandlerTest extends FunSuite with Matchers with BeforeAndAfterAl
   }
 
   test("async producer should use monix") {
-    val producer = client.producer(topic)
+    val producer = client.producer(ProducerConfig(topic))
     val t = producer.sendAsync("wibble")
     val f = t.runAsync
     Await.result(f, Duration.Inf) should not be null
@@ -29,7 +32,7 @@ class MonixAsyncHandlerTest extends FunSuite with Matchers with BeforeAndAfterAl
   }
 
   test("async consumer should use monix") {
-    val consumer = client.consumer(topic, Subscription("mysub_" + UUID.randomUUID()))
+    val consumer = client.consumer(ConsumerConfig(Seq(topic), Subscription("mysub_" + UUID.randomUUID())))
     consumer.seekEarliest()
     val t = consumer.receiveAsync
     val f = t.runAsync

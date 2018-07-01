@@ -6,10 +6,10 @@ import java.util.function.BiConsumer
 import com.sksamuel.pulsar4s.{AsyncHandler, Message, MessageId}
 import org.apache.pulsar.client.api
 import org.apache.pulsar.client.api.Reader
+import scalaz.concurrent.Task
 
 import scala.language.implicitConversions
 import scala.util.{Failure, Success, Try}
-import scalaz.concurrent.Task
 
 class ScalazAsyncHandler extends AsyncHandler[Task] {
 
@@ -29,18 +29,15 @@ class ScalazAsyncHandler extends AsyncHandler[Task] {
 
   override def failed(e: Throwable): Task[Nothing] = Task.fail(e)
 
-  override def send(msg: Message, producer: api.Producer): Task[MessageId] =
-    completableToTask(producer.sendAsync(msg)).map(MessageId.apply)
+  override def send[T](t: T, producer: api.Producer[T]): Task[MessageId] =
+    completableToTask(producer.sendAsync(t)).map(MessageId.apply)
 
-  override def receive(consumer: api.Consumer): Task[Message] =
+  override def receive[T](consumer: api.Consumer[T]): Task[Message[T]] =
     completableToTask(consumer.receiveAsync).map(Message.fromJava)
 
-  def unsubscribeAsync(consumer: api.Consumer): Task[Unit] = consumer.unsubscribeAsync()
+  override def unsubscribeAsync(consumer: api.Consumer[_]): Task[Unit] = consumer.unsubscribeAsync()
 
-  override def close(producer: api.Producer): Task[Unit] = producer.closeAsync()
-  override def close(consumer: api.Consumer): Task[Unit] = consumer.closeAsync()
-
-  override def seekAsync(consumer: api.Consumer, messageId: MessageId): Task[Unit] = consumer.seekAsync(messageId)
+  override def seekAsync(consumer: api.Consumer[_], messageId: MessageId): Task[Unit] = consumer.seekAsync(messageId)
 
   override def transform[A, B](f: Task[A])(fn: A => Try[B]): Task[B] = f.flatMap {
     a =>
@@ -50,21 +47,17 @@ class ScalazAsyncHandler extends AsyncHandler[Task] {
       }
   }
 
-  override def acknowledgeAsync(consumer: api.Consumer, message: Message): Task[Unit] =
-    consumer.acknowledgeAsync(message)
-
-  override def acknowledgeAsync(consumer: api.Consumer, messageId: MessageId): Task[Unit] =
+  override def acknowledgeAsync[T](consumer: api.Consumer[T], messageId: MessageId): Task[Unit] =
     consumer.acknowledgeAsync(messageId)
 
-  override def acknowledgeCumulativeAsync(consumer: api.Consumer, message: Message): Task[Unit] =
-    consumer.acknowledgeCumulativeAsync(message)
-
-  override def acknowledgeCumulativeAsync(consumer: api.Consumer, messageId: MessageId): Task[Unit] =
+  override def acknowledgeCumulativeAsync[T](consumer: api.Consumer[T], messageId: MessageId): Task[Unit] =
     consumer.acknowledgeCumulativeAsync(messageId)
 
-  override def close(reader: Reader): Task[Unit] = reader.closeAsync()
+  override def close(reader: Reader[_]): Task[Unit] = reader.closeAsync()
+  override def close(producer: api.Producer[_]): Task[Unit] = producer.closeAsync()
+  override def close(consumer: api.Consumer[_]): Task[Unit] = consumer.closeAsync()
 
-  override def nextAsync(reader: Reader): Task[Message] = reader.readNextAsync().map(Message.fromJava)
+  override def nextAsync[T](reader: Reader[T]): Task[Message[T]] = reader.readNextAsync().map(Message.fromJava)
 }
 
 object ScalazAsyncHandler {

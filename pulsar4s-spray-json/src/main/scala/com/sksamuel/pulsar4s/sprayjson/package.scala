@@ -2,27 +2,24 @@ package com.sksamuel.pulsar4s
 
 import java.nio.charset.Charset
 
+import org.apache.pulsar.client.api.Schema
+import org.apache.pulsar.shade.org.apache.pulsar.common.schema.{SchemaInfo, SchemaType}
+
 import scala.annotation.implicitNotFound
-import scala.util.Try
 
 package object sprayjson {
 
   import spray.json._
 
   @implicitNotFound("No RootJsonWriter for type ${T} found. Bring an implicit RootJsonWriter[T] instance in scope")
-  implicit def sprayJsonWriter[T](implicit w: RootJsonWriter[T]): MessageWriter[T] = new MessageWriter[T] {
-    override def write(t: T): Try[Message] = {
-      Try {
-        val bytes =w.write(t).compactPrint.getBytes(Charset.forName("UTF-8"))
-        Message(None, bytes, Map.empty, None, 0, System.currentTimeMillis())
-      }
-    }
-  }
-
-  @implicitNotFound("No RootJsonReader for type ${T} found. Bring an implicit RootJsonReader[T] instance in scope")
-  implicit def sprayJsonReader[T](implicit r: RootJsonReader[T]): MessageReader[T] = new MessageReader[T] {
-    override def read(msg: Message): Try[T] = Try {
-      r.read(new String(msg.data, "UTF-8").parseJson)
+  implicit def spraySchema[T: Manifest](implicit w: RootJsonWriter[T], r: RootJsonReader[T]): Schema[T] = new Schema[T] {
+    override def encode(t: T): Array[Byte] = w.write(t).compactPrint.getBytes(Charset.forName("UTF-8"))
+    override def decode(bytes: Array[Byte]): T = r.read(new String(bytes, "UTF-8").parseJson)
+    override def getSchemaInfo: SchemaInfo = {
+      val info = new SchemaInfo()
+      info.setName(manifest[T].runtimeClass.getCanonicalName)
+      info.setType(SchemaType.JSON)
+      info
     }
   }
 }

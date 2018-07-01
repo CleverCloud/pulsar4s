@@ -3,14 +3,20 @@ package com.sksamuel.pulsar4s.streams
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.{Executors, LinkedBlockingQueue}
 
-import com.sksamuel.pulsar4s.{Message, Producer}
+import com.sksamuel.pulsar4s.Producer
 import org.reactivestreams.{Subscriber, Subscription}
+
 import scala.collection.JavaConverters._
 
-class PulsarSubscriber(producer: Producer,
-                       bufferSize: Int = Int.MaxValue) extends Subscriber[Message] {
+/**
+  * A [[PulsarSubscriber]] will subscribe to a reactive streams
+  * publisher, and for each message it receives, it will publish
+  * that message to a pulsar topic.
+  */
+class PulsarSubscriber[T](producer: Producer[T],
+                          bufferSize: Int = Int.MaxValue) extends Subscriber[T] {
 
-  private val buffer = new LinkedBlockingQueue[Message](bufferSize)
+  private val buffer = new LinkedBlockingQueue[T](bufferSize)
   private val executor = Executors.newSingleThreadExecutor()
   private val running = new AtomicBoolean(false)
   private val started = new AtomicBoolean(false)
@@ -33,8 +39,8 @@ class PulsarSubscriber(producer: Producer,
     }
   }
 
-  override def onNext(msg: Message): Unit = {
-    buffer.put(msg)
+  override def onNext(t: T): Unit = {
+    buffer.put(t)
   }
 
   override def onError(t: Throwable): Unit = {
@@ -55,16 +61,16 @@ class PulsarSubscriber(producer: Producer,
             // if we have recieved onComplete then we just process the remaining
             // messages and then exit gracefully
             case true =>
-              for (msg <- buffer.iterator.asScala) {
-                producer.send(msg)
+              for (t <- buffer.iterator.asScala) {
+                producer.send(t)
               }
               buffer.clear()
               running.set(false)
             // if we haven't yet received onComplete then we should just
             // continue to take or block
             case false =>
-              val msg = buffer.take()
-              producer.send(msg)
+              val t = buffer.take()
+              producer.send(t)
           }
         }
       }

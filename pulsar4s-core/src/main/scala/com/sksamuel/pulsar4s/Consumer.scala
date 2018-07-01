@@ -7,7 +7,7 @@ import org.apache.pulsar.client.api.{ConsumerStats, Consumer => JConsumer}
 
 import scala.concurrent.duration.FiniteDuration
 import scala.language.{higherKinds, implicitConversions}
-import scala.util.{Failure, Success, Try}
+import scala.util.Try
 
 class Consumer[T](consumer: JConsumer[T]) extends Logging {
 
@@ -29,40 +29,29 @@ class Consumer[T](consumer: JConsumer[T]) extends Logging {
   def tryReceive: Try[Message[T]] = Try(receive)
   def tryReceive(duration: FiniteDuration): Try[Message[T]] = Try(receive(duration))
 
-  def receiveT: T = {
-    read(receive) match {
-      case Failure(e) => throw e
-      case Success(t) => t
-    }
-  }
-
-  def tryReceiveT: Try[T] = tryReceive.flatMap(implicitly[MessageReader[T]].read)
-  def tryReceiveT[T](duration: FiniteDuration): Try[T] =
-    tryReceive(duration).flatMap(reader.read)
-
   def receiveAsync[F[_] : AsyncHandler]: F[Message[T]] = implicitly[AsyncHandler[F]].receive(consumer)
-  def receiveAsyncT[T, F[_] : AsyncHandler]: F[T] =
-    implicitly[AsyncHandler[F]].transform(receiveAsync)(implicitly[MessageReader[T]].read)
 
-  def acknowledge(message: Message[T]): Unit = consumer.acknowledge(message)
+  def acknowledge(message: Message[T]): Unit = acknowledge(message.messageId.get)
   def acknowledge(messageId: MessageId): Unit = consumer.acknowledge(messageId)
 
-  def acknowledgeCumulative(message: Message[T]): Unit = consumer.acknowledgeCumulative(message)
+  def acknowledgeCumulative(message: Message[T]): Unit = consumer.acknowledgeCumulative(message.messageId.get)
   def acknowledgeCumulative(messageId: MessageId): Unit = consumer.acknowledgeCumulative(messageId)
 
   def acknowledgeAsync[F[_] : AsyncHandler](message: Message[T]): F[Unit] =
-    implicitly[AsyncHandler[F]].acknowledgeAsync(consumer, message)
+    acknowledgeAsync(message.messageId.get)
 
   def acknowledgeAsync[F[_] : AsyncHandler](messageId: MessageId): F[Unit] =
     implicitly[AsyncHandler[F]].acknowledgeAsync(consumer, messageId)
 
   def acknowledgeCumulativeAsync[F[_] : AsyncHandler](message: Message[T]): F[Unit] =
-    implicitly[AsyncHandler[F]].acknowledgeCumulativeAsync(consumer, message)
+    acknowledgeCumulativeAsync(message.messageId.get)
 
   def acknowledgeCumulativeAsync[F[_] : AsyncHandler](messageId: MessageId): F[Unit] =
     implicitly[AsyncHandler[F]].acknowledgeCumulativeAsync(consumer, messageId)
 
   def stats: ConsumerStats = consumer.getStats
+  def subscription = Subscription(consumer.getSubscription)
+  def topic = Topic(consumer.getTopic)
 
   def hasReachedEndOfTopic: Boolean = consumer.hasReachedEndOfTopic
 

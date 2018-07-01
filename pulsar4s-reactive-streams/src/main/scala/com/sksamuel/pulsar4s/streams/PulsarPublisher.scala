@@ -6,32 +6,34 @@ import java.util.concurrent.{Executors, Semaphore}
 
 import com.sksamuel.exts.Logging
 import com.sksamuel.pulsar4s._
+import org.apache.pulsar.client.api.Schema
 import org.reactivestreams.{Publisher, Subscriber}
 
 import scala.util.control.NonFatal
 
 /**
-  * A Pulsar publisher will attach to a pulsar instance and publish
-  * the messages on a topic.
+  * A PulsarPublisher is a reactive streams [[Publisher]] that will
+  * consume messages from a pulsar topic and publish those messages
+  * to a subscriber.
   *
   * @param client    the pulsar client to create a consumer on
-  * @param topic     the topic to read messages from
+  * @param topics    the topic(s) to read messages from
   * @param messageId the messageId to seek, to start from the beginning of the topic, use MessageId.earliest
   * @param max       the maximum number of messages to receive before terminating.
   *                  Set to Long.MaxValue for an unbounded number of messages.
   */
-class PulsarPublisher(client: PulsarClient,
-                      topic: Topic,
-                      messageId: MessageId,
-                      max: Long) extends Publisher[Message] {
+class PulsarPublisher[T: Schema](client: PulsarClient,
+                                 topics: Seq[Topic],
+                                 messageId: MessageId,
+                                 max: Long) extends Publisher[Message[T]] {
 
-  def this(client: PulsarClient, topic: Topic) = this(client, topic, MessageId.earliest, Long.MaxValue)
+  def this(client: PulsarClient, topics: Seq[Topic]) = this(client, topics, MessageId.earliest, Long.MaxValue)
 
-  override def subscribe(subscriber: Subscriber[_ >: Message]): Unit = {
+  override def subscribe(subscriber: Subscriber[_ >: Message[T]]): Unit = {
     // Rule 1.9 subscriber cannot be null
     if (subscriber == null) throw new NullPointerException("Rule 1.9: Subscriber cannot be null")
 
-    val consumer = client.consumer(topic, Subscription("pulsar_subscription_" + UUID.randomUUID))
+    val consumer = client.consumer(ConsumerConfig(topics, Subscription("pulsar_subscription_" + UUID.randomUUID)))
     consumer.seek(messageId)
 
     val subscription = new PulsarSubscription(consumer, subscriber, max)
@@ -44,9 +46,9 @@ class PulsarPublisher(client: PulsarClient,
   }
 }
 
-class PulsarSubscription(consumer: Consumer,
-                         subscriber: Subscriber[_ >: Message],
-                         max: Long) extends org.reactivestreams.Subscription with Logging {
+class PulsarSubscription[T](consumer: Consumer[T],
+                            subscriber: Subscriber[_ >: Message[T]],
+                            max: Long) extends org.reactivestreams.Subscription with Logging {
 
   private val executor = Executors.newSingleThreadExecutor()
   private val requested = new AtomicLong(0)
@@ -111,7 +113,7 @@ class PulsarSubscription(consumer: Consumer,
               // rule 1.05
               subscriber.onComplete()
             case null =>
-              // nothing to do
+            // nothing to do
             case t =>
               logger.error("Signalling onError", t)
               subscriber.onError(t)

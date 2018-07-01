@@ -2,27 +2,23 @@ package com.sksamuel.pulsar4s
 
 import java.nio.charset.Charset
 
+import org.apache.pulsar.client.api.Schema
+import org.apache.pulsar.shade.org.apache.pulsar.common.schema.{SchemaInfo, SchemaType}
 import play.api.libs.json.{Json, Reads, Writes}
 
 import scala.annotation.implicitNotFound
-import scala.util.Try
 
 package object playjson {
 
-  @implicitNotFound("No Writes for type ${T} found. Bring an implicit Writes[T] instance in scope")
-  implicit def playJsonWriter[T](implicit w: Writes[T]): MessageWriter[T] = new MessageWriter[T] {
-    override def write(t: T): Try[Message] = {
-      Try {
-        val bytes = Json.stringify(Json.toJson(t)(w)).getBytes(Charset.forName("UTF-8"))
-        Message(None, bytes, Map.empty, None, 0, System.currentTimeMillis())
-      }
-    }
-  }
-
-  @implicitNotFound("No Reads for type ${T} found. Bring an implicit Reads[T] instance in scope")
-  implicit def playJsonReader[T](implicit r: Reads[T]): MessageReader[T] = new MessageReader[T] {
-    override def read(msg: Message): Try[T] = Try {
-      Json.parse(msg.data).as[T]
+  @implicitNotFound("No Writes or Reads for type ${T} found. Bring an implicit Writes[T] and Reads[T] instance in scope")
+  implicit def playSchema[T: Manifest](implicit w: Writes[T], r: Reads[T]): Schema[T] = new Schema[T] {
+    override def encode(t: T): Array[Byte] = Json.stringify(Json.toJson(t)(w)).getBytes(Charset.forName("UTF-8"))
+    override def decode(bytes: Array[Byte]): T = Json.parse(bytes).as[T]
+    override def getSchemaInfo: SchemaInfo = {
+      val info = new SchemaInfo()
+      info.setName(manifest[T].runtimeClass.getCanonicalName)
+      info.setType(SchemaType.JSON)
+      info
     }
   }
 }

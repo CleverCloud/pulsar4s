@@ -1,39 +1,41 @@
 package com.sksamuel.pulsar4s
 
-import java.nio.charset.Charset
-
-import org.apache.pulsar.client.api.{MessageBuilder, Message => JMessage}
+import org.apache.pulsar.client.api.{MessageBuilder, Schema, Message => JMessage}
 import org.apache.pulsar.client.impl.MessageIdImpl
 
 import scala.collection.JavaConverters._
 import scala.language.implicitConversions
 
 case class Message[T](key: Option[String],
+                      value: T,
                       data: Array[Byte],
                       properties: Map[String, String],
                       messageId: Option[MessageId],
+                      sequenceId: Long,
+                      producerName: String,
                       publishTime: Long,
                       eventTime: Long)
 
 object Message {
 
-  def apply[T](data: Array[Byte]): Message[T] = Message(None, data, Map.empty, None, 0, System.currentTimeMillis())
-  def apply[T](data: String)(implicit charset: Charset = Charset.forName("UTF8")): Message[T] = apply(data.getBytes(charset))
-
   implicit def fromJava[T](message: JMessage[T]): Message[T] = {
     Message(
       Option(message.getKey),
+      message.getValue,
       message.getData,
       message.getProperties.asScala.toMap,
       Option(MessageId(message.getMessageId)),
+      message.getSequenceId,
+      message.getProducerName,
       message.getPublishTime,
       message.getEventTime
     )
   }
 
-  implicit def toJava[T](message: Message[T]): JMessage[T] = {
-    val builder = MessageBuilder.create()
+  implicit def toJava[T](message: Message[T])(implicit schema: Schema[T]): JMessage[T] = {
+    val builder = MessageBuilder.create(schema)
       .setContent(message.data)
+      .setValue(message.value)
     message.key.foreach(builder.setKey)
     message.properties.foreach { case (k, v) => builder.setProperty(k, v) }
     builder.setEventTime(message.eventTime)

@@ -26,15 +26,15 @@ class CatsAsyncHandler extends AsyncHandler[IO] {
 
   override def failed(e: Throwable): IO[Nothing] = IO.raiseError(e)
 
-  override def send(msg: Message, producer: api.Producer): IO[MessageId] = producer.sendAsync(msg).map(MessageId.apply)
-  override def receive(consumer: api.Consumer): IO[Message] = consumer.receiveAsync().map(Message.fromJava)
+  override def send[T](t: T, producer: api.Producer[T]): IO[MessageId] = producer.sendAsync(t).map(MessageId.apply)
+  override def receive[T](consumer: api.Consumer[T]): IO[Message[T]] = consumer.receiveAsync().map(Message.fromJava)
 
-  def unsubscribeAsync(consumer: api.Consumer): IO[Unit] = consumer.unsubscribeAsync()
+  override def unsubscribeAsync(consumer: api.Consumer[_]): IO[Unit] = consumer.unsubscribeAsync()
 
-  override def close(producer: api.Producer): IO[Unit] = producer.closeAsync()
-  override def close(consumer: api.Consumer): IO[Unit] = consumer.closeAsync()
+  override def close(producer: api.Producer[_]): IO[Unit] = producer.closeAsync()
+  override def close(consumer: api.Consumer[_]): IO[Unit] = consumer.closeAsync()
 
-  override def seekAsync(consumer: api.Consumer, messageId: MessageId): IO[Unit] = consumer.seekAsync(messageId)
+  override def seekAsync(consumer: api.Consumer[_], messageId: MessageId): IO[Unit] = consumer.seekAsync(messageId)
 
   override def transform[A, B](t: IO[A])(fn: A => Try[B]): IO[B] =
     t.flatMap { a =>
@@ -44,21 +44,15 @@ class CatsAsyncHandler extends AsyncHandler[IO] {
       }
     }
 
-  override def acknowledgeAsync(consumer: api.Consumer, message: Message): IO[Unit] =
-    consumer.acknowledgeAsync(message)
-
-  override def acknowledgeAsync(consumer: api.Consumer, messageId: MessageId): IO[Unit] =
+  override def acknowledgeAsync[T](consumer: api.Consumer[T], messageId: MessageId): IO[Unit] =
     consumer.acknowledgeAsync(messageId)
 
-  override def acknowledgeCumulativeAsync(consumer: api.Consumer, message: Message): IO[Unit] =
-    consumer.acknowledgeCumulativeAsync(message)
-
-  override def acknowledgeCumulativeAsync(consumer: api.Consumer, messageId: MessageId): IO[Unit] =
+  override def acknowledgeCumulativeAsync[T](consumer: api.Consumer[T], messageId: MessageId): IO[Unit] =
     consumer.acknowledgeCumulativeAsync(messageId)
 
-  override def close(reader: Reader): IO[Unit] = reader.closeAsync()
+  override def close(reader: Reader[_]): IO[Unit] = reader.closeAsync()
 
-  override def nextAsync(reader: Reader): IO[Message] = reader.readNextAsync().map(Message.fromJava)
+  override def nextAsync[T](reader: Reader[T]): IO[Message[T]] = reader.readNextAsync().map(Message.fromJava)
 }
 
 object CatsAsyncHandler {

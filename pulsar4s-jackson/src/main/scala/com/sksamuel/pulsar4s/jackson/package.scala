@@ -1,22 +1,17 @@
 package com.sksamuel.pulsar4s
 
-import scala.util.Try
+import org.apache.pulsar.client.api.Schema
+import org.apache.pulsar.shade.org.apache.pulsar.common.schema.{SchemaInfo, SchemaType}
 
 package object jackson {
-  implicit def writer[T: Manifest]: MessageWriter[T] = new MessageWriter[T] {
-    override def write(t: T): Try[Message] = {
-      Try {
-        val bytes = JacksonSupport.mapper.writeValueAsBytes(t)
-        Message(None, bytes, Map.empty, None, 0, System.currentTimeMillis())
-      }
-    }
-  }
-
-  implicit def reader[T: Manifest]: MessageReader[T] = new MessageReader[T] {
-    override def read(msg: Message): Try[T] = {
-      Try {
-        JacksonSupport.mapper.readValue[T](msg.data)
-      }
+  implicit def schema[T: Manifest]: Schema[T] = new Schema[T] {
+    override def encode(t: T): Array[Byte] = JacksonSupport.mapper.writeValueAsBytes(t)
+    override def decode(bytes: Array[Byte]): T = JacksonSupport.mapper.readValue[T](bytes)
+    override def getSchemaInfo: SchemaInfo = {
+      val info = new SchemaInfo()
+      info.setName(manifest[T].runtimeClass.getCanonicalName)
+      info.setType(SchemaType.JSON)
+      info
     }
   }
 }

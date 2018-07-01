@@ -11,10 +11,10 @@ trait Control {
   def close(): Unit
 }
 
-class PulsarSourceGraphStage(create: () => Consumer) extends GraphStageWithMaterializedValue[SourceShape[Message], Control] {
+class PulsarSourceGraphStage[T](create: () => Consumer[T]) extends GraphStageWithMaterializedValue[SourceShape[Message[T]], Control] {
 
-  private val out = Outlet[Message]("pulsar.out")
-  override def shape: SourceShape[Message] = SourceShape(out)
+  private val out = Outlet[Message[T]]("pulsar.out")
+  override def shape: SourceShape[Message[T]] = SourceShape(out)
 
   override def createLogicAndMaterializedValue(inheritedAttributes: Attributes): (GraphStageLogic, Control) = {
     val logic = new GraphStageLogic(shape) with OutHandler {

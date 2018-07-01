@@ -5,6 +5,6 @@ import akka.stream.scaladsl.{Sink, Source}
 import com.sksamuel.pulsar4s.{Consumer, Message, Producer}
 
 package object streams {
-  def source(create: () => Consumer): Source[Message, Control] = Source.fromGraph(new PulsarSourceGraphStage(create))
-  def sink(create: () => Producer): Sink[Message, NotUsed] = Sink.fromGraph(new PulsarSinkGraphStage(create))
+  def source[T](create: () => Consumer[T]): Source[Message[T], Control] = Source.fromGraph(new PulsarSourceGraphStage(create))
+  def sink[T](create: () => Producer[T]): Sink[T, NotUsed] = Sink.fromGraph(new PulsarSinkGraphStage(create))
 }

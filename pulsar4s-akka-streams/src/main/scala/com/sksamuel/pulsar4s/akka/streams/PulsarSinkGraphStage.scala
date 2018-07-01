@@ -2,15 +2,15 @@ package com.sksamuel.pulsar4s.akka.streams
 
 import akka.stream.stage.{GraphStage, GraphStageLogic, InHandler}
 import akka.stream.{Attributes, Inlet, SinkShape}
-import com.sksamuel.pulsar4s.{Message, Producer}
+import com.sksamuel.pulsar4s.Producer
 
 import scala.concurrent.ExecutionContextExecutor
 import scala.util.{Failure, Success}
 
-class PulsarSinkGraphStage(create: () => Producer) extends GraphStage[SinkShape[Message]] {
+class PulsarSinkGraphStage[T](create: () => Producer[T]) extends GraphStage[SinkShape[T]] {
 
-  private val in = Inlet.create[Message]("pulsar.in")
-  override def shape: SinkShape[Message] = SinkShape.of(in)
+  private val in = Inlet.create[T]("pulsar.in")
+  override def shape: SinkShape[T] = SinkShape.of(in)
 
   override def createLogic(inheritedAttributes: Attributes): GraphStageLogic = {
     new GraphStageLogic(shape) with InHandler {

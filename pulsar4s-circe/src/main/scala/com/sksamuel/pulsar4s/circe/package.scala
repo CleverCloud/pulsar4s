@@ -2,11 +2,11 @@ package com.sksamuel.pulsar4s
 
 import java.nio.charset.StandardCharsets
 
-import io.circe.jawn.decode
 import io.circe.{Decoder, Encoder, Json, Printer}
+import org.apache.pulsar.client.api.Schema
+import org.apache.pulsar.shade.org.apache.pulsar.common.schema.{SchemaInfo, SchemaType}
 
 import scala.annotation.implicitNotFound
-import scala.util.{Failure, Success, Try}
 
 /**
   * Automatic MessageWriter and MessageReader derivation
@@ -26,20 +26,20 @@ import scala.util.{Failure, Success, Try}
   * }}}
   */
 package object circe {
-  @implicitNotFound(
-    "No Decoder for type ${T} found. Use 'import io.circe.generic.auto._' or provide an implicit Decoder instance ")
-  implicit def circeReader[T](implicit decoder: Decoder[T]): MessageReader[T] = new MessageReader[T] {
-    override def read(msg: Message): Try[T] = decode[T](new String(msg.data, StandardCharsets.UTF_8)) match {
-      case Left(e) => Failure(e)
-      case Right(t) => Success(t)
-    }
-  }
 
   @implicitNotFound(
     "No Encoder for type ${T} found. Use 'import io.circe.generic.auto._' or provide an implicit Encoder instance ")
-  implicit def circeWriter[T](implicit encoder: Encoder[T], printer: Json => String = Printer.noSpaces.pretty): MessageWriter[T] = new MessageWriter[T] {
-    override def write(t: T): Try[Message] = Try {
-      Message(printer(encoder(t)).getBytes(StandardCharsets.UTF_8))
+  implicit def spraySchema[T: Manifest](implicit
+                                        encoder: Encoder[T],
+                                        decoder: Decoder[T],
+                                        printer: Json => String = Printer.noSpaces.pretty): Schema[T] = new Schema[T] {
+    override def encode(t: T): Array[Byte] = printer(encoder(t)).getBytes(StandardCharsets.UTF_8)
+    override def decode(bytes: Array[Byte]): T = io.circe.jawn.decode[T](new String(bytes, StandardCharsets.UTF_8)).right.get
+    override def getSchemaInfo: SchemaInfo = {
+      val info = new SchemaInfo()
+      info.setName(manifest[T].runtimeClass.getCanonicalName)
+      info.setType(SchemaType.JSON)
+      info
     }
   }
 }
