@@ -12,6 +12,7 @@ lazy val root = Project("pulsar4s", file("."))
     circe,
     playjson,
     sprayjson,
+    json4s,
     akka_streams
   )
 
@@ -84,6 +85,14 @@ lazy val playjson = Project("pulsar4s-play-json", file("pulsar4s-play-json"))
   .settings(name := "pulsar4s-play-json")
   .settings(libraryDependencies ++= Seq(
     "com.typesafe.play" %% "play-json" % PlayJsonVersion
+  ))
+  .dependsOn(core)
+
+lazy val json4s = Project("pulsar4s-json4s", file("pulsar4s-json4s"))
+  .settings(name := "pulsar4s-json4s")
+  .settings(libraryDependencies ++= Seq(
+    "org.json4s" %% "json4s-core"     % Json4sVersion,
+    "org.json4s" %% "json4s-jackson"  % Json4sVersion
   ))
   .dependsOn(core)
 
