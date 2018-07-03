@@ -16,7 +16,6 @@ The official Java client can of course be used, but this client provides better 
 * Provides case classes rather than Java beans
 * [Reactive Streams](https://github.com/sksamuel/pulsar4s#reactive-streams) implementation for streaming data in and out of Pulsar
 * [Akka Streams](https://github.com/sksamuel/pulsar4s#akka-streams) source and sink
-* [Typeclasses](https://github.com/sksamuel/pulsar4s#marshalling-tofrom-classes) for marshalling to/from Pulsar messages
 * Circe and Jackson implementations of said typeclasses
 
 ## Using the client
