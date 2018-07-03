@@ -16,7 +16,7 @@ The official Java client can of course be used, but this client provides better 
 * Provides case classes rather than Java beans
 * [Reactive Streams](https://github.com/sksamuel/pulsar4s#reactive-streams) implementation for streaming data in and out of Pulsar
 * [Akka Streams](https://github.com/sksamuel/pulsar4s#akka-streams) source and sink
-* Circe and Jackson implementations of said typeclasses
+* Circe, SprayJson, PlayJson and Jackson implementations of Schema typeclass
 
 ## Using the client
 
