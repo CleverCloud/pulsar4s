@@ -19,12 +19,7 @@ lazy val root = Project("pulsar4s", file("."))
 lazy val core = Project("pulsar4s-core", file("pulsar4s-core"))
   .settings(name := "pulsar4s-core")
   .settings(libraryDependencies ++= Seq(
-
-    "org.scala-lang.modules"        %% "scala-java8-compat"     % Java8CompatVersion,
-    "com.fasterxml.jackson.core"    % "jackson-core"            % JacksonVersion,
-    "com.fasterxml.jackson.core"    % "jackson-annotations"     % JacksonVersion,
-    "com.fasterxml.jackson.core"    % "jackson-databind"        % JacksonVersion,
-    "com.fasterxml.jackson.module"  %% "jackson-module-scala"   % JacksonVersion        % "test" exclude("org.scala-lang", "scala-library")
+    "org.scala-lang.modules"        %% "scala-java8-compat" % Java8CompatVersion
   ))
 
 lazy val cats_effect = Project("pulsar4s-cats-effect", file("pulsar4s-cats-effect"))
@@ -67,6 +62,7 @@ lazy val jackson = Project("pulsar4s-jackson", file("pulsar4s-jackson"))
   .settings(name := "pulsar4s-jackson")
   .settings(libraryDependencies ++= Seq(
     "com.fasterxml.jackson.core"    % "jackson-core"          % JacksonVersion,
+    "com.fasterxml.jackson.core"    % "jackson-annotations"   % JacksonVersion,
     "com.fasterxml.jackson.core"    % "jackson-databind"      % JacksonVersion,
     "com.fasterxml.jackson.module" %% "jackson-module-scala"  % JacksonVersion
   ))
