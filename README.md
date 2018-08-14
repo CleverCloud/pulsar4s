@@ -55,6 +55,7 @@ An example of creating a producer for a complex type:
 
 ```scala
 import io.circe.generic.auto._
+import com.sksamuel.pulsar4s.circe._
 
 val topic = Topic("persistent://sample/standalone/ns1/b")
 val producer = client.producer[Food](ProducerConfig(topic))
