@@ -4,6 +4,7 @@ import java.nio.charset.StandardCharsets
 
 import io.circe.{Decoder, Encoder, Json, Printer}
 import org.apache.pulsar.client.api.Schema
+import org.apache.pulsar.common.schema.{SchemaInfo, SchemaType}
 
 import scala.annotation.implicitNotFound
 
@@ -34,10 +35,10 @@ package object circe {
                                         printer: Json => String = Printer.noSpaces.pretty): Schema[T] = new Schema[T] {
     override def encode(t: T): Array[Byte] = printer(encoder(t)).getBytes(StandardCharsets.UTF_8)
     override def decode(bytes: Array[Byte]): T = io.circe.jawn.decode[T](new String(bytes, StandardCharsets.UTF_8)).right.get
-    override def getSchemaInfo: org.apache.pulsar.shade.org.apache.pulsar.common.schema.SchemaInfo = {
-      val info = new org.apache.pulsar.shade.org.apache.pulsar.common.schema.SchemaInfo()
+    override def getSchemaInfo: SchemaInfo = {
+      val info = new SchemaInfo()
       info.setName(manifest[T].runtimeClass.getCanonicalName)
-      info.setType(org.apache.pulsar.shade.org.apache.pulsar.common.schema.SchemaType.JSON)
+      info.setType(SchemaType.JSON)
       info
     }
   }
