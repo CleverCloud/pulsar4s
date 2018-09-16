@@ -51,6 +51,7 @@ object Build extends AutoPlugin {
     sbtrelease.ReleasePlugin.autoImport.releaseCrossBuild := true,
     credentials += Credentials(Path.userHome / ".sbt" / "pgp.credentials"),
     scalacOptions := Seq("-unchecked", "-deprecation", "-encoding", "utf8"),
+    scalacOptions += "-target:jvm-1.8",
     javacOptions := Seq("-source", "1.8", "-target", "1.8"),
     libraryDependencies ++= Seq(
       "org.apache.pulsar" % "pulsar-client"             % PulsarVersion,
