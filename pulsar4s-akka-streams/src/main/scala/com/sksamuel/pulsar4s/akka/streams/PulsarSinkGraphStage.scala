@@ -47,6 +47,7 @@ class PulsarSinkGraphStage[T](create: () => Producer[T]) extends GraphStage[Sink
 
       override def postStop(): Unit = {
         logger.debug("Graph stage stopping; closing producer")
+        producer.flush()
         producer.close()
       }
     }
