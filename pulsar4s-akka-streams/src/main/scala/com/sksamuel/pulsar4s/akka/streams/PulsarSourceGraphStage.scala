@@ -1,5 +1,7 @@
 package com.sksamuel.pulsar4s.akka.streams
 
+import java.io.Closeable
+
 import akka.stream.stage.{AsyncCallback, GraphStageLogic, GraphStageWithMaterializedValue, OutHandler}
 import akka.stream.{Attributes, Outlet, SourceShape}
 import com.sksamuel.exts.Logging
@@ -8,7 +10,7 @@ import com.sksamuel.pulsar4s.{Consumer, Message, MessageId}
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success}
 
-trait Control {
+trait Control extends Closeable {
   def close(): Unit
 }
 
