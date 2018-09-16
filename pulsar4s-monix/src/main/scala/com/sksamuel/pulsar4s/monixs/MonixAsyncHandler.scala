@@ -58,6 +58,7 @@ class MonixAsyncHandler extends AsyncHandler[Task] {
     consumer.acknowledgeCumulativeAsync(messageId)
 
   override def close(reader: Reader[_]): Task[Unit] = reader.closeAsync()
+  override def flush(producer: api.Producer[_]): Task[Unit] = producer.flushAsync()
 
   override def nextAsync[T](reader: Reader[T]): Task[Message[T]] = Task.deferFuture(reader.readNextAsync()).map(Message.fromJava)
 }

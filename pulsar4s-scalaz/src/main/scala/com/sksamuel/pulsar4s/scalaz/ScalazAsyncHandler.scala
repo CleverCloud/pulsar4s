@@ -57,6 +57,8 @@ class ScalazAsyncHandler extends AsyncHandler[Task] {
   override def close(producer: api.Producer[_]): Task[Unit] = producer.closeAsync()
   override def close(consumer: api.Consumer[_]): Task[Unit] = consumer.closeAsync()
 
+  override def flush(producer: api.Producer[_]): Task[Unit] = producer.flushAsync()
+
   override def nextAsync[T](reader: Reader[T]): Task[Message[T]] = reader.readNextAsync().map(Message.fromJava)
 }
 

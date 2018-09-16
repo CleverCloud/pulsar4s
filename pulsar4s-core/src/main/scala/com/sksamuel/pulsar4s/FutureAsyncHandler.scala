@@ -49,6 +49,7 @@ class FutureAsyncHandler(implicit ec: ExecutionContext) extends AsyncHandler[Fut
     consumer.acknowledgeCumulativeAsync(messageId)
 
   override def close(reader: api.Reader[_]): Future[Unit] = reader.closeAsync()
+  override def flush(producer: api.Producer[_]): Future[Unit] = producer.flushAsync()
 
   override def nextAsync[T](reader: api.Reader[T]): Future[Message[T]] = reader.readNextAsync().map(Message.fromJava)
 }

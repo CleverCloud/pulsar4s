@@ -18,6 +18,8 @@ trait AsyncHandler[F[_]] {
   def close(consumer: api.Consumer[_]): F[Unit]
   def close(reader: api.Reader[_]): F[Unit]
 
+  def flush(producer: api.Producer[_]): F[Unit]
+
   def seekAsync(consumer: api.Consumer[_], messageId: MessageId): F[Unit]
   def nextAsync[T](reader: api.Reader[T]): F[Message[T]]
 

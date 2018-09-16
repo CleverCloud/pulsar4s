@@ -51,6 +51,7 @@ class CatsAsyncHandler extends AsyncHandler[IO] {
     consumer.acknowledgeCumulativeAsync(messageId)
 
   override def close(reader: Reader[_]): IO[Unit] = reader.closeAsync()
+  override def flush(producer: api.Producer[_]): IO[Unit] = producer.flushAsync()
 
   override def nextAsync[T](reader: Reader[T]): IO[Message[T]] = reader.readNextAsync().map(Message.fromJava)
 }

@@ -74,6 +74,11 @@ trait Producer[T] extends Closeable {
     * of errors, pending writes will not be retried.
     */
   def closeAsync[F[_] : AsyncHandler]: F[Unit]
+
+  def isConnected: Boolean
+
+  def flush(): Unit
+  def flushAsync[F[_] : AsyncHandler]: F[Unit]
 }
 
 class DefaultProducer[T](producer: JProducer[T])(implicit schema: Schema[T]) extends Producer[T] {
@@ -86,6 +91,11 @@ class DefaultProducer[T](producer: JProducer[T])(implicit schema: Schema[T]) ext
   override def lastSequenceId: SequenceId = SequenceId(producer.getLastSequenceId)
   override def stats: ProducerStats = producer.getStats
   override def topic: Topic = Topic(producer.getTopic)
+
+  override def isConnected: Boolean = producer.isConnected
+
+  override def flush(): Unit = producer.flush()
+  override def flushAsync[F[_] : AsyncHandler]: F[Unit] = AsyncHandler[F].flush(producer)
 
   override def close(): Unit = producer.close()
   override def closeAsync[F[_] : AsyncHandler]: F[Unit] = AsyncHandler[F].close(producer)
