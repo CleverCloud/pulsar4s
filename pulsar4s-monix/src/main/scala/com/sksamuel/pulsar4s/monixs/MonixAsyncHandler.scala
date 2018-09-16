@@ -26,7 +26,7 @@ class MonixAsyncHandler extends AsyncHandler[Task] {
     Task.deferFuture {
       val future = producer.sendAsync(t)
       FutureConverters.toScala(future)
-    }.map { id => MessageId(id) }
+    }.map { id => MessageId.fromJava(id) }
   }
 
   override def receive[T](consumer: api.Consumer[T]): Task[Message[T]] = {

@@ -26,7 +26,7 @@ class CatsAsyncHandler extends AsyncHandler[IO] {
 
   override def failed(e: Throwable): IO[Nothing] = IO.raiseError(e)
 
-  override def send[T](t: T, producer: api.Producer[T]): IO[MessageId] = producer.sendAsync(t).map(MessageId.apply)
+  override def send[T](t: T, producer: api.Producer[T]): IO[MessageId] = producer.sendAsync(t).map(MessageId.fromJava)
   override def receive[T](consumer: api.Consumer[T]): IO[Message[T]] = consumer.receiveAsync().map(Message.fromJava)
 
   override def unsubscribeAsync(consumer: api.Consumer[_]): IO[Unit] = consumer.unsubscribeAsync()
