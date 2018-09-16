@@ -17,7 +17,7 @@ class PulsarSourceTest extends FunSuite with Matchers {
   implicit val system: ActorSystem = ActorSystem()
   implicit val materializer: ActorMaterializer = ActorMaterializer()
 
-  test("pulsar sink should write messages to pulsar cluster") {
+  test("pulsar source should read messages from a cluster") {
 
     implicit val schema: Schema[String] = Schema.STRING
 
