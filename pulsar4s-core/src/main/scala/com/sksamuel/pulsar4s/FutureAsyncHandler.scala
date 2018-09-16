@@ -18,7 +18,7 @@ class FutureAsyncHandler(implicit ec: ExecutionContext) extends AsyncHandler[Fut
 
   override def send[T](t: T, producer: api.Producer[T]): Future[MessageId] = {
     val future = producer.sendAsync(t)
-    FutureConverters.toScala(future).map { id => MessageId(id) }
+    FutureConverters.toScala(future).map(MessageId.fromJava)
   }
 
   override def receive[T](consumer: api.Consumer[T]): Future[Message[T]] = {

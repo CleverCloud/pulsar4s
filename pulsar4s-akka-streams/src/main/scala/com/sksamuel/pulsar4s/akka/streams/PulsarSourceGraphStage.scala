@@ -1,8 +1,9 @@
 package com.sksamuel.pulsar4s.akka.streams
 
-import akka.stream.stage.{GraphStageLogic, GraphStageWithMaterializedValue, OutHandler}
+import akka.stream.stage.{AsyncCallback, GraphStageLogic, GraphStageWithMaterializedValue, OutHandler}
 import akka.stream.{Attributes, Outlet, SourceShape}
-import com.sksamuel.pulsar4s.{Consumer, Message}
+import com.sksamuel.exts.Logging
+import com.sksamuel.pulsar4s.{Consumer, Message, MessageId}
 
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success}
@@ -11,22 +12,37 @@ trait Control {
   def close(): Unit
 }
 
-class PulsarSourceGraphStage[T](create: () => Consumer[T]) extends GraphStageWithMaterializedValue[SourceShape[Message[T]], Control] {
+class PulsarSourceGraphStage[T](create: () => Consumer[T], seek: MessageId)
+  extends GraphStageWithMaterializedValue[SourceShape[Message[T]], Control]
+    with Logging {
 
   private val out = Outlet[Message[T]]("pulsar.out")
   override def shape: SourceShape[Message[T]] = SourceShape(out)
 
   override def createLogicAndMaterializedValue(inheritedAttributes: Attributes): (GraphStageLogic, Control) = {
-    val logic = new GraphStageLogic(shape) with OutHandler {
+
+    val logic: GraphStageLogic = new GraphStageLogic(shape) with OutHandler {
       setHandler(out, this)
 
-      implicit val context: ExecutionContext = super.materializer.executionContext
-      val consumer = create()
+      var consumer: Consumer[T] = _
+      var callback: AsyncCallback[Message[T]] = _
+
+      override def preStart(): Unit = {
+        consumer = create()
+        consumer.seek(seek)
+        callback = getAsyncCallback(msg => push(out, msg))
+      }
 
       override def onPull(): Unit = {
+        implicit val context: ExecutionContext = super.materializer.executionContext
+        logger.debug("Pull received; asking consumer for message")
         consumer.receiveAsync.onComplete {
-          case Success(msg) => push(out, msg)
-          case Failure(t) => failStage(t)
+          case Success(msg) =>
+            logger.debug(s"Msg received $msg")
+            callback.invoke(msg)
+          case Failure(e) =>
+            logger.warn("Error when receiving message", e)
+            failStage(e)
         }
       }
 

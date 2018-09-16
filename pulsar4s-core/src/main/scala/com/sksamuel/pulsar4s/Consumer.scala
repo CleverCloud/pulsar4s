@@ -1,5 +1,6 @@
 package com.sksamuel.pulsar4s
 
+import java.io.Closeable
 import java.util.concurrent.TimeUnit
 
 import com.sksamuel.exts.Logging
@@ -9,7 +10,7 @@ import scala.concurrent.duration.FiniteDuration
 import scala.language.{higherKinds, implicitConversions}
 import scala.util.Try
 
-trait Consumer[T] {
+trait Consumer[T] extends Closeable {
 
   /**
     * Receives a single message.

@@ -72,7 +72,7 @@ class DefaultPulsarClient(client: org.apache.pulsar.client.api.PulsarClient) ext
     config.messageRouter.foreach(builder.messageRouter)
     config.messageRoutingMode.foreach(builder.messageRoutingMode)
     config.producerName.foreach(builder.producerName)
-    new Producer(builder.create())
+    new DefaultProducer(builder.create())
   }
 
   override def consumer[T](config: ConsumerConfig)(implicit schema: Schema[T]): Consumer[T] = {

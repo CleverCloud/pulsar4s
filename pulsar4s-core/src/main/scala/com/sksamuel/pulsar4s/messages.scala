@@ -25,7 +25,7 @@ object Message {
       message.getValue,
       message.getData,
       message.getProperties.asScala.toMap,
-      Option(MessageId(message.getMessageId)),
+      Option(MessageId.fromJava(message.getMessageId)),
       message.getSequenceId,
       message.getProducerName,
       message.getPublishTime,
@@ -55,7 +55,7 @@ object MessageId {
   val earliest: MessageId = org.apache.pulsar.client.api.MessageId.earliest
   val latest: MessageId = org.apache.pulsar.client.api.MessageId.latest
 
-  implicit def apply(messageId: org.apache.pulsar.client.api.MessageId): MessageId = MessageId(messageId.toByteArray)
+  implicit def fromJava(messageId: org.apache.pulsar.client.api.MessageId): MessageId = MessageId(messageId.toByteArray)
 }
 
 case class PulsarTopic(mode: String, tenant: String, namespace: String, topic: String)

@@ -30,7 +30,7 @@ class ScalazAsyncHandler extends AsyncHandler[Task] {
   override def failed(e: Throwable): Task[Nothing] = Task.fail(e)
 
   override def send[T](t: T, producer: api.Producer[T]): Task[MessageId] =
-    completableToTask(producer.sendAsync(t)).map(MessageId.apply)
+    completableToTask(producer.sendAsync(t)).map(MessageId.fromJava)
 
   override def receive[T](consumer: api.Consumer[T]): Task[Message[T]] =
     completableToTask(consumer.receiveAsync).map(Message.fromJava)
