@@ -19,6 +19,7 @@ case class Message[T](key: Option[String],
 object Message {
 
   implicit def fromJava[T](message: JMessage[T]): Message[T] = {
+    require(message != null)
     Message(
       Option(message.getKey),
       message.getValue,

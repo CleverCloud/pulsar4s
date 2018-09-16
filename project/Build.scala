@@ -11,6 +11,7 @@ object Build extends AutoPlugin {
 
   object autoImport {
     val org                       = "com.sksamuel.pulsar4s"
+    val AkkaStreamVersion         = "2.5.16"
     val CatsVersion               = "1.4.0"
     val CirceVersion              = "0.9.3"
     val CommonsIoVersion          = "2.4"
@@ -54,10 +55,6 @@ object Build extends AutoPlugin {
     scalacOptions += "-target:jvm-1.8",
     javacOptions := Seq("-source", "1.8", "-target", "1.8"),
     libraryDependencies ++= Seq(
-      "org.apache.pulsar" % "pulsar-client"             % PulsarVersion,
-      "org.apache.pulsar" % "pulsar-client-admin"       % PulsarVersion,
-      "org.apache.pulsar" % "pulsar-common"             % PulsarVersion,
-      "org.apache.pulsar" % "pulsar-client-admin"       % PulsarVersion,
       "com.sksamuel.exts" %% "exts"                     % ExtsVersion,
       "org.slf4j"         % "slf4j-api"                 % Slf4jVersion,
       "org.apache.logging.log4j" % "log4j-api"          % Log4jVersion % "test",

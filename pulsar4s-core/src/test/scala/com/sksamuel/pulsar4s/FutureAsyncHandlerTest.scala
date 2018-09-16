@@ -22,8 +22,6 @@ class FutureAsyncHandlerTest extends FunSuite with Matchers with BeforeAndAfterA
   }
 
   test("async producer should bring future effect into scope by default") {
-
-
     val producer = client.producer(ProducerConfig(topic))
     val f = producer.sendAsync("wibble")
     Await.result(f, Duration.Inf) should not be null

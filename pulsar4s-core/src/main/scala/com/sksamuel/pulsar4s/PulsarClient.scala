@@ -8,9 +8,15 @@ import org.apache.pulsar.client.api.Schema
 import scala.collection.JavaConverters._
 
 case class Topic(name: String)
+
 case class Subscription(name: String)
+
 object Subscription {
-  def generate = Subscription(UUID.randomUUID.toString)
+
+  /**
+    * Generates a [[Subscription]] with a random UUID as the name.
+    */
+  def generate: Subscription = Subscription(UUID.randomUUID.toString)
 }
 
 trait PulsarClient {
@@ -86,7 +92,7 @@ class DefaultPulsarClient(client: org.apache.pulsar.client.api.PulsarClient) ext
     builder.topics(config.topics.map(_.name).asJava)
     builder.subscriptionName(config.subscriptionName.name)
     config.readCompacted.foreach(builder.readCompacted)
-    new Consumer(builder.subscribe())
+    new DefaultConsumer(builder.subscribe())
   }
 
   override def reader[T](topic: Topic, seek: MessageId, config: ReaderConfig)(implicit schema: Schema[T]): Reader[T] = {
