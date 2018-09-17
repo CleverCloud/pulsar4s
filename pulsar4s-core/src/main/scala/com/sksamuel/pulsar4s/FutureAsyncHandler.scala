@@ -6,6 +6,7 @@ import scala.compat.java8.FutureConverters
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.implicitConversions
 import org.apache.pulsar.client.api
+import org.apache.pulsar.client.api.TypedMessageBuilder
 
 import scala.util.{Failure, Success, Try}
 
@@ -21,9 +22,9 @@ class FutureAsyncHandler(implicit ec: ExecutionContext) extends AsyncHandler[Fut
     FutureConverters.toScala(future).map(MessageId.fromJava)
   }
 
-  override def receive[T](consumer: api.Consumer[T]): Future[Message[T]] = {
+  override def receive[T](consumer: api.Consumer[T]): Future[ConsumerMessage[T]] = {
     val future = consumer.receiveAsync()
-    FutureConverters.toScala(future).map { msg => Message.fromJava(msg) }
+    FutureConverters.toScala(future).map(ConsumerMessage.fromJava)
   }
 
   override def unsubscribeAsync(consumer: api.Consumer[_]): Future[Unit] = consumer.unsubscribeAsync()
@@ -40,16 +41,18 @@ class FutureAsyncHandler(implicit ec: ExecutionContext) extends AsyncHandler[Fut
     }
   }
 
-  override def acknowledgeAsync[T](consumer: api.Consumer[T], messageId: MessageId): Future[Unit] = {
+  override def acknowledgeAsync[T](consumer: api.Consumer[T], messageId: MessageId): Future[Unit] =
     consumer.acknowledgeAsync(messageId)
-  }
 
-  override def acknowledgeCumulativeAsync[T](consumer: api.Consumer[T],
-                                             messageId: MessageId): Future[Unit] =
+  override def acknowledgeCumulativeAsync[T](consumer: api.Consumer[T], messageId: MessageId): Future[Unit] =
     consumer.acknowledgeCumulativeAsync(messageId)
 
   override def close(reader: api.Reader[_]): Future[Unit] = reader.closeAsync()
   override def flush(producer: api.Producer[_]): Future[Unit] = producer.flushAsync()
 
-  override def nextAsync[T](reader: api.Reader[T]): Future[Message[T]] = reader.readNextAsync().map(Message.fromJava)
+  override def nextAsync[T](reader: api.Reader[T]): Future[ConsumerMessage[T]] =
+    reader.readNextAsync().map(ConsumerMessage.fromJava)
+
+  override def send[T](builder: TypedMessageBuilder[T]): Future[MessageId] =
+    builder.sendAsync().map(MessageId.fromJava)
 }

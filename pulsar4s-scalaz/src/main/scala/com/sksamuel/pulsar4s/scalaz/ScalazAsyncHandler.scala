@@ -3,9 +3,9 @@ package com.sksamuel.pulsar4s.scalaz
 import java.util.concurrent.CompletableFuture
 import java.util.function.BiConsumer
 
-import com.sksamuel.pulsar4s.{AsyncHandler, Message, MessageId}
+import com.sksamuel.pulsar4s.{AsyncHandler, ConsumerMessage, MessageId}
 import org.apache.pulsar.client.api
-import org.apache.pulsar.client.api.Reader
+import org.apache.pulsar.client.api.{Reader, TypedMessageBuilder}
 import scalaz.concurrent.Task
 
 import scala.language.implicitConversions
@@ -13,7 +13,9 @@ import scala.util.{Failure, Success, Try}
 
 class ScalazAsyncHandler extends AsyncHandler[Task] {
 
-  implicit def completableVoidToTask(f: CompletableFuture[Void]): Task[Unit] = completableToTask(f).map(_ => ())
+  implicit def completableVoidToTask(f: CompletableFuture[Void]): Task[Unit] =
+    completableToTask(f).map(_ => ())
+
   implicit def completableToTask[T](f: CompletableFuture[T]): Task[T] = {
     Task.async[T] { k =>
       f.whenCompleteAsync(new BiConsumer[T, Throwable] {
@@ -32,19 +34,20 @@ class ScalazAsyncHandler extends AsyncHandler[Task] {
   override def send[T](t: T, producer: api.Producer[T]): Task[MessageId] =
     completableToTask(producer.sendAsync(t)).map(MessageId.fromJava)
 
-  override def receive[T](consumer: api.Consumer[T]): Task[Message[T]] =
-    completableToTask(consumer.receiveAsync).map(Message.fromJava)
+  override def receive[T](consumer: api.Consumer[T]): Task[ConsumerMessage[T]] =
+    completableToTask(consumer.receiveAsync).map(ConsumerMessage.fromJava)
 
-  override def unsubscribeAsync(consumer: api.Consumer[_]): Task[Unit] = consumer.unsubscribeAsync()
+  override def unsubscribeAsync(consumer: api.Consumer[_]): Task[Unit] =
+    consumer.unsubscribeAsync()
 
-  override def seekAsync(consumer: api.Consumer[_], messageId: MessageId): Task[Unit] = consumer.seekAsync(messageId)
+  override def seekAsync(consumer: api.Consumer[_], messageId: MessageId): Task[Unit] =
+    consumer.seekAsync(messageId)
 
-  override def transform[A, B](f: Task[A])(fn: A => Try[B]): Task[B] = f.flatMap {
-    a =>
-      fn(a) match {
-        case Success(b) => Task.now(b)
-        case Failure(e) => Task.fail(e)
-      }
+  override def transform[A, B](f: Task[A])(fn: A => Try[B]): Task[B] = f.flatMap { a =>
+    fn(a) match {
+      case Success(b) => Task.now(b)
+      case Failure(e) => Task.fail(e)
+    }
   }
 
   override def acknowledgeAsync[T](consumer: api.Consumer[T], messageId: MessageId): Task[Unit] =
@@ -59,7 +62,11 @@ class ScalazAsyncHandler extends AsyncHandler[Task] {
 
   override def flush(producer: api.Producer[_]): Task[Unit] = producer.flushAsync()
 
-  override def nextAsync[T](reader: Reader[T]): Task[Message[T]] = reader.readNextAsync().map(Message.fromJava)
+  override def nextAsync[T](reader: Reader[T]): Task[ConsumerMessage[T]] =
+    reader.readNextAsync().map(ConsumerMessage.fromJava)
+
+  override def send[T](builder: TypedMessageBuilder[T]): Task[MessageId] =
+    builder.sendAsync().map(MessageId.fromJava)
 }
 
 object ScalazAsyncHandler {

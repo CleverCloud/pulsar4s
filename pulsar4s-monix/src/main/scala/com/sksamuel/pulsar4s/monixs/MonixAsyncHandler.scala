@@ -2,10 +2,10 @@ package com.sksamuel.pulsar4s.monixs
 
 import java.util.concurrent.CompletableFuture
 
-import com.sksamuel.pulsar4s.{AsyncHandler, Message, MessageId}
+import com.sksamuel.pulsar4s.{AsyncHandler, ConsumerMessage, MessageId}
 import monix.eval.Task
 import org.apache.pulsar.client.api
-import org.apache.pulsar.client.api.Reader
+import org.apache.pulsar.client.api.{Reader, TypedMessageBuilder}
 
 import scala.compat.java8.FutureConverters
 import scala.concurrent.Future
@@ -29,11 +29,11 @@ class MonixAsyncHandler extends AsyncHandler[Task] {
     }.map { id => MessageId.fromJava(id) }
   }
 
-  override def receive[T](consumer: api.Consumer[T]): Task[Message[T]] = {
+  override def receive[T](consumer: api.Consumer[T]): Task[ConsumerMessage[T]] = {
     Task.deferFuture {
       val future = consumer.receiveAsync()
       FutureConverters.toScala(future)
-    }.map { msg => Message.fromJava(msg) }
+    }.map(ConsumerMessage.fromJava)
   }
 
   def unsubscribeAsync(consumer: api.Consumer[_]): Task[Unit] = consumer.unsubscribeAsync()
@@ -41,7 +41,8 @@ class MonixAsyncHandler extends AsyncHandler[Task] {
   override def close(producer: api.Producer[_]): Task[Unit] = producer.closeAsync()
   override def close(consumer: api.Consumer[_]): Task[Unit] = consumer.closeAsync()
 
-  override def seekAsync(consumer: api.Consumer[_], messageId: MessageId): Task[Unit] = consumer.seekAsync(messageId)
+  override def seekAsync(consumer: api.Consumer[_], messageId: MessageId): Task[Unit] =
+    consumer.seekAsync(messageId)
 
   override def transform[A, B](t: Task[A])(fn: A => Try[B]): Task[B] =
     t.flatMap { a =>
@@ -60,7 +61,11 @@ class MonixAsyncHandler extends AsyncHandler[Task] {
   override def close(reader: Reader[_]): Task[Unit] = reader.closeAsync()
   override def flush(producer: api.Producer[_]): Task[Unit] = producer.flushAsync()
 
-  override def nextAsync[T](reader: Reader[T]): Task[Message[T]] = Task.deferFuture(reader.readNextAsync()).map(Message.fromJava)
+  override def nextAsync[T](reader: Reader[T]): Task[ConsumerMessage[T]] =
+    Task.deferFuture(reader.readNextAsync()).map(ConsumerMessage.fromJava)
+
+  override def send[T](builder: TypedMessageBuilder[T]): Task[MessageId] =
+    Task.deferFuture(builder.sendAsync()).map(MessageId.fromJava)
 }
 
 object MonixAsyncHandler {

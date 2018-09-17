@@ -7,7 +7,6 @@ lazy val root = Project("pulsar4s", file("."))
     cats_effect,
     scalaz,
     monix,
-    reactive_streams,
     jackson,
     circe,
     playjson,
@@ -42,16 +41,6 @@ lazy val monix = Project("pulsar4s-monix", file("pulsar4s-monix"))
   .settings(name := "pulsar4s-monix")
   .settings(libraryDependencies ++= Seq(
     "io.monix" %% "monix" % "2.3.2"
-  ))
-  .dependsOn(core)
-
-lazy val reactive_streams = Project("pulsar4s-reactive-streams", file("pulsar4s-reactive-streams"))
-  .settings(name := "pulsar4s-reactive-streams")
-  .settings(libraryDependencies ++= Seq(
-    "org.apache.logging.log4j"  % "log4j-api"                 % Log4jVersion  % "test",
-    "org.apache.logging.log4j"  % "log4j-slf4j-impl"          % Log4jVersion  % "test",
-    "org.reactivestreams"       % "reactive-streams"          % ReactiveStreamsVersion,
-    "org.reactivestreams"       % "reactive-streams-tck"      % ReactiveStreamsVersion % "test"
   ))
   .dependsOn(core)
 

@@ -5,7 +5,7 @@ import java.io.Closeable
 import akka.stream.stage.{AsyncCallback, GraphStageLogic, GraphStageWithMaterializedValue, OutHandler}
 import akka.stream.{Attributes, Outlet, SourceShape}
 import com.sksamuel.exts.Logging
-import com.sksamuel.pulsar4s.{Consumer, Message, MessageId}
+import com.sksamuel.pulsar4s.{Consumer, ConsumerMessage, MessageId}
 
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success}
@@ -15,11 +15,11 @@ trait Control extends Closeable {
 }
 
 class PulsarSourceGraphStage[T](create: () => Consumer[T], seek: MessageId)
-  extends GraphStageWithMaterializedValue[SourceShape[Message[T]], Control]
+  extends GraphStageWithMaterializedValue[SourceShape[ConsumerMessage[T]], Control]
     with Logging {
 
-  private val out = Outlet[Message[T]]("pulsar.out")
-  override def shape: SourceShape[Message[T]] = SourceShape(out)
+  private val out = Outlet[ConsumerMessage[T]]("pulsar.out")
+  override def shape: SourceShape[ConsumerMessage[T]] = SourceShape(out)
 
   override def createLogicAndMaterializedValue(inheritedAttributes: Attributes): (GraphStageLogic, Control) = {
 
@@ -27,7 +27,7 @@ class PulsarSourceGraphStage[T](create: () => Consumer[T], seek: MessageId)
       setHandler(out, this)
 
       var consumer: Consumer[T] = _
-      var callback: AsyncCallback[Message[T]] = _
+      var callback: AsyncCallback[ConsumerMessage[T]] = _
 
       override def preStart(): Unit = {
         consumer = create()

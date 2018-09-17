@@ -1,6 +1,7 @@
 package com.sksamuel.pulsar4s
 
 import org.apache.pulsar.client.api
+import org.apache.pulsar.client.api.TypedMessageBuilder
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.{higherKinds, implicitConversions}
@@ -12,7 +13,8 @@ trait AsyncHandler[F[_]] {
   def failed(e: Throwable): F[Nothing]
 
   def send[T](t: T, producer: api.Producer[T]): F[MessageId]
-  def receive[T](consumer: api.Consumer[T]): F[Message[T]]
+  def send[T](builder: TypedMessageBuilder[T]): F[MessageId]
+  def receive[T](consumer: api.Consumer[T]): F[ConsumerMessage[T]]
 
   def close(producer: api.Producer[_]): F[Unit]
   def close(consumer: api.Consumer[_]): F[Unit]
@@ -21,7 +23,7 @@ trait AsyncHandler[F[_]] {
   def flush(producer: api.Producer[_]): F[Unit]
 
   def seekAsync(consumer: api.Consumer[_], messageId: MessageId): F[Unit]
-  def nextAsync[T](reader: api.Reader[T]): F[Message[T]]
+  def nextAsync[T](reader: api.Reader[T]): F[ConsumerMessage[T]]
 
   def unsubscribeAsync(consumer: api.Consumer[_]): F[Unit]
 

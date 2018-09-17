@@ -3,7 +3,7 @@ import java.util.UUID
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Keep, Sink}
-import com.sksamuel.pulsar4s.{ConsumerConfig, Message, MessageId, ProducerConfig, PulsarClient, Subscription, Topic}
+import com.sksamuel.pulsar4s.{ConsumerConfig, ConsumerMessage, MessageId, ProducerConfig, PulsarClient, Subscription, Topic}
 import org.apache.pulsar.client.api.Schema
 import org.scalatest.{FunSuite, Matchers}
 
@@ -35,7 +35,7 @@ class PulsarSourceTest extends FunSuite with Matchers {
     val createFn = () => client.consumer(ConsumerConfig(Seq(topic), Subscription.generate))
     val f = source(createFn, MessageId.earliest)
       .take(4)
-      .runWith(Sink.seq[Message[String]])
+      .runWith(Sink.seq[ConsumerMessage[String]])
     val msgs = Await.result(f, 15.seconds)
     msgs.map(_.value) shouldBe Seq("a", "b", "c", "d")
   }
@@ -55,7 +55,7 @@ class PulsarSourceTest extends FunSuite with Matchers {
 
     val createFn = () => client.consumer(ConsumerConfig(Seq(topic), Subscription.generate))
     val (control, f) = source(createFn, MessageId.earliest)
-      .toMat(Sink.seq[Message[String]])(Keep.both)
+      .toMat(Sink.seq[ConsumerMessage[String]])(Keep.both)
       .run()
 
     Future {

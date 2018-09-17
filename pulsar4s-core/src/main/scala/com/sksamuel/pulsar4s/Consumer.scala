@@ -16,35 +16,21 @@ trait Consumer[T] extends Closeable {
     * Receives a single message.
     * This calls blocks until a message is available.
     */
-  def receive: Message[T]
+  def receive: Try[ConsumerMessage[T]]
 
   /**
     * Receive a single message waiting up to the given duration
     * if necessary. If no message is received within the duration
     * then None is returned.
     */
-  def receive(duration: FiniteDuration): Option[Message[T]]
+  def receive(duration: FiniteDuration): Try[Option[ConsumerMessage[T]]]
 
-  def receiveAsync[F[_] : AsyncHandler]: F[Message[T]]
-
-  /**
-    * Receives a single message as a Success[T], or if an exception
-    * is thrown by the client, returns a Failure.
-    * This calls blocks until a message is available.
-    */
-  def tryReceive: Try[Message[T]] = Try(receive)
-
-  /**
-    * Receive a single message waiting up to the given duration
-    * if necessary. If no message is received within the duration
-    * then None is returned.
-    *
-    * If the method throws an exception then a Failure is returned.
-    */
-  def tryReceive(duration: FiniteDuration): Try[Option[Message[T]]] = Try(receive(duration))
+  def receiveAsync[F[_] : AsyncHandler]: F[ConsumerMessage[T]]
 
   def stats: ConsumerStats
+
   def subscription: Subscription
+
   def topic: Topic
 
   /**
@@ -65,19 +51,19 @@ trait Consumer[T] extends Closeable {
   def close(): Unit
   def closeAsync[F[_] : AsyncHandler]: F[Unit]
 
-  def acknowledge(message: Message[T]): Unit = acknowledge(message.messageId.get)
+  def acknowledge(message: ConsumerMessage[T]): Unit = acknowledge(message.messageId)
   def acknowledge(messageId: MessageId): Unit
 
-  def acknowledgeCumulative(message: Message[T]): Unit
+  def acknowledgeCumulative(message: ConsumerMessage[T]): Unit
   def acknowledgeCumulative(messageId: MessageId): Unit
 
-  def acknowledgeAsync[F[_] : AsyncHandler](message: Message[T]): F[Unit] =
-    acknowledgeAsync(message.messageId.get)
+  final def acknowledgeAsync[F[_] : AsyncHandler](message: ConsumerMessage[T]): F[Unit] =
+    acknowledgeAsync(message.messageId)
 
   def acknowledgeAsync[F[_] : AsyncHandler](messageId: MessageId): F[Unit]
 
-  def acknowledgeCumulativeAsync[F[_] : AsyncHandler](message: Message[T]): F[Unit] =
-    acknowledgeCumulativeAsync(message.messageId.get)
+  final def acknowledgeCumulativeAsync[F[_] : AsyncHandler](message: ConsumerMessage[T]): F[Unit] =
+    acknowledgeCumulativeAsync(message.messageId)
 
   def acknowledgeCumulativeAsync[F[_] : AsyncHandler](messageId: MessageId): F[Unit]
 
@@ -87,46 +73,46 @@ trait Consumer[T] extends Closeable {
 
 class DefaultConsumer[T](consumer: JConsumer[T]) extends Consumer[T] with Logging {
 
-  override def receive: Message[T] = {
+  override def receive: Try[ConsumerMessage[T]] = Try {
     logger.trace("About to block until a message is received..")
     val msg = consumer.receive()
-    Message.fromJava(msg)
+    ConsumerMessage.fromJava(msg)
   }
 
-  override def receive(duration: FiniteDuration): Option[Message[T]] = {
+  override def receive(duration: FiniteDuration): Try[Option[ConsumerMessage[T]]] = Try {
     logger.trace(s"About to block for duration $duration or until a message is received..")
     val msg = consumer.receive(duration.toMillis.toInt, TimeUnit.MILLISECONDS)
-    Option(msg).map(Message.fromJava)
+    Option(msg).map(ConsumerMessage.fromJava)
   }
 
-  def receiveAsync[F[_] : AsyncHandler]: F[Message[T]] = implicitly[AsyncHandler[F]].receive(consumer)
+  override def receiveAsync[F[_] : AsyncHandler]: F[ConsumerMessage[T]] = implicitly[AsyncHandler[F]].receive(consumer)
 
-  def acknowledge(messageId: MessageId): Unit = consumer.acknowledge(messageId)
+  override def acknowledge(messageId: MessageId): Unit = consumer.acknowledge(messageId)
 
-  def acknowledgeCumulative(message: Message[T]): Unit = consumer.acknowledgeCumulative(message.messageId.get)
-  def acknowledgeCumulative(messageId: MessageId): Unit = consumer.acknowledgeCumulative(messageId)
+  override def acknowledgeCumulative(message: ConsumerMessage[T]): Unit = consumer.acknowledgeCumulative(message.messageId)
+  override def acknowledgeCumulative(messageId: MessageId): Unit = consumer.acknowledgeCumulative(messageId)
 
-  def acknowledgeAsync[F[_] : AsyncHandler](messageId: MessageId): F[Unit] =
+  override def acknowledgeAsync[F[_] : AsyncHandler](messageId: MessageId): F[Unit] =
     implicitly[AsyncHandler[F]].acknowledgeAsync(consumer, messageId)
 
-  def acknowledgeCumulativeAsync[F[_] : AsyncHandler](messageId: MessageId): F[Unit] =
+  override def acknowledgeCumulativeAsync[F[_] : AsyncHandler](messageId: MessageId): F[Unit] =
     implicitly[AsyncHandler[F]].acknowledgeCumulativeAsync(consumer, messageId)
 
-  def stats: ConsumerStats = consumer.getStats
-  def subscription = Subscription(consumer.getSubscription)
-  def topic = Topic(consumer.getTopic)
+  override def stats: ConsumerStats = consumer.getStats
+  override def subscription = Subscription(consumer.getSubscription)
+  override def topic = Topic(consumer.getTopic)
 
-  def hasReachedEndOfTopic: Boolean = consumer.hasReachedEndOfTopic
+  override def hasReachedEndOfTopic: Boolean = consumer.hasReachedEndOfTopic
 
-  def redeliverUnacknowledgedMessages(): Unit = consumer.redeliverUnacknowledgedMessages()
+  override def redeliverUnacknowledgedMessages(): Unit = consumer.redeliverUnacknowledgedMessages()
 
-  def seek(messageId: MessageId): Unit = consumer.seek(messageId)
+  override def seek(messageId: MessageId): Unit = consumer.seek(messageId)
 
-  def seekAsync[F[_] : AsyncHandler](messageId: MessageId): F[Unit] =
+  override def seekAsync[F[_] : AsyncHandler](messageId: MessageId): F[Unit] =
     implicitly[AsyncHandler[F]].seekAsync(consumer, messageId)
 
-  def close(): Unit = consumer.close()
-  def closeAsync[F[_] : AsyncHandler]: F[Unit] = implicitly[AsyncHandler[F]].close(consumer)
+  override def close(): Unit = consumer.close()
+  override def closeAsync[F[_] : AsyncHandler]: F[Unit] = implicitly[AsyncHandler[F]].close(consumer)
 
   override def unsubscribe(): Unit = consumer.unsubscribe()
   override def unsubscribeAsync[F[_] : AsyncHandler]: F[Unit] = implicitly[AsyncHandler[F]].unsubscribeAsync(consumer)

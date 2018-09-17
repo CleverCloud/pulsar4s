@@ -16,7 +16,7 @@ class ProducerConsumerTest extends FunSuite with Matchers {
     val topic = Topic("persistent://sample/standalone/ns1/test_" + UUID.randomUUID())
 
     val producer = client.producer(ProducerConfig(topic))
-    val messageId = producer.send("wibble")
+    val messageId = producer.send("wibble").get
     messageId.bytes.length > 0 shouldBe true
 
     producer.close()
@@ -33,9 +33,9 @@ class ProducerConsumerTest extends FunSuite with Matchers {
     producer.close()
 
     val consumer = client.consumer(ConsumerConfig(Seq(topic), Subscription.generate))
-    consumer.seek(messageId)
+    consumer.seek(messageId.get)
     val msg = consumer.receive
-    new String(msg.data) shouldBe "wibble"
+    new String(msg.get.data) shouldBe "wibble"
     consumer.close()
 
     client.close()
@@ -54,15 +54,15 @@ class ProducerConsumerTest extends FunSuite with Matchers {
 
     val consumer1 = client.consumer(ConsumerConfig(Seq(topic), Subscription.generate))
     consumer1.seek(MessageId.earliest)
-    consumer1.receive.data shouldBe "wibble".getBytes
-    consumer1.receive.data shouldBe "wobble".getBytes
-    consumer1.receive.data shouldBe "wubble".getBytes
+    consumer1.receive.get.data shouldBe "wibble".getBytes
+    consumer1.receive.get.data shouldBe "wobble".getBytes
+    consumer1.receive.get.data shouldBe "wubble".getBytes
 
     val consumer2 = client.consumer(ConsumerConfig(Seq(topic), Subscription.generate))
     consumer2.seek(MessageId.earliest)
-    consumer2.receive.data shouldBe "wibble".getBytes
-    consumer2.receive.data shouldBe "wobble".getBytes
-    consumer2.receive.data shouldBe "wubble".getBytes
+    consumer2.receive.get.data shouldBe "wibble".getBytes
+    consumer2.receive.get.data shouldBe "wobble".getBytes
+    consumer2.receive.get.data shouldBe "wubble".getBytes
 
     consumer1.close()
     consumer2.close()

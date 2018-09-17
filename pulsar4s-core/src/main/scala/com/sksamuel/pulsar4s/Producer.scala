@@ -2,14 +2,10 @@ package com.sksamuel.pulsar4s
 
 import java.io.Closeable
 
-import org.apache.pulsar.client.api.{ProducerStats, Schema, Producer => JProducer}
+import org.apache.pulsar.client.api.{ProducerStats, TypedMessageBuilder, Producer => JProducer}
 
 import scala.language.{higherKinds, implicitConversions}
 import scala.util.Try
-
-case class SequenceId(value: Long)
-
-case class ProducerName(name: String)
 
 trait Producer[T] extends Closeable {
 
@@ -21,19 +17,49 @@ trait Producer[T] extends Closeable {
 
   /**
     * Sends a message of type T.
+    * The message sent will have no key.
+    *
+    * This method can be used when you have no need to set the
+    * other properties of a message, such as the event time, key,
+    * headers and so on. The producer will generate an appropriate
+    * Pulsar [[ProducerMessage]] with this t set as the value.
+    *
     * This call will block until it is successfully acknowledged by
     * the Pulsar broker.
     */
-  def send(t: T): MessageId
+  def send(t: T): Try[MessageId]
 
   /**
-    * Asynchronously sends a message of type T return an effect of type F
-    * which will be completed when the message is acknowledged by the
-    * Pulsar broker.
+    * Sends a [[ProducerMessage]] of type T.
+    * This method can be used when you want to specify properties
+    * on a message such as the event time, key and so on.
+    *
+    * This call will block until it is successfully acknowledged by
+    * the Pulsar broker.
+    */
+  def send(msg: ProducerMessage[T]): Try[MessageId]
+
+  /**
+    * Asynchronously sends a message of type T, returning an effect
+    * which will be completed with the [[MessageId]] once the message
+    * is acknowledged by the Pulsar broker.
+    *
+    * This method can be used when you have no need to set the
+    * other properties of a message, such as the event time, key,
+    * headers and so on. The producer will generate an appropriate
+    * Pulsar [[ProducerMessage]] with this t set as the value.
     */
   def sendAsync[F[_] : AsyncHandler](t: T): F[MessageId]
 
-  def trySend(t: T): Try[MessageId] = Try(send(t))
+  /**
+    * Asynchronously sends a [[ProducerMessage]] of type T, returning an effect
+    * which will be completed with the [[MessageId]] once the message
+    * is acknowledged by the Pulsar broker.
+    *
+    * This method can be used when you want to specify properties
+    * on a message such as the event time, key and so on.
+    */
+  def sendAsync[F[_] : AsyncHandler](msg: ProducerMessage[T]): F[MessageId]
 
   /**
     * Get the last sequence id that was published by this producer.
@@ -78,15 +104,19 @@ trait Producer[T] extends Closeable {
   def isConnected: Boolean
 
   def flush(): Unit
+
   def flushAsync[F[_] : AsyncHandler]: F[Unit]
 }
 
-class DefaultProducer[T](producer: JProducer[T])(implicit schema: Schema[T]) extends Producer[T] {
+class DefaultProducer[T](producer: JProducer[T]) extends Producer[T] {
 
   override def name: ProducerName = ProducerName(producer.getProducerName)
 
-  override def send(t: T): MessageId = MessageId.fromJava(producer.send(t))
+  override def send(t: T): Try[MessageId] = Try(MessageId.fromJava(producer.send(t)))
   override def sendAsync[F[_] : AsyncHandler](t: T): F[MessageId] = AsyncHandler[F].send(t, producer)
+
+  override def send(msg: ProducerMessage[T]): Try[MessageId] = Try(buildMessage(msg).send())
+  override def sendAsync[F[_] : AsyncHandler](msg: ProducerMessage[T]): F[MessageId] = AsyncHandler[F].send(buildMessage(msg))
 
   override def lastSequenceId: SequenceId = SequenceId(producer.getLastSequenceId)
   override def stats: ProducerStats = producer.getStats
@@ -99,4 +129,20 @@ class DefaultProducer[T](producer: JProducer[T])(implicit schema: Schema[T]) ext
 
   override def close(): Unit = producer.close()
   override def closeAsync[F[_] : AsyncHandler]: F[Unit] = AsyncHandler[F].close(producer)
+
+  private def buildMessage(msg: ProducerMessage[T]): TypedMessageBuilder[T] = {
+    import scala.collection.JavaConverters._
+    val builder = producer.newMessage().value(msg.value)
+    msg.key.foreach(builder.key)
+    msg.sequenceId.map(_.value).foreach(builder.sequenceId)
+    msg.eventTime.map(_.value).foreach(builder.eventTime)
+    if (msg.replicationClusters.nonEmpty)
+      builder.replicationClusters(msg.replicationClusters.asJava)
+    if (msg.disableReplication)
+      builder.disableReplication
+    for ((key, value) <- msg.props) {
+      builder.property(key, value)
+    }
+    builder
+  }
 }

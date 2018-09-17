@@ -4,9 +4,9 @@ import java.util.concurrent.CompletableFuture
 import java.util.function.BiConsumer
 
 import cats.effect.IO
-import com.sksamuel.pulsar4s.{AsyncHandler, Message, MessageId}
+import com.sksamuel.pulsar4s.{AsyncHandler, ConsumerMessage, MessageId}
 import org.apache.pulsar.client.api
-import org.apache.pulsar.client.api.Reader
+import org.apache.pulsar.client.api.{Reader, TypedMessageBuilder}
 
 import scala.language.implicitConversions
 import scala.util.{Failure, Success, Try}
@@ -27,7 +27,7 @@ class CatsAsyncHandler extends AsyncHandler[IO] {
   override def failed(e: Throwable): IO[Nothing] = IO.raiseError(e)
 
   override def send[T](t: T, producer: api.Producer[T]): IO[MessageId] = producer.sendAsync(t).map(MessageId.fromJava)
-  override def receive[T](consumer: api.Consumer[T]): IO[Message[T]] = consumer.receiveAsync().map(Message.fromJava)
+  override def receive[T](consumer: api.Consumer[T]): IO[ConsumerMessage[T]] = consumer.receiveAsync().map(ConsumerMessage.fromJava)
 
   override def unsubscribeAsync(consumer: api.Consumer[_]): IO[Unit] = consumer.unsubscribeAsync()
 
@@ -53,7 +53,11 @@ class CatsAsyncHandler extends AsyncHandler[IO] {
   override def close(reader: Reader[_]): IO[Unit] = reader.closeAsync()
   override def flush(producer: api.Producer[_]): IO[Unit] = producer.flushAsync()
 
-  override def nextAsync[T](reader: Reader[T]): IO[Message[T]] = reader.readNextAsync().map(Message.fromJava)
+  override def nextAsync[T](reader: Reader[T]): IO[ConsumerMessage[T]] =
+    reader.readNextAsync().map(ConsumerMessage.fromJava)
+
+  override def send[T](builder: TypedMessageBuilder[T]): IO[MessageId] =
+    builder.sendAsync().map(MessageId.fromJava)
 }
 
 object CatsAsyncHandler {
