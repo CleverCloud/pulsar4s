@@ -1,6 +1,7 @@
 package com.sksamuel.pulsar4s
 
 import java.util.UUID
+import java.util.concurrent.TimeUnit
 
 import com.sksamuel.exts.Logging
 import org.apache.pulsar.client.api.Schema
@@ -33,13 +34,19 @@ object PulsarClient {
     val builder = org.apache.pulsar.client.api.PulsarClient.builder().serviceUrl(config.serviceUrl)
     config.ioThreads.foreach(builder.ioThreads)
     config.allowTlsInsecureConnection.foreach(builder.allowTlsInsecureConnection)
+    config.authentication.foreach(builder.authentication)
     config.connectionsPerBroker.foreach(builder.connectionsPerBroker)
     config.enableTcpNoDelay.foreach(builder.enableTcpNoDelay)
     config.enableTls.foreach(builder.enableTls)
     config.enableTlsHostnameVerification.foreach(builder.enableTlsHostnameVerification)
+    config.ioThreads.foreach(builder.ioThreads)
     config.listenerThreads.foreach(builder.listenerThreads)
     config.maxConcurrentLookupRequests.foreach(builder.maxConcurrentLookupRequests)
+    config.maxLookupRequests.foreach(builder.maxLookupRequests)
     config.maxNumberOfRejectedRequestPerConnection.foreach(builder.maxNumberOfRejectedRequestPerConnection)
+    config.operationTimeout.map(_.toSeconds.toInt).foreach(builder.operationTimeout(_, TimeUnit.SECONDS))
+    config.keepAliveInterval.map(_.toSeconds.toInt).foreach(builder.keepAliveInterval(_, TimeUnit.SECONDS))
+    config.statsInterval.map(_.toMillis).foreach(builder.statsInterval(_, TimeUnit.MILLISECONDS))
     config.tlsTrustCertsFilePath.foreach(builder.tlsTrustCertsFilePath)
     new DefaultPulsarClient(builder.build())
   }
@@ -58,10 +65,10 @@ class DefaultPulsarClient(client: org.apache.pulsar.client.api.PulsarClient) ext
     val builder = client.newProducer(schema)
     builder.topic(config.topic.name)
     config.encryptionKey.foreach(builder.addEncryptionKey)
+    config.batchingMaxMessages.foreach(builder.batchingMaxMessages)
+    config.batchingMaxPublishDelay.map(_.toMillis).foreach(builder.batchingMaxPublishDelay(_, TimeUnit.MILLISECONDS))
     config.blockIfQueueFull.foreach(builder.blockIfQueueFull)
     config.compressionType.foreach(builder.compressionType)
-    config.batchingMaxMessages.foreach(builder.batchingMaxMessages)
-    config.blockIfQueueFull.foreach(builder.blockIfQueueFull)
     config.cryptoFailureAction.foreach(builder.cryptoFailureAction)
     config.cryptoKeyReader.foreach(builder.cryptoKeyReader)
     config.enableBatching.foreach(builder.enableBatching)
@@ -72,6 +79,7 @@ class DefaultPulsarClient(client: org.apache.pulsar.client.api.PulsarClient) ext
     config.messageRouter.foreach(builder.messageRouter)
     config.messageRoutingMode.foreach(builder.messageRoutingMode)
     config.producerName.foreach(builder.producerName)
+    config.sendTimeout.map(_.toSeconds.toInt).foreach(builder.sendTimeout(_, TimeUnit.MILLISECONDS))
     new DefaultProducer(builder.create())
   }
 
@@ -91,7 +99,6 @@ class DefaultPulsarClient(client: org.apache.pulsar.client.api.PulsarClient) ext
     config.subscriptionType.foreach(builder.subscriptionType)
     builder.topics(config.topics.map(_.name).asJava)
     builder.subscriptionName(config.subscriptionName.name)
-    config.readCompacted.foreach(builder.readCompacted)
     new DefaultConsumer(builder.subscribe())
   }
 
@@ -102,6 +109,6 @@ class DefaultPulsarClient(client: org.apache.pulsar.client.api.PulsarClient) ext
     config.reader.foreach(builder.readerName)
     config.receiverQueueSize.foreach(builder.receiverQueueSize)
     config.readCompacted.foreach(builder.readCompacted)
-    new Reader(builder.create(), topic)
+    new DefaultReader(builder.create(), topic)
   }
 }

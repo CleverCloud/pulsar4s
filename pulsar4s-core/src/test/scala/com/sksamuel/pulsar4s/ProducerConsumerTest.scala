@@ -7,8 +7,6 @@ import org.scalatest.{FunSuite, Matchers}
 
 class ProducerConsumerTest extends FunSuite with Matchers {
 
-  import scala.concurrent.ExecutionContext.Implicits.global
-
   implicit val schema: Schema[String] = Schema.STRING
 
   test("producer should return messageId when sending a synchronous messsage") {

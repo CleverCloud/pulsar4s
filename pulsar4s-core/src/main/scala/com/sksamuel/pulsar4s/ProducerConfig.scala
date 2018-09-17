@@ -2,9 +2,12 @@ package com.sksamuel.pulsar4s
 
 import org.apache.pulsar.client.api._
 
+import scala.concurrent.duration.FiniteDuration
+
 case class ProducerConfig(topic: Topic,
                           encryptionKey: Option[String] = None,
                           batchingMaxMessages: Option[Int] = None,
+                          batchingMaxPublishDelay: Option[FiniteDuration],
                           blockIfQueueFull: Option[Boolean] = None,
                           cryptoFailureAction: Option[ProducerCryptoFailureAction] = None,
                           cryptoKeyReader: Option[CryptoKeyReader] = None,
@@ -16,6 +19,7 @@ case class ProducerConfig(topic: Topic,
                           messageRouter: Option[MessageRouter] = None,
                           messageRoutingMode: Option[MessageRoutingMode] = None,
                           producerName: Option[String] = None,
+                          sendTimeout: Option[FiniteDuration],
                           compressionType: Option[CompressionType] = None)
 
 case class ConsumerConfig(topics: Seq[Topic],
