@@ -7,6 +7,10 @@ import com.sksamuel.pulsar4s.{Consumer, ConsumerMessage, MessageId, Producer, Pr
 import scala.concurrent.Future
 
 package object streams {
-  def source[T](create: () => Consumer[T], seek: MessageId): Source[ConsumerMessage[T], Control] = Source.fromGraph(new PulsarSourceGraphStage(create, seek))
-  def sink[T](create: () => Producer[T]): Sink[ProducerMessage[T], Future[Done]] = Sink.fromGraph(new PulsarSinkGraphStage(create))
+
+  def source[T](create: () => Consumer[T], seek: MessageId): Source[ConsumerMessage[T], Control] =
+    Source.fromGraph(new PulsarSourceGraphStage(create, seek))
+
+  def sink[T](create: () => Producer[T]): Sink[ProducerMessage[T], Future[Done]] =
+    Sink.fromGraph(new PulsarSinkGraphStage(create))
 }

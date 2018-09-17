@@ -42,6 +42,7 @@ class PulsarSourceGraphStage[T](create: () => Consumer[T], seek: MessageId)
           case Success(msg) =>
             logger.debug(s"Msg received $msg")
             callback.invoke(msg)
+            consumer.acknowledge(msg.messageId)
           case Failure(e) =>
             logger.warn("Error when receiving message", e)
             failStage(e)
