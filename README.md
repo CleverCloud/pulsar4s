@@ -6,7 +6,7 @@ pulsar4s - Apache Pulsar Scala Client
 [<img src="https://img.shields.io/maven-central/v/com.sksamuel.pulsar4s/pulsar4s-core_2.12.svg?label=latest%20release%20for%202.12"/>](http://search.maven.org/#search%7Cga%7C1%7Ca%3A%22pulsar4s-core_2.12%22)
 
 pulsar4s is a concise, idiomatic, reactive, type safe Scala client for [Apache Pulsar](https://pulsar.apache.org/).
-The official Java client can of course be used, but this client provides better integration with Scala.
+The official Java client can of course be used, but this client provides better integration with Scala. As a simple wrapper over the Java client, we beneift from the reliability and performance of that client.
 
 * Supports different effects - [scala.concurrent.Future](https://docs.scala-lang.org/overviews/core/futures.html),
 [monix.eval.Task](https://monix.io/docs/2x/eval/task.html),
