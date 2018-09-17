@@ -51,9 +51,7 @@ object PulsarClient {
     new DefaultPulsarClient(builder.build())
   }
 
-  def apply(url: String): PulsarClient = {
-    new DefaultPulsarClient(org.apache.pulsar.client.api.PulsarClient.builder().serviceUrl(url).build())
-  }
+  def apply(serviceUrl: String): PulsarClient = apply(PulsarClientConfig(serviceUrl))
 }
 
 class DefaultPulsarClient(client: org.apache.pulsar.client.api.PulsarClient) extends PulsarClient with Logging {
