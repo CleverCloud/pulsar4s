@@ -21,7 +21,9 @@ The official Java client can of course be used, but this client provides better 
 
 The first step is to create a client attached to the pulsar cluster, providing the service url.
 
-`val client = PulsarClient("pulsar://localhost:6650")`
+```scala
+val client = PulsarClient("pulsar://localhost:6650")
+```
 
 Alternatively, you can use an instance of `PulsarClientConfig` if you need to set further configuration
 options such as authentication, tls, timeouts and so on.
