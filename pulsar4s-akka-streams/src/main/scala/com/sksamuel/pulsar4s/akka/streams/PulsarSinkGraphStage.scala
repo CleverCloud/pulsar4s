@@ -1,29 +1,36 @@
 package com.sksamuel.pulsar4s.akka.streams
 
-import akka.stream.stage.{AsyncCallback, GraphStage, GraphStageLogic, InHandler}
+import akka.Done
+import akka.stream.stage.{AsyncCallback, GraphStageLogic, GraphStageWithMaterializedValue, InHandler}
 import akka.stream.{Attributes, Inlet, SinkShape}
 import com.sksamuel.exts.Logging
-import com.sksamuel.pulsar4s.Producer
+import com.sksamuel.pulsar4s.{Producer, ProducerMessage}
 
-import scala.concurrent.ExecutionContextExecutor
+import scala.concurrent.{ExecutionContextExecutor, Future, Promise}
 import scala.util.{Failure, Success}
 
-class PulsarSinkGraphStage[T](create: () => Producer[T]) extends GraphStage[SinkShape[T]] with Logging {
+class PulsarSinkGraphStage[T](createFn: () => Producer[T])
+  extends GraphStageWithMaterializedValue[SinkShape[ProducerMessage[T]], Future[Done]]
+    with Logging {
 
-  private val in = Inlet.create[T]("pulsar.in")
-  override def shape: SinkShape[T] = SinkShape.of(in)
+  private val in = Inlet.create[ProducerMessage[T]]("pulsar.in")
+  override def shape: SinkShape[ProducerMessage[T]] = SinkShape.of(in)
 
-  override def createLogic(inheritedAttributes: Attributes): GraphStageLogic = {
-    new GraphStageLogic(shape) with InHandler {
+  override def createLogicAndMaterializedValue(inheritedAttributes: Attributes): (GraphStageLogic, Future[Done]) = {
+
+    val promise = Promise[Done]()
+
+    val logic: GraphStageLogic = new GraphStageLogic(shape) with InHandler {
       setHandler(in, this)
 
       implicit def context: ExecutionContextExecutor = super.materializer.executionContext
 
-      val producer = create()
-      var next: AsyncCallback[T] = _
+      var producer: Producer[T] = _
+      var next: AsyncCallback[ProducerMessage[T]] = _
       var error: Throwable = _
 
       override def preStart(): Unit = {
+        producer = createFn()
         next = getAsyncCallback { _ => pull(in) }
         pull(in)
       }
@@ -50,6 +57,16 @@ class PulsarSinkGraphStage[T](create: () => Producer[T]) extends GraphStage[Sink
         producer.flush()
         producer.close()
       }
+
+      override def onUpstreamFailure(ex: Throwable): Unit = {
+        promise.tryFailure(ex)
+      }
+
+      override def onUpstreamFinish(): Unit = {
+        promise.trySuccess(Done)
+      }
     }
+
+    (logic, promise.future)
   }
 }

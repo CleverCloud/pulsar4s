@@ -1,12 +1,14 @@
 import java.util.UUID
 
+import akka.Done
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Source
-import com.sksamuel.pulsar4s.{ConsumerConfig, ProducerConfig, PulsarClient, Subscription, Topic}
+import com.sksamuel.pulsar4s.{ConsumerConfig, ProducerConfig, ProducerMessage, PulsarClient, Subscription, Topic}
 import org.apache.pulsar.client.api.Schema
 import org.scalatest.{FunSuite, Matchers}
 
+import scala.concurrent.Await
 import scala.concurrent.duration._
 
 class PulsarSinkTest extends FunSuite with Matchers {
@@ -15,16 +17,16 @@ class PulsarSinkTest extends FunSuite with Matchers {
 
   implicit val system: ActorSystem = ActorSystem()
   implicit val materializer: ActorMaterializer = ActorMaterializer()
+  implicit val schema: Schema[String] = Schema.STRING
+
+  val client = PulsarClient("pulsar://localhost:6650")
 
   test("pulsar sink should write messages to pulsar cluster") {
-
-    implicit val schema: Schema[String] = Schema.STRING
-
-    val client = PulsarClient("pulsar://localhost:6650")
     val topic = Topic("persistent://sample/standalone/ns1/sinktest_" + UUID.randomUUID)
 
     val producerFn = () => client.producer(ProducerConfig(topic))
     Source.fromIterator(() => List("a", "b", "c", "d").iterator)
+      .map(string => ProducerMessage(string))
       .to(sink(producerFn))
       .run()
 
@@ -32,5 +34,16 @@ class PulsarSinkTest extends FunSuite with Matchers {
     val consumer = client.consumer(config)
     consumer.seekEarliest()
     Iterator.continually(consumer.receive(30.seconds).get).take(4).toList.flatten.size shouldBe 4
+  }
+
+  test("future done should be completed when stream completes") {
+    val topic = Topic("persistent://sample/standalone/ns1/sinktest_" + UUID.randomUUID)
+
+    val producerFn = () => client.producer(ProducerConfig(topic))
+    val f = Source.fromIterator(() => List("a").iterator)
+      .map(string => ProducerMessage(string))
+      .runWith(sink(producerFn))
+
+    Await.result(f, 15.seconds) shouldBe Done
   }
 }
