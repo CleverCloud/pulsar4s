@@ -25,10 +25,11 @@ class PulsarSinkTest extends FunSuite with Matchers {
     val topic = Topic("persistent://sample/standalone/ns1/sinktest_" + UUID.randomUUID)
 
     val producerFn = () => client.producer(ProducerConfig(topic))
-    Source.fromIterator(() => List("a", "b", "c", "d").iterator)
+    val f = Source.fromIterator(() => List("a", "b", "c", "d").iterator)
       .map(string => ProducerMessage(string))
-      .to(sink(producerFn))
-      .run()
+      .runWith(sink(producerFn))
+
+    Await.ready(f, 15.seconds)
 
     val config = ConsumerConfig(Seq(topic), Subscription.generate)
     val consumer = client.consumer(config)
