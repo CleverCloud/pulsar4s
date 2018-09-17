@@ -1,3 +1,5 @@
+package com.sksamuel.pulsar4s.akka.streams
+
 import java.util.UUID
 
 import akka.actor.ActorSystem
@@ -11,8 +13,6 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
 
 class PulsarSourceTest extends FunSuite with Matchers {
-
-  import com.sksamuel.pulsar4s.akka.streams._
 
   implicit val system: ActorSystem = ActorSystem()
   implicit val materializer: ActorMaterializer = ActorMaterializer()

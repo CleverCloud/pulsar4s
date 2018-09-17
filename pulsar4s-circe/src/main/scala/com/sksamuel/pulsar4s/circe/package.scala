@@ -29,7 +29,7 @@ package object circe {
 
   @implicitNotFound(
     "No Encoder for type ${T} found. Use 'import io.circe.generic.auto._' or provide an implicit Encoder instance ")
-  implicit def spraySchema[T: Manifest](implicit
+  implicit def circeSchema[T: Manifest](implicit
                                         encoder: Encoder[T],
                                         decoder: Decoder[T],
                                         printer: Json => String = Printer.noSpaces.pretty): Schema[T] = new Schema[T] {
