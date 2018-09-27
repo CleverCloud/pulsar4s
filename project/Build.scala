@@ -19,7 +19,7 @@ object Build extends AutoPlugin {
     val JacksonVersion            = "2.9.6"
     val Log4jVersion              = "2.10.0"
     val PlayJsonVersion           = "2.6.9"
-    val PulsarVersion             = "2.1.0-incubating"
+    val PulsarVersion             = "2.1.1-incubating"
     val ReactiveStreamsVersion    = "1.0.2"
     val Json4sVersion             = "3.6.1"
     val ScalaVersion              = "2.11.12"
