@@ -25,7 +25,7 @@ trait PulsarClient {
 
   def producer[T](config: ProducerConfig)(implicit schema: Schema[T]): Producer[T]
   def consumer[T](config: ConsumerConfig)(implicit schema: Schema[T]): Consumer[T]
-  def reader[T](topic: Topic, seek: MessageId, config: ReaderConfig)(implicit schema: Schema[T]): Reader[T]
+  def reader[T](config: ReaderConfig)(implicit schema: Schema[T]): Reader[T]
 }
 
 object PulsarClient {
@@ -95,18 +95,21 @@ class DefaultPulsarClient(client: org.apache.pulsar.client.api.PulsarClient) ext
     config.readCompacted.foreach(builder.readCompacted)
     config.subscriptionInitialPosition.foreach(builder.subscriptionInitialPosition)
     config.subscriptionType.foreach(builder.subscriptionType)
-    builder.topics(config.topics.map(_.name).asJava)
+    config.topicPattern.map(_.pattern).foreach(builder.topicsPattern)
+    if (config.topics.nonEmpty)
+      builder.topics(config.topics.map(_.name).asJava)
     builder.subscriptionName(config.subscriptionName.name)
     new DefaultConsumer(builder.subscribe())
   }
 
-  override def reader[T](topic: Topic, seek: MessageId, config: ReaderConfig)(implicit schema: Schema[T]): Reader[T] = {
-    logger.info(s"Creating read on $topic with config $config and seek $seek")
+  override def reader[T](config: ReaderConfig)(implicit schema: Schema[T]): Reader[T] = {
+    logger.info(s"Creating reader for config $config")
     val builder = client.newReader(schema)
-    builder.topic(topic.name)
+    builder.topic(config.topic.name)
     config.reader.foreach(builder.readerName)
+    builder.startMessageId(MessageId.toJava(config.seek))
     config.receiverQueueSize.foreach(builder.receiverQueueSize)
     config.readCompacted.foreach(builder.readCompacted)
-    new DefaultReader(builder.create(), topic)
+    new DefaultReader(builder.create(), config.topic)
   }
 }

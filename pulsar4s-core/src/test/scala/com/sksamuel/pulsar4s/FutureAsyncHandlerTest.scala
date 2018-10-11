@@ -29,7 +29,7 @@ class FutureAsyncHandlerTest extends FunSuite with Matchers with BeforeAndAfterA
   }
 
   test("async consumer should bring future effect into scope by default") {
-    val consumer = client.consumer(ConsumerConfig(Seq(topic), Subscription("mysub_" + UUID.randomUUID)))
+    val consumer = client.consumer(ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription("mysub_" + UUID.randomUUID)))
     consumer.seekEarliest()
     val f = consumer.receiveAsync
     new String(Await.result(f, Duration.Inf).data) shouldBe "wibble"

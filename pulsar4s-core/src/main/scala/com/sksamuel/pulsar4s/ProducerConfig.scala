@@ -3,6 +3,7 @@ package com.sksamuel.pulsar4s
 import org.apache.pulsar.client.api._
 
 import scala.concurrent.duration.FiniteDuration
+import scala.util.matching.Regex
 
 case class ProducerConfig(topic: Topic,
                           encryptionKey: Option[String] = None,
@@ -22,8 +23,9 @@ case class ProducerConfig(topic: Topic,
                           sendTimeout: Option[FiniteDuration] = None,
                           compressionType: Option[CompressionType] = None)
 
-case class ConsumerConfig(topics: Seq[Topic],
-                          subscriptionName: Subscription,
+case class ConsumerConfig(subscriptionName: Subscription,
+                          topics: Seq[Topic] = Nil,
+                          topicPattern: Option[Regex] = None,
                           consumerEventListener: Option[ConsumerEventListener] = None,
                           cryptoFailureAction: Option[ConsumerCryptoFailureAction] = None,
                           consumerName: Option[String] = None,
@@ -36,6 +38,8 @@ case class ConsumerConfig(topics: Seq[Topic],
                           subscriptionType: Option[SubscriptionType] = None,
                           readCompacted: Option[Boolean] = None)
 
-case class ReaderConfig(receiverQueueSize: Option[Int] = None,
+case class ReaderConfig(topic: Topic,
+                        seek: MessageId,
+                        receiverQueueSize: Option[Int] = None,
                         reader: Option[String] = None,
                         readCompacted: Option[Boolean] = None)

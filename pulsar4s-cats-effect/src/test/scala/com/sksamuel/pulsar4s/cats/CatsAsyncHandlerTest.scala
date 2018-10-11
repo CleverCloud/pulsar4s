@@ -27,7 +27,7 @@ class CatsAsyncHandlerTest extends FunSuite with Matchers with BeforeAndAfterAll
   }
 
   test("async consumer should use cats") {
-    val consumer = client.consumer(ConsumerConfig(Seq(topic), Subscription("mysub_" + UUID.randomUUID)))
+    val consumer = client.consumer(ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription("mysub_" + UUID.randomUUID)))
     consumer.seekEarliest()
     val t = consumer.receiveAsync
     new String(t.unsafeRunSync().data) shouldBe "wibble"

@@ -31,7 +31,7 @@ class PulsarSinkTest extends FunSuite with Matchers {
 
     Await.ready(f, 15.seconds)
 
-    val config = ConsumerConfig(Seq(topic), Subscription.generate)
+    val config = ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription.generate)
     val consumer = client.consumer(config)
     consumer.seekEarliest()
     Iterator.continually(consumer.receive(30.seconds).get).take(4).toList.flatten.size shouldBe 4

@@ -18,7 +18,7 @@ object Example {
   val intopic = Topic("persistent://sample/standalone/ns1/in")
   val outtopic = Topic("persistent://sample/standalone/ns1/out")
 
-  val consumerFn = () => client.consumer(ConsumerConfig(Seq(intopic), Subscription("mysub")))
+  val consumerFn = () => client.consumer(ConsumerConfig(topics = Seq(intopic), subscriptionName = Subscription("mysub")))
   val producerFn = () => client.producer(ProducerConfig(outtopic))
 
   val control = source(consumerFn, MessageId.earliest)

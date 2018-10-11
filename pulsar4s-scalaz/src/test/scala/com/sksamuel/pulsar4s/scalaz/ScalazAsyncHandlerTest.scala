@@ -27,7 +27,7 @@ class ScalazAsyncHandlerTest extends FunSuite with Matchers with BeforeAndAfterA
   }
 
   test("async consumer should use scalaz task") {
-    val consumer = client.consumer(ConsumerConfig(Seq(topic), Subscription.generate)
+    val consumer = client.consumer(ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription.generate)
     )
     consumer.seekEarliest()
     val t = consumer.receiveAsync

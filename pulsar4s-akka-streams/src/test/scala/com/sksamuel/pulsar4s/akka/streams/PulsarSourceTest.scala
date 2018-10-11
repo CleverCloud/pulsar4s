@@ -32,7 +32,7 @@ class PulsarSourceTest extends FunSuite with Matchers {
     producer.send("d")
     producer.close()
 
-    val createFn = () => client.consumer(ConsumerConfig(Seq(topic), Subscription.generate))
+    val createFn = () => client.consumer(ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription.generate))
     val f = source(createFn, MessageId.earliest)
       .take(4)
       .runWith(Sink.seq[ConsumerMessage[String]])
@@ -53,7 +53,7 @@ class PulsarSourceTest extends FunSuite with Matchers {
       }
     }
 
-    val createFn = () => client.consumer(ConsumerConfig(Seq(topic), Subscription.generate))
+    val createFn = () => client.consumer(ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription.generate))
     val (control, f) = source(createFn, MessageId.earliest)
       .toMat(Sink.seq[ConsumerMessage[String]])(Keep.both)
       .run()

@@ -32,7 +32,7 @@ class MonixAsyncHandlerTest extends FunSuite with Matchers with BeforeAndAfterAl
   }
 
   test("async consumer should use monix") {
-    val consumer = client.consumer(ConsumerConfig(Seq(topic), Subscription("mysub_" + UUID.randomUUID())))
+    val consumer = client.consumer(ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription("mysub_" + UUID.randomUUID())))
     consumer.seekEarliest()
     val t = consumer.receiveAsync
     val f = t.runAsync
