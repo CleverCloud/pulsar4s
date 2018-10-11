@@ -111,7 +111,11 @@ class DefaultConsumer[T](consumer: JConsumer[T]) extends Consumer[T] with Loggin
   override def seekAsync[F[_] : AsyncHandler](messageId: MessageId): F[Unit] =
     implicitly[AsyncHandler[F]].seekAsync(consumer, messageId)
 
-  override def close(): Unit = consumer.close()
+  override def close(): Unit = {
+    logger.info("Closing consumer")
+    consumer.close()
+  }
+
   override def closeAsync[F[_] : AsyncHandler]: F[Unit] = implicitly[AsyncHandler[F]].close(consumer)
 
   override def unsubscribe(): Unit = consumer.unsubscribe()

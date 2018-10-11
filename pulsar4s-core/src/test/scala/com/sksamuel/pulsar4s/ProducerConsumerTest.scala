@@ -1,9 +1,14 @@
 package com.sksamuel.pulsar4s
 
 import java.util.UUID
+import java.util.concurrent.{CountDownLatch, TimeUnit}
 
 import org.apache.pulsar.client.api.Schema
 import org.scalatest.{FunSuite, Matchers}
+
+import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
+import scala.util.Success
 
 class ProducerConsumerTest extends FunSuite with Matchers {
 
@@ -11,7 +16,7 @@ class ProducerConsumerTest extends FunSuite with Matchers {
 
   test("producer should return messageId when sending a synchronous messsage") {
     val client = PulsarClient("pulsar://localhost:6650")
-    val topic = Topic("persistent://sample/standalone/ns1/test_" + UUID.randomUUID())
+    val topic = Topic("persistent://sample/standalone/ns1/test_" + UUID.randomUUID)
 
     val producer = client.producer(ProducerConfig(topic))
     val messageId = producer.send("wibble").get
@@ -24,7 +29,7 @@ class ProducerConsumerTest extends FunSuite with Matchers {
   test("producer and consumer synchronous round trip") {
 
     val client = PulsarClient("pulsar://localhost:6650")
-    val topic = Topic("persistent://sample/standalone/ns1/test_" + UUID.randomUUID())
+    val topic = Topic("persistent://sample/standalone/ns1/test_" + UUID.randomUUID)
 
     val producer = client.producer(ProducerConfig(topic))
     val messageId = producer.send("wibble")
@@ -42,7 +47,7 @@ class ProducerConsumerTest extends FunSuite with Matchers {
   test("consumers on separate subscriptions should have replay") {
 
     val client = PulsarClient("pulsar://localhost:6650")
-    val topic = Topic("persistent://sample/standalone/ns1/test_" + UUID.randomUUID())
+    val topic = Topic("persistent://sample/standalone/ns1/test_" + UUID.randomUUID)
 
     val producer = client.producer(ProducerConfig(topic))
     producer.send("wibble")
@@ -65,5 +70,57 @@ class ProducerConsumerTest extends FunSuite with Matchers {
     consumer1.close()
     consumer2.close()
     client.close()
+  }
+
+  test("support patterns in consumer") {
+    val client = PulsarClient("pulsar://localhost:6650")
+
+    val random = UUID.randomUUID
+    val topic1 = Topic(s"persistent://public/default/multitest${random}_1")
+    val topic2 = Topic(s"persistent://public/default/multitest${random}_2")
+
+    implicit val executor: ExecutionContextExecutor = ExecutionContext.global
+
+    val latch = new CountDownLatch(1)
+
+    val producer1 = client.producer(ProducerConfig(topic1))
+    val producer2 = client.producer(ProducerConfig(topic2))
+
+    @volatile var producing = true
+
+    Future {
+      while (producing) {
+        producer1.send("wibble")
+        producer2.send("bibble")
+      }
+    }
+
+    Future {
+
+      // let the topics be created
+      Thread.sleep(2000)
+
+      val consumer = client.consumer(ConsumerConfig(
+        topicPattern = Some(s"persistent://public/default/multitest$random.*".r),
+        subscriptionName = Subscription.generate)
+      )
+
+      try {
+        val set = Iterator.continually(consumer.receive(1.second)).flatMap {
+          case Success(Some(msg)) => List(msg)
+          case _ => Nil
+        }.take(25).map(msg => new String(msg.data)).toSet[String]
+        if (set == Set("wibble", "bibble"))
+          latch.countDown()
+      } catch {
+        case t: Throwable =>
+          t.printStackTrace()
+      }
+    }
+
+    latch.await(15, TimeUnit.SECONDS) shouldBe true
+    producing = false
+    producer1.close()
+    producer2.close()
   }
 }

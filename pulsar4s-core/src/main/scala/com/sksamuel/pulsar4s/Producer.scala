@@ -2,12 +2,13 @@ package com.sksamuel.pulsar4s
 
 import java.io.Closeable
 
+import com.sksamuel.exts.Logging
 import org.apache.pulsar.client.api.{ProducerStats, TypedMessageBuilder, Producer => JProducer}
 
 import scala.language.{higherKinds, implicitConversions}
 import scala.util.Try
 
-trait Producer[T] extends Closeable {
+trait Producer[T] extends Closeable with Logging {
 
   /**
     * Returns the [[ProducerName]] which could have been specified
@@ -127,7 +128,11 @@ class DefaultProducer[T](producer: JProducer[T]) extends Producer[T] {
   override def flush(): Unit = producer.flush()
   override def flushAsync[F[_] : AsyncHandler]: F[Unit] = AsyncHandler[F].flush(producer)
 
-  override def close(): Unit = producer.close()
+  override def close(): Unit = {
+    logger.info("Closing producer")
+    producer.close()
+  }
+
   override def closeAsync[F[_] : AsyncHandler]: F[Unit] = AsyncHandler[F].close(producer)
 
   private def buildMessage(msg: ProducerMessage[T]): TypedMessageBuilder[T] = {

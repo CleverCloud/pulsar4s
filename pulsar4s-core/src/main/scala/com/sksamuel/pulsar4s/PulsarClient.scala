@@ -95,7 +95,9 @@ class DefaultPulsarClient(client: org.apache.pulsar.client.api.PulsarClient) ext
     config.readCompacted.foreach(builder.readCompacted)
     config.subscriptionInitialPosition.foreach(builder.subscriptionInitialPosition)
     config.subscriptionType.foreach(builder.subscriptionType)
-    config.topicPattern.map(_.pattern).foreach(builder.topicsPattern)
+    config.topicPattern.map(_.pattern).foreach { pattern =>
+      builder.topicsPattern(pattern)
+    }
     if (config.topics.nonEmpty)
       builder.topics(config.topics.map(_.name).asJava)
     builder.subscriptionName(config.subscriptionName.name)
