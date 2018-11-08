@@ -3,7 +3,7 @@ package com.sksamuel.pulsar4s
 import java.io.Closeable
 
 import com.sksamuel.exts.Logging
-import org.apache.pulsar.client.api.{ProducerStats, TypedMessageBuilder, Producer => JProducer}
+import org.apache.pulsar.client.api.{ProducerStats, TypedMessageBuilder}
 
 import scala.language.{higherKinds, implicitConversions}
 import scala.util.Try
@@ -135,7 +135,11 @@ class DefaultProducer[T](producer: JProducer[T]) extends Producer[T] {
 
   override def closeAsync[F[_] : AsyncHandler]: F[Unit] = AsyncHandler[F].close(producer)
 
-  private def buildMessage(msg: ProducerMessage[T]): TypedMessageBuilder[T] = {
+  private def buildMessage(msg: ProducerMessage[T]) = new ProducerMessageBuilder(producer).build(msg)
+}
+
+class ProducerMessageBuilder[T](producer: JProducer[T]) {
+  def build(msg: ProducerMessage[T]): TypedMessageBuilder[T] = {
     import scala.collection.JavaConverters._
     val builder = producer.newMessage().value(msg.value)
     msg.key.foreach(builder.key)

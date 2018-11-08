@@ -4,6 +4,7 @@ import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 import com.sksamuel.exts.Logging
+import org.apache.pulsar.client.api
 import org.apache.pulsar.client.api.Schema
 
 import scala.collection.JavaConverters._
@@ -22,10 +23,58 @@ object Subscription {
 
 trait PulsarClient {
   def close(): Unit
-
-  def producer[T](config: ProducerConfig)(implicit schema: Schema[T]): Producer[T]
-  def consumer[T](config: ConsumerConfig)(implicit schema: Schema[T]): Consumer[T]
+  def producer[T](config: ProducerConfig, interceptors: List[ProducerInterceptor[T]] = Nil)(implicit schema: Schema[T]): Producer[T]
+  def consumer[T](config: ConsumerConfig, interceptors: List[ConsumerInterceptor[T]] = Nil)(implicit schema: Schema[T]): Consumer[T]
   def reader[T](config: ReaderConfig)(implicit schema: Schema[T]): Reader[T]
+}
+
+trait ProducerInterceptor[T] extends AutoCloseable {
+  def beforeSend(message: ProducerMessage[T]): ProducerMessage[T]
+  def onAck(message: ProducerMessage[T], messageId: MessageId): Unit
+  def onError(message: ProducerMessage[T], t: Throwable): Unit
+}
+
+trait ConsumerInterceptor[T] extends AutoCloseable {
+  def beforeConsume(message: ConsumerMessage[T]): ConsumerMessage[T]
+  def onAck(messageId: MessageId): Unit
+  def onError(messageId: MessageId, throwable: Throwable): Unit
+  def onAckCumulative(messageId: MessageId): Unit
+  def onErrorCumulative(messageId: MessageId, throwable: Throwable): Unit
+}
+
+class ConsumerInterceptorAdapter[T](interceptor: ConsumerInterceptor[T]) extends api.ConsumerInterceptor[T] {
+
+  override def close(): Unit = interceptor.close()
+
+  override def beforeConsume(consumer: api.Consumer[T], message: JMessage[T]): JMessage[T] = {
+    interceptor.beforeConsume(ConsumerMessage.fromJava(message))
+    ???
+  }
+
+  override def onAcknowledge(consumer: api.Consumer[T], messageId: JMessageId, throwable: Throwable): Unit = {
+    if (throwable == null) interceptor.onAck(MessageId.fromJava(messageId)) else interceptor.onError(MessageId.fromJava(messageId), throwable)
+  }
+
+  override def onAcknowledgeCumulative(consumer: api.Consumer[T], messageId: JMessageId, throwable: Throwable): Unit = {
+    if (throwable == null) interceptor.onAckCumulative(MessageId.fromJava(messageId)) else interceptor.onErrorCumulative(MessageId.fromJava(messageId), throwable)
+  }
+}
+
+class ProducerInterceptorAdapter[T](interceptor: ProducerInterceptor[T]) extends api.ProducerInterceptor[T] {
+
+  override def close(): Unit = interceptor.close()
+
+  override def beforeSend(producer: api.Producer[T], msg: JMessage[T]): JMessage[T] = {
+    val intercepted = interceptor.beforeSend(ProducerMessage.fromJava(msg))
+    ???
+  }
+
+  override def onSendAcknowledgement(producer: api.Producer[T], msg: JMessage[T], messageId: JMessageId, throwable: Throwable): Unit = {
+    if (throwable == null)
+      interceptor.onAck(ProducerMessage.fromJava(msg), MessageId.fromJava(messageId))
+    else
+      interceptor.onError(ProducerMessage.fromJava(msg), throwable)
+  }
 }
 
 object PulsarClient {
@@ -58,7 +107,7 @@ class DefaultPulsarClient(client: org.apache.pulsar.client.api.PulsarClient) ext
 
   override def close(): Unit = client.close()
 
-  override def producer[T](config: ProducerConfig)(implicit schema: Schema[T]): Producer[T] = {
+  override def producer[T](config: ProducerConfig, interceptors: List[ProducerInterceptor[T]] = Nil)(implicit schema: Schema[T]): Producer[T] = {
     logger.info(s"Creating producer with config $config")
     val builder = client.newProducer(schema)
     builder.topic(config.topic.name)
@@ -78,10 +127,12 @@ class DefaultPulsarClient(client: org.apache.pulsar.client.api.PulsarClient) ext
     config.messageRoutingMode.foreach(builder.messageRoutingMode)
     config.producerName.foreach(builder.producerName)
     config.sendTimeout.map(_.toSeconds.toInt).foreach(builder.sendTimeout(_, TimeUnit.MILLISECONDS))
+    if (interceptors.nonEmpty)
+      builder.intercept(interceptors.map(new ProducerInterceptorAdapter(_)): _*)
     new DefaultProducer(builder.create())
   }
 
-  override def consumer[T](config: ConsumerConfig)(implicit schema: Schema[T]): Consumer[T] = {
+  override def consumer[T](config: ConsumerConfig, interceptors: List[ConsumerInterceptor[T]] = Nil)(implicit schema: Schema[T]): Consumer[T] = {
     logger.info(s"Creating consumer with config $config")
     val builder = client.newConsumer(schema)
     config.consumerEventListener.foreach(builder.consumerEventListener)
@@ -101,6 +152,8 @@ class DefaultPulsarClient(client: org.apache.pulsar.client.api.PulsarClient) ext
     if (config.topics.nonEmpty)
       builder.topics(config.topics.map(_.name).asJava)
     builder.subscriptionName(config.subscriptionName.name)
+    if (interceptors.nonEmpty)
+      builder.intercept(interceptors.map(new ConsumerInterceptorAdapter(_)): _*)
     new DefaultConsumer(builder.subscribe())
   }
 

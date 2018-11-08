@@ -28,8 +28,21 @@ trait ProducerMessage[T] {
 }
 
 object ProducerMessage {
+
+  import scala.collection.JavaConverters._
+
   def apply[T](t: T): ProducerMessage[T] = DefaultProducerMessage[T](None, t)
   def apply[T](key: String, t: T): ProducerMessage[T] = DefaultProducerMessage[T](Some(key), t)
+
+  def fromJava[T](msg: JMessage[T]): ProducerMessage[T] = {
+    DefaultProducerMessage[T](
+      Option(msg.getKey),
+      msg.getValue,
+      msg.getProperties.asScala.toMap,
+      Option(msg.getSequenceId).map(SequenceId.apply),
+      Option(msg.getEventTime).map(EventTime.apply)
+    )
+  }
 }
 
 case class DefaultProducerMessage[T](key: Option[String],
