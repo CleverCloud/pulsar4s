@@ -7,11 +7,10 @@ package object jackson {
   implicit def schema[T: Manifest]: Schema[T] = new Schema[T] {
     override def encode(t: T): Array[Byte] = JacksonSupport.mapper.writeValueAsBytes(t)
     override def decode(bytes: Array[Byte]): T = JacksonSupport.mapper.readValue[T](bytes)
-    override def getSchemaInfo: SchemaInfo = {
-      val info = new SchemaInfo()
-      info.setName(manifest[T].runtimeClass.getCanonicalName)
-      info.setType(SchemaType.JSON)
-      info
-    }
+    override def getSchemaInfo: SchemaInfo =
+      new SchemaInfo()
+        .setName(manifest[T].runtimeClass.getCanonicalName)
+        .setType(SchemaType.JSON)
+        .setSchema(Array(0))
   }
 }

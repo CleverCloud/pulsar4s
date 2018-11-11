@@ -35,11 +35,10 @@ package object circe {
                                         printer: Json => String = Printer.noSpaces.pretty): Schema[T] = new Schema[T] {
     override def encode(t: T): Array[Byte] = printer(encoder(t)).getBytes(StandardCharsets.UTF_8)
     override def decode(bytes: Array[Byte]): T = io.circe.jawn.decode[T](new String(bytes, StandardCharsets.UTF_8)).right.get
-    override def getSchemaInfo: SchemaInfo = {
-      val info = new SchemaInfo()
-      info.setName(manifest[T].runtimeClass.getCanonicalName)
-      info.setType(SchemaType.JSON)
-      info
-    }
+    override def getSchemaInfo: SchemaInfo =
+      new SchemaInfo()
+        .setName(manifest[T].runtimeClass.getCanonicalName)
+        .setType(SchemaType.JSON)
+        .setSchema(Array(0))
   }
 }
