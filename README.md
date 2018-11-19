@@ -164,7 +164,7 @@ We pass that function into the source method, providing the seek. Note the impor
 
 ```scala
 import com.sksamuel.pulsar4s.akka.streams._
-val pulsarSource = source(consumerFn, MessageId.earliest)
+val pulsarSource = source(consumerFn, Some(MessageId.earliest))
 ```
 
 The materialized value of the source is an instance of `Control` which provides a method called 'close' which can be used to stop consuming messages.
@@ -225,7 +225,7 @@ val outtopic = Topic("persistent://sample/standalone/ns1/out")
 val consumerFn = () => client.consumer(ConsumerConfig(Seq(intopic), Subscription("mysub")))
 val producerFn = () => client.producer(ProducerConfig(outtopic))
 
-val control = source(consumerFn, MessageId.earliest)
+val control = source(consumerFn, Some(MessageId.earliest))
                 .map { consumerMessage => ProducerMessage(consumerMessage.data) }
                 .to(sink(producerFn)).run()
 

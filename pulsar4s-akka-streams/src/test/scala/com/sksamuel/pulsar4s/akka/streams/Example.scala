@@ -21,7 +21,7 @@ object Example {
   val consumerFn = () => client.consumer(ConsumerConfig(topics = Seq(intopic), subscriptionName = Subscription("mysub")))
   val producerFn = () => client.producer(ProducerConfig(outtopic))
 
-  val control = source(consumerFn, MessageId.earliest)
+  val control = source(consumerFn, Some(MessageId.earliest))
     .map { consumerMessage => ProducerMessage(consumerMessage.data) }
     .to(sink(producerFn)).run()
 

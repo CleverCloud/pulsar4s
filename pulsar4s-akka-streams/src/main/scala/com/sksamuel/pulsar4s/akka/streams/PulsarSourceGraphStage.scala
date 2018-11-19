@@ -14,7 +14,7 @@ trait Control extends Closeable {
   def close(): Unit
 }
 
-class PulsarSourceGraphStage[T](create: () => Consumer[T], seek: MessageId)
+class PulsarSourceGraphStage[T](create: () => Consumer[T], seek: Option[MessageId])
   extends GraphStageWithMaterializedValue[SourceShape[ConsumerMessage[T]], Control]
     with Logging {
 
@@ -31,7 +31,7 @@ class PulsarSourceGraphStage[T](create: () => Consumer[T], seek: MessageId)
 
       override def preStart(): Unit = {
         consumer = create()
-        consumer.seek(seek)
+        seek foreach consumer.seek
         callback = getAsyncCallback(msg => push(out, msg))
       }
 
