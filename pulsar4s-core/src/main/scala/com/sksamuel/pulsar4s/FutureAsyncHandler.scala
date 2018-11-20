@@ -2,18 +2,22 @@ package com.sksamuel.pulsar4s
 
 import java.util.concurrent.CompletableFuture
 
-import scala.compat.java8.FutureConverters
-import scala.concurrent.{ExecutionContext, Future}
-import scala.language.implicitConversions
 import org.apache.pulsar.client.api
 import org.apache.pulsar.client.api.TypedMessageBuilder
 
-import scala.util.{Failure, Success, Try}
+import scala.compat.java8.FutureConverters
+import scala.compat.java8.FutureConverters.CompletionStageOps
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
 
 class FutureAsyncHandler(implicit ec: ExecutionContext) extends AsyncHandler[Future] {
 
-  implicit def completableToFuture[U](f: CompletableFuture[U]): Future[U] = FutureConverters.toScala(f)
-  implicit def voidCompletableToFuture(f: CompletableFuture[Void]): Future[Unit] = f.map(_ => ())
+  implicit class VoidCompletableFutureOps(val completableFuture: CompletableFuture[Void]) {
+    def toScala: Future[Unit] = new CompletionStageOps(completableFuture).toScala.map(_ => ())
+  }
 
   override def failed(e: Throwable): Future[Nothing] = Future.failed(e)
 
@@ -27,12 +31,13 @@ class FutureAsyncHandler(implicit ec: ExecutionContext) extends AsyncHandler[Fut
     FutureConverters.toScala(future).map(ConsumerMessage.fromJava)
   }
 
-  override def unsubscribeAsync(consumer: api.Consumer[_]): Future[Unit] = consumer.unsubscribeAsync()
+  override def unsubscribeAsync(consumer: api.Consumer[_]): Future[Unit] = consumer.unsubscribeAsync().toScala
 
-  override def close(producer: api.Producer[_]): Future[Unit] = producer.closeAsync()
-  override def close(consumer: api.Consumer[_]): Future[Unit] = consumer.closeAsync()
+  override def close(producer: api.Producer[_]): Future[Unit] = producer.closeAsync().toScala
+  override def close(consumer: api.Consumer[_]): Future[Unit] = consumer.closeAsync().toScala
 
-  override def seekAsync(consumer: api.Consumer[_], messageId: MessageId): Future[Unit] = consumer.seekAsync(messageId)
+  override def seekAsync(consumer: api.Consumer[_], messageId: MessageId): Future[Unit] =
+    consumer.seekAsync(messageId).toScala
 
   override def transform[A, B](f: Future[A])(fn: A => Try[B]): Future[B] = f.flatMap { a =>
     fn(a) match {
@@ -42,17 +47,17 @@ class FutureAsyncHandler(implicit ec: ExecutionContext) extends AsyncHandler[Fut
   }
 
   override def acknowledgeAsync[T](consumer: api.Consumer[T], messageId: MessageId): Future[Unit] =
-    consumer.acknowledgeAsync(messageId)
+    consumer.acknowledgeAsync(messageId).toScala
 
   override def acknowledgeCumulativeAsync[T](consumer: api.Consumer[T], messageId: MessageId): Future[Unit] =
-    consumer.acknowledgeCumulativeAsync(messageId)
+    consumer.acknowledgeCumulativeAsync(messageId).toScala
 
-  override def close(reader: api.Reader[_]): Future[Unit] = reader.closeAsync()
-  override def flush(producer: api.Producer[_]): Future[Unit] = producer.flushAsync()
+  override def close(reader: api.Reader[_]): Future[Unit] = reader.closeAsync().toScala
+  override def flush(producer: api.Producer[_]): Future[Unit] = producer.flushAsync().toScala
 
   override def nextAsync[T](reader: api.Reader[T]): Future[ConsumerMessage[T]] =
-    reader.readNextAsync().map(ConsumerMessage.fromJava)
+    reader.readNextAsync().toScala.map(ConsumerMessage.fromJava)
 
   override def send[T](builder: TypedMessageBuilder[T]): Future[MessageId] =
-    builder.sendAsync().map(MessageId.fromJava)
+    builder.sendAsync().toScala.map(MessageId.fromJava)
 }

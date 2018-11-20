@@ -11,6 +11,8 @@ import scala.collection.JavaConverters._
 
 case class Topic(name: String)
 
+case class TopicPartition(name: String)
+
 case class Subscription(name: String)
 
 object Subscription {

@@ -18,12 +18,13 @@ import org.apache.pulsar.client.api.SubscriptionInitialPosition
 import org.scalatest.FunSuite
 import org.scalatest.Matchers
 
-import scala.concurrent.duration._
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.Future
+import scala.concurrent.duration._
 
-class PulsarSourceTest extends FunSuite with Matchers {
+
+class PulsarCommittableSourceTest extends FunSuite with Matchers {
 
   implicit val system: ActorSystem = ActorSystem()
   implicit val materializer: ActorMaterializer = ActorMaterializer()
@@ -32,7 +33,7 @@ class PulsarSourceTest extends FunSuite with Matchers {
 
   val client = PulsarClient("pulsar://localhost:6650")
 
-  test("pulsar source should read messages from a cluster") {
+  test("pulsar committableSource should read messages from a cluster") {
 
     val topic = Topic("persistent://sample/standalone/ns1/sourcetest_" + UUID.randomUUID)
     val config = ProducerConfig(topic)
@@ -44,14 +45,35 @@ class PulsarSourceTest extends FunSuite with Matchers {
     producer.close()
 
     val createFn = () => client.consumer(ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription.generate))
-    val f = source(createFn, Some(MessageId.earliest))
+    val f = committableSource(createFn, Some(MessageId.earliest))
       .take(4)
+      .runWith(Sink.seq[CommittableMessage[String]])
+    val msgs = Await.result(f, 15.seconds)
+    msgs.map(_.message.value) shouldBe Seq("a", "b", "c", "d")
+  }
+
+  test("pulsar committableSource should acknowledge messages") {
+
+    val topic = Topic("persistent://sample/standalone/ns1/sourcetest_" + UUID.randomUUID)
+    val config = ProducerConfig(topic)
+    val producer = client.producer(config)
+    producer.send("a")
+    producer.send("b")
+    producer.send("c")
+    producer.send("d")
+    producer.close()
+
+    val createFn = () => client.consumer(ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription.generate))
+    val f = committableSource(createFn, Some(MessageId.earliest))
+      .take(4)
+      .mapAsync(10)(msg => msg.ack().map(_ => msg.message))
       .runWith(Sink.seq[ConsumerMessage[String]])
+
     val msgs = Await.result(f, 15.seconds)
     msgs.map(_.value) shouldBe Seq("a", "b", "c", "d")
   }
 
-  test("pulsar source should acknowledge messages on multiple topics") {
+  test("pulsar committableSource should acknowledge messages on multiple topics") {
 
     val topics = (0 to 2).map(_ => Topic("persistent://sample/standalone/ns1/sourcetest_" + UUID.randomUUID))
     val n = topics.size * 4
@@ -72,8 +94,9 @@ class PulsarSourceTest extends FunSuite with Matchers {
       subscriptionName = Subscription.generate,
       subscriptionInitialPosition = Some(SubscriptionInitialPosition.Earliest)
     ))
-    val f = source(createFn)
+    val f = committableSource(createFn)
       .take(n)
+      .mapAsync(10)(msg => msg.ack().map(_ => msg.message))
       .runWith(Sink.seq[ConsumerMessage[String]])
 
     val msgs = Await.result(f, 30.seconds)
@@ -95,7 +118,8 @@ class PulsarSourceTest extends FunSuite with Matchers {
     }
 
     val createFn = () => client.consumer(ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription.generate))
-    val (control, f) = source(createFn, Some(MessageId.earliest))
+    val (control, f) = committableSource(createFn, Some(MessageId.earliest))
+      .mapAsync(10)(msg => msg.ack().map(_ => msg.message))
       .toMat(Sink.seq[ConsumerMessage[String]])(Keep.both)
       .run()
 
