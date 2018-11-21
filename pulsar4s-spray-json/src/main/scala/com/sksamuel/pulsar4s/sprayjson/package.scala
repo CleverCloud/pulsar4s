@@ -15,11 +15,10 @@ package object sprayjson {
   implicit def spraySchema[T: Manifest](implicit w: RootJsonWriter[T], r: RootJsonReader[T]): Schema[T] = new Schema[T] {
     override def encode(t: T): Array[Byte] = w.write(t).compactPrint.getBytes(Charset.forName("UTF-8"))
     override def decode(bytes: Array[Byte]): T = r.read(new String(bytes, "UTF-8").parseJson)
-    override def getSchemaInfo: SchemaInfo = {
-      val info = new SchemaInfo()
-      info.setName(manifest[T].runtimeClass.getCanonicalName)
-      info.setType(SchemaType.JSON)
-      info
-    }
+    override def getSchemaInfo: SchemaInfo =
+      new SchemaInfo()
+        .setName(manifest[T].runtimeClass.getCanonicalName)
+        .setType(SchemaType.JSON)
+        .setSchema(Array(0))
   }
 }

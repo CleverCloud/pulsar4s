@@ -14,11 +14,10 @@ package object playjson {
   implicit def playSchema[T: Manifest](implicit w: Writes[T], r: Reads[T]): Schema[T] = new Schema[T] {
     override def encode(t: T): Array[Byte] = Json.stringify(Json.toJson(t)(w)).getBytes(Charset.forName("UTF-8"))
     override def decode(bytes: Array[Byte]): T = Json.parse(bytes).as[T]
-    override def getSchemaInfo: SchemaInfo = {
-      val info = new SchemaInfo()
-      info.setName(manifest[T].runtimeClass.getCanonicalName)
-      info.setType(SchemaType.JSON)
-      info
-    }
+    override def getSchemaInfo: SchemaInfo =
+      new SchemaInfo()
+        .setName(manifest[T].runtimeClass.getCanonicalName)
+        .setType(SchemaType.JSON)
+        .setSchema(Array(0))
   }
 }
