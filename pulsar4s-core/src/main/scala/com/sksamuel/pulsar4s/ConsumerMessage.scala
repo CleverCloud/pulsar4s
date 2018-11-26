@@ -1,5 +1,9 @@
 package com.sksamuel.pulsar4s
 
+import org.apache.pulsar.client.api.Schema
+import org.apache.pulsar.client.impl.MessageImpl
+import org.apache.pulsar.shade.io.netty.buffer.Unpooled
+
 import scala.collection.JavaConverters._
 import scala.language.implicitConversions
 
@@ -50,9 +54,12 @@ trait ConsumerMessage[T] {
     * then this will return an event time of 0.
     */
   def eventTime: EventTime
+
+  def topic: Topic
 }
 
 object ConsumerMessage {
+
   def fromJava[T](message: JMessage[T]): ConsumerMessage[T] = {
     require(message != null)
     DefaultConsumerMessage(
@@ -64,8 +71,14 @@ object ConsumerMessage {
       SequenceId(message.getSequenceId),
       ProducerName(message.getProducerName),
       PublishTime(message.getPublishTime),
-      EventTime(message.getEventTime)
+      EventTime(message.getEventTime),
+      Topic(message.getTopicName)
     )
+  }
+
+  def toJava[T](message: ConsumerMessage[T], schema: Schema[T]): JMessage[T] = {
+    require(message != null)
+    new MessageImpl(message.topic.name, MessageId.toJava(message.messageId).toString, message.props.asJava, Unpooled.wrappedBuffer(schema.encode(message.value)), schema)
   }
 }
 
@@ -77,4 +90,5 @@ case class DefaultConsumerMessage[T](key: Option[String],
                                      sequenceId: SequenceId,
                                      producerName: ProducerName,
                                      publishTime: PublishTime,
-                                     eventTime: EventTime) extends ConsumerMessage[T]
+                                     eventTime: EventTime,
+                                     topic: Topic) extends ConsumerMessage[T]

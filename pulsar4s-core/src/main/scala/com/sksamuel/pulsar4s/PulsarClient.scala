@@ -44,13 +44,13 @@ trait ConsumerInterceptor[T] extends AutoCloseable {
   def onErrorCumulative(messageId: MessageId, throwable: Throwable): Unit
 }
 
-class ConsumerInterceptorAdapter[T](interceptor: ConsumerInterceptor[T]) extends api.ConsumerInterceptor[T] {
+class ConsumerInterceptorAdapter[T](interceptor: ConsumerInterceptor[T], schema: Schema[T]) extends api.ConsumerInterceptor[T] {
 
   override def close(): Unit = interceptor.close()
 
   override def beforeConsume(consumer: api.Consumer[T], message: JMessage[T]): JMessage[T] = {
-    interceptor.beforeConsume(ConsumerMessage.fromJava(message))
-    ???
+    val intercepted = interceptor.beforeConsume(ConsumerMessage.fromJava(message))
+    ConsumerMessage.toJava(intercepted, schema)
   }
 
   override def onAcknowledge(consumer: api.Consumer[T], messageId: JMessageId, throwable: Throwable): Unit = {
@@ -62,13 +62,13 @@ class ConsumerInterceptorAdapter[T](interceptor: ConsumerInterceptor[T]) extends
   }
 }
 
-class ProducerInterceptorAdapter[T](interceptor: ProducerInterceptor[T]) extends api.ProducerInterceptor[T] {
+class ProducerInterceptorAdapter[T](interceptor: ProducerInterceptor[T], schema: Schema[T]) extends api.ProducerInterceptor[T] {
 
   override def close(): Unit = interceptor.close()
 
   override def beforeSend(producer: api.Producer[T], msg: JMessage[T]): JMessage[T] = {
     val intercepted = interceptor.beforeSend(ProducerMessage.fromJava(msg))
-    ???
+    ProducerMessage.toJava(intercepted, schema)
   }
 
   override def onSendAcknowledgement(producer: api.Producer[T], msg: JMessage[T], messageId: JMessageId, throwable: Throwable): Unit = {
@@ -130,7 +130,7 @@ class DefaultPulsarClient(client: org.apache.pulsar.client.api.PulsarClient) ext
     config.producerName.foreach(builder.producerName)
     config.sendTimeout.map(_.toSeconds.toInt).foreach(builder.sendTimeout(_, TimeUnit.MILLISECONDS))
     if (interceptors.nonEmpty)
-      builder.intercept(interceptors.map(new ProducerInterceptorAdapter(_)): _*)
+      builder.intercept(interceptors.map(new ProducerInterceptorAdapter(_, schema)): _*)
     new DefaultProducer(builder.create())
   }
 
@@ -155,7 +155,7 @@ class DefaultPulsarClient(client: org.apache.pulsar.client.api.PulsarClient) ext
       builder.topics(config.topics.map(_.name).asJava)
     builder.subscriptionName(config.subscriptionName.name)
     if (interceptors.nonEmpty)
-      builder.intercept(interceptors.map(new ConsumerInterceptorAdapter(_)): _*)
+      builder.intercept(interceptors.map(new ConsumerInterceptorAdapter(_, schema)): _*)
     new DefaultConsumer(builder.subscribe())
   }
 
