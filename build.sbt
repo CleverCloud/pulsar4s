@@ -32,8 +32,8 @@ lazy val cats_effect = Project("pulsar4s-cats-effect", file("pulsar4s-cats-effec
 lazy val scalaz = Project("pulsar4s-scalaz", file("pulsar4s-scalaz"))
   .settings(name := "pulsar4s-scalaz")
   .settings(libraryDependencies ++= Seq(
-    "org.scalaz" %% "scalaz-core" % "7.2.18",
-    "org.scalaz" %% "scalaz-concurrent" % "7.2.18"
+    "org.scalaz" %% "scalaz-core" % "7.2.27",
+    "org.scalaz" %% "scalaz-concurrent" % "7.2.27"
   ))
   .dependsOn(core)
 
