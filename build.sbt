@@ -25,7 +25,7 @@ lazy val core = Project("pulsar4s-core", file("pulsar4s-core"))
 lazy val cats_effect = Project("pulsar4s-cats-effect", file("pulsar4s-cats-effect"))
   .settings(name := "pulsar4s-cats-effect")
   .settings(libraryDependencies ++= Seq(
-    "org.typelevel" %% "cats-effect" % "0.8"
+    "org.typelevel" %% "cats-effect" % "0.10.1"
   ))
   .dependsOn(core)
 
