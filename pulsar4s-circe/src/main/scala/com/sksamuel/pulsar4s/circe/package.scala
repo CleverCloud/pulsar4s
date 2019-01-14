@@ -6,6 +6,9 @@ import io.circe.{Decoder, Encoder, Json, Printer}
 import org.apache.pulsar.client.api.Schema
 import org.apache.pulsar.common.schema.{SchemaInfo, SchemaType}
 
+import com.sksamuel.avro4s.{ AvroSchema, SchemaFor }
+
+
 import scala.annotation.implicitNotFound
 
 /**
@@ -30,15 +33,16 @@ package object circe {
   @implicitNotFound(
     "No Encoder for type ${T} found. Use 'import io.circe.generic.auto._' or provide an implicit Encoder instance ")
   implicit def circeSchema[T: Manifest](implicit
-                                        encoder: Encoder[T],
-                                        decoder: Decoder[T],
-                                        printer: Json => String = Printer.noSpaces.pretty): Schema[T] = new Schema[T] {
+    encoder: Encoder[T],
+    decoder: Decoder[T],
+    avroSchema: SchemaFor[T],
+    printer: Json => String = Printer.noSpaces.pretty): Schema[T] = new Schema[T] {
     override def encode(t: T): Array[Byte] = printer(encoder(t)).getBytes(StandardCharsets.UTF_8)
     override def decode(bytes: Array[Byte]): T = io.circe.jawn.decode[T](new String(bytes, StandardCharsets.UTF_8)).right.get
     override def getSchemaInfo: SchemaInfo =
       new SchemaInfo()
         .setName(manifest[T].runtimeClass.getCanonicalName)
         .setType(SchemaType.JSON)
-        .setSchema(Array(0))
+        .setSchema(avroSchema.schema.toString.getBytes)
   }
 }
