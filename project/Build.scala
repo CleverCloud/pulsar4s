@@ -16,7 +16,7 @@ object Build extends AutoPlugin {
     val CirceVersion              = "0.11.1"
     val CommonsIoVersion          = "2.4"
     val ExtsVersion               = "1.61.0"
-    val JacksonVersion            = "2.9.7"
+    val JacksonVersion            = "2.9.8"
     val Log4jVersion              = "2.11.1"
     val PlayJsonVersion           = "2.6.13"
     val PulsarVersion             = "2.2.1"
