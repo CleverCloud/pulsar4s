@@ -12,12 +12,13 @@ object Build extends AutoPlugin {
   object autoImport {
     val org                       = "com.sksamuel.pulsar4s"
     val AkkaStreamVersion         = "2.5.21"
-    val CatsVersion               = "1.4.0"
+    val CatsEffectVersion         = "1.2.0"
     val CirceVersion              = "0.11.1"
     val CommonsIoVersion          = "2.4"
     val ExtsVersion               = "1.61.0"
     val JacksonVersion            = "2.9.8"
     val Log4jVersion              = "2.11.2"
+    val MonixVersion              = "2.3.3"
     val PlayJsonVersion           = "2.7.1"
     val PulsarVersion             = "2.3.0"
     val ReactiveStreamsVersion    = "1.0.2"
@@ -38,7 +39,7 @@ object Build extends AutoPlugin {
     // appending everything from 'compileonly' to unmanagedClasspath
     unmanagedClasspath in Compile ++= update.value.select(configurationFilter("compileonly")),
     scalaVersion := ScalaVersion,
-    crossScalaVersions := Seq(ScalaVersion, "2.12.6"),
+    crossScalaVersions := Seq(ScalaVersion, "2.12.8"),
     publishMavenStyle := true,
     resolvers += Resolver.mavenLocal,
     fork in Test := true,
