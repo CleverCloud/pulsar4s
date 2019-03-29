@@ -26,6 +26,6 @@ object Example {
     .to(sink(producerFn)).run()
 
   Thread.sleep(10000)
-  control.close()
+  control.stop()
 
 }
