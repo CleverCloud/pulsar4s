@@ -1,17 +1,64 @@
 package com.sksamuel.pulsar4s.akka.streams
 
-import java.io.Closeable
-
-import akka.stream.stage.{AsyncCallback, GraphStageLogic, GraphStageWithMaterializedValue, OutHandler}
-import akka.stream.{Attributes, Outlet, SourceShape}
+import akka.Done
+import akka.stream.Attributes
+import akka.stream.Outlet
+import akka.stream.SourceShape
+import akka.stream.stage.AsyncCallback
+import akka.stream.stage.GraphStageLogic
+import akka.stream.stage.GraphStageWithMaterializedValue
+import akka.stream.stage.OutHandler
 import com.sksamuel.exts.Logging
-import com.sksamuel.pulsar4s.{Consumer, ConsumerMessage, MessageId}
+import com.sksamuel.pulsar4s.Consumer
+import com.sksamuel.pulsar4s.ConsumerMessage
+import com.sksamuel.pulsar4s.MessageId
+import org.apache.pulsar.client.api.ConsumerStats
 
 import scala.concurrent.ExecutionContext
-import scala.util.{Failure, Success}
+import scala.concurrent.Future
+import scala.util.Failure
+import scala.util.Success
 
-trait Control extends Closeable {
-  def close(): Unit
+trait Control {
+
+  /**
+   * Stop producing messages from the Pulsar consumer `Source` without shutting down the consumer.
+   */
+  def stop(): Unit
+
+  /**
+   * Shut down the Pulsar consumer, and shut down the `Source` if it is not already shut down.
+   */
+  def shutdown()(implicit ec: ExecutionContext): Future[Done]
+
+  /**
+   * Stop producing messages from the `Source`, wait for stream completion and shut down the consumer `Source` so that
+   * all consumed messages reach the end of the stream. Failures in stream completion will be propagated.
+   */
+  def drainAndShutdown[S](streamCompletion: Future[S])(implicit ec: ExecutionContext): Future[S] = {
+    stop()
+    streamCompletion
+      .recoverWith {
+        case e: Throwable =>
+          shutdown()
+            .flatMap(_ => streamCompletion)
+            .recoverWith {
+              case _: Throwable => throw e
+            }
+      }
+      .flatMap { result =>
+        shutdown()
+          .map(_ => result)
+          .recover {
+            case e: Throwable => throw e
+          }
+      }
+  }
+
+  /**
+   * Get stats for the Pulsar consumer backing the `Source`.
+   */
+  def stats: ConsumerStats
 }
 
 class PulsarSourceGraphStage[T](create: () => Consumer[T], seek: Option[MessageId])
@@ -23,7 +70,7 @@ class PulsarSourceGraphStage[T](create: () => Consumer[T], seek: Option[MessageI
 
   override def createLogicAndMaterializedValue(inheritedAttributes: Attributes): (GraphStageLogic, Control) = {
 
-    val logic: GraphStageLogic = new GraphStageLogic(shape) with OutHandler {
+    val logic: GraphStageLogic with Control = new GraphStageLogic(shape) with OutHandler with Control {
       setHandler(out, this)
 
       var consumer: Consumer[T] = _
@@ -49,15 +96,16 @@ class PulsarSourceGraphStage[T](create: () => Consumer[T], seek: Option[MessageI
         }
       }
 
-      override def postStop(): Unit = consumer.close()
-    }
+      override def stop(): Unit = completeStage()
 
-    val control = new Control {
-      override def close(): Unit = {
-        logic.completeStage()
+      override def shutdown()(implicit ec: ExecutionContext): Future[Done] = {
+        completeStage()
+        consumer.closeAsync.map(_ => Done)
       }
+
+      override def stats: ConsumerStats = consumer.stats
     }
 
-    (logic, control)
+    (logic, logic)
   }
 }

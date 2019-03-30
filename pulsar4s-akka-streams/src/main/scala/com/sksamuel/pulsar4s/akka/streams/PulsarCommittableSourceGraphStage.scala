@@ -12,6 +12,7 @@ import com.sksamuel.exts.Logging
 import com.sksamuel.pulsar4s.Consumer
 import com.sksamuel.pulsar4s.ConsumerMessage
 import com.sksamuel.pulsar4s.MessageId
+import org.apache.pulsar.client.api.ConsumerStats
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -30,7 +31,7 @@ class PulsarCommittableSourceGraphStage[T](create: () => Consumer[T], seek: Opti
   private val out = Outlet[CommittableMessage[T]]("pulsar.out")
   override def shape: SourceShape[CommittableMessage[T]] = SourceShape(out)
 
-  private class PulsarCommittableSourceLogic(shape: Shape) extends GraphStageLogic(shape) with OutHandler {
+  private class PulsarCommittableSourceLogic(shape: Shape) extends GraphStageLogic(shape) with OutHandler with Control {
     setHandler(out, this)
 
     var consumer: Consumer[T] = _
@@ -67,14 +68,20 @@ class PulsarCommittableSourceGraphStage[T](create: () => Consumer[T], seek: Opti
           failStage(e)
       }
     }
+
+    override def stop(): Unit = completeStage()
+
+    override def shutdown()(implicit ec: ExecutionContext): Future[Done] = {
+      completeStage()
+      consumer.closeAsync.map(_ => Done)
+    }
+
+    def stats: ConsumerStats = consumer.stats
   }
 
   override def createLogicAndMaterializedValue(inheritedAttributes: Attributes): (GraphStageLogic, Control) = {
     val logic = new PulsarCommittableSourceLogic(shape)
-    val control = new Control {
-      override def close(): Unit = logic.completeStage()
-    }
-    (logic, control)
+    (logic, logic)
   }
 }
 

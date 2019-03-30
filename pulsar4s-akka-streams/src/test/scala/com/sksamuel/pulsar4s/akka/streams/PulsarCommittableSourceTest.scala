@@ -104,7 +104,7 @@ class PulsarCommittableSourceTest extends FunSuite with Matchers {
     msgs.map(_.value).distinct shouldBe Seq("a", "b", "c", "d")
   }
 
-  test("materialized control value can shutdown the source") {
+  test("materialized control value can shut down the source") {
 
     val topic = Topic("persistent://sample/standalone/ns1/sourcetest_" + UUID.randomUUID)
     val config = ProducerConfig(topic)
@@ -125,11 +125,42 @@ class PulsarCommittableSourceTest extends FunSuite with Matchers {
 
     Future {
       Thread.sleep(1000)
-      control.close()
+      control.stop()
     }
 
     // unless the control shuts down the consumer, the source would never end, and this future would not complete
     val msgs = Await.result(f, 2.minutes)
+    msgs.size should be > 0
+
+    Await.result(control.shutdown(), 5.seconds)
+
+    producer.close()
+  }
+
+  test("materialized control value can drain and shut down the source") {
+
+    val topic = Topic("persistent://sample/standalone/ns1/sourcetest_" + UUID.randomUUID)
+    val config = ProducerConfig(topic)
+    val producer = client.producer(config)
+
+    Future {
+      while (true) {
+        producer.send("a")
+        Thread.sleep(500)
+      }
+    }
+
+    val createFn = () => client.consumer(ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription.generate))
+    val (control, f) = committableSource(createFn, Some(MessageId.earliest))
+      .mapAsync(10)(msg => msg.ack().map(_ => msg.message))
+      .toMat(Sink.seq[ConsumerMessage[String]])(Keep.both)
+      .run()
+
+    Thread.sleep(1000)
+    val drained = control.drainAndShutdown(f)
+
+    // unless the control shuts down the consumer, the source would never end, and this future would not complete
+    val msgs = Await.result(drained, 2.minutes)
     msgs.size should be > 0
 
     producer.close()
