@@ -1,6 +1,7 @@
 package com.sksamuel.pulsar4s
 
 import java.util.UUID
+import java.util.{Set => JSet}
 import java.util.concurrent.TimeUnit
 
 import com.sksamuel.exts.Logging
@@ -42,6 +43,8 @@ trait ConsumerInterceptor[T] extends AutoCloseable {
   def onError(messageId: MessageId, throwable: Throwable): Unit
   def onAckCumulative(messageId: MessageId): Unit
   def onErrorCumulative(messageId: MessageId, throwable: Throwable): Unit
+  def onNegativeAcksSend(messageIds: Set[MessageId]): Unit
+  def onAckTimeoutSend(messageIds: Set[MessageId]): Unit
 }
 
 class ConsumerInterceptorAdapter[T](interceptor: ConsumerInterceptor[T], schema: Schema[T]) extends api.ConsumerInterceptor[T] {
@@ -59,6 +62,14 @@ class ConsumerInterceptorAdapter[T](interceptor: ConsumerInterceptor[T], schema:
 
   override def onAcknowledgeCumulative(consumer: api.Consumer[T], messageId: JMessageId, throwable: Throwable): Unit = {
     if (throwable == null) interceptor.onAckCumulative(MessageId.fromJava(messageId)) else interceptor.onErrorCumulative(MessageId.fromJava(messageId), throwable)
+  }
+
+  override def onNegativeAcksSend(consumer: JConsumer[T], set: JSet[JMessageId]): Unit = {
+    interceptor.onNegativeAcksSend(set.asScala.map(MessageId.fromJava).toSet)
+  }
+
+  override def onAckTimeoutSend(consumer: JConsumer[T], set: JSet[JMessageId]): Unit = {
+    interceptor.onAckTimeoutSend(set.asScala.map(MessageId.fromJava).toSet)
   }
 }
 
@@ -88,7 +99,6 @@ object PulsarClient {
     config.authentication.foreach(builder.authentication)
     config.connectionsPerBroker.foreach(builder.connectionsPerBroker)
     config.enableTcpNoDelay.foreach(builder.enableTcpNoDelay)
-    config.enableTls.foreach(builder.enableTls)
     config.enableTlsHostnameVerification.foreach(builder.enableTlsHostnameVerification)
     config.ioThreads.foreach(builder.ioThreads)
     config.listenerThreads.foreach(builder.listenerThreads)
@@ -142,6 +152,7 @@ class DefaultPulsarClient(client: org.apache.pulsar.client.api.PulsarClient) ext
     config.cryptoFailureAction.foreach(builder.cryptoFailureAction)
     config.cryptoKeyReader.foreach(builder.cryptoKeyReader)
     config.maxTotalReceiverQueueSizeAcrossPartitions.foreach(builder.maxTotalReceiverQueueSizeAcrossPartitions)
+    config.negativeAckRedeliveryDelay.foreach { d => builder.negativeAckRedeliveryDelay(d._1, d._2) }
     config.patternAutoDiscoveryPeriod.foreach(builder.patternAutoDiscoveryPeriod)
     config.priorityLevel.foreach(builder.priorityLevel)
     config.receiverQueueSize.foreach(builder.receiverQueueSize)

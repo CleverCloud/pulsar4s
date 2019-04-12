@@ -5,6 +5,7 @@ import java.util.function.BiConsumer
 
 import com.sksamuel.pulsar4s.{AsyncHandler, ConsumerMessage, MessageId}
 import org.apache.pulsar.client.api
+import org.apache.pulsar.client.api.Consumer
 import org.apache.pulsar.client.api.{Reader, TypedMessageBuilder}
 import scalaz.concurrent.Task
 
@@ -13,10 +14,10 @@ import scala.util.{Failure, Success, Try}
 
 class ScalazAsyncHandler extends AsyncHandler[Task] {
 
-  implicit def completableVoidToTask(f: CompletableFuture[Void]): Task[Unit] =
+  implicit def completableVoidToTask(f: => CompletableFuture[Void]): Task[Unit] =
     completableToTask(f).map(_ => ())
 
-  implicit def completableToTask[T](f: CompletableFuture[T]): Task[T] = {
+  implicit def completableToTask[T](f: => CompletableFuture[T]): Task[T] = {
     Task.async[T] { k =>
       f.whenCompleteAsync(new BiConsumer[T, Throwable] {
         override def accept(t: T, e: Throwable): Unit = {
@@ -55,6 +56,9 @@ class ScalazAsyncHandler extends AsyncHandler[Task] {
 
   override def acknowledgeCumulativeAsync[T](consumer: api.Consumer[T], messageId: MessageId): Task[Unit] =
     consumer.acknowledgeCumulativeAsync(messageId)
+
+  override def negativeAcknowledgeAsync[T](consumer: Consumer[T], messageId: MessageId): Task[Unit] =
+    Task { consumer.negativeAcknowledge(messageId) }
 
   override def close(reader: Reader[_]): Task[Unit] = reader.closeAsync()
   override def close(producer: api.Producer[_]): Task[Unit] = producer.closeAsync()

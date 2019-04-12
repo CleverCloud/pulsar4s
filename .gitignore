@@ -28,3 +28,6 @@ esdata
 *.sublime-workspace
 
 data/standalone
+
+.metals
+.bloop

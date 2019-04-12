@@ -39,6 +39,6 @@ package object circe {
       new SchemaInfo()
         .setName(manifest[T].runtimeClass.getCanonicalName)
         .setType(SchemaType.JSON)
-        .setSchema(Array(0))
+        .setSchema("""{"type":"any"}""".getBytes("UTF-8"))
   }
 }

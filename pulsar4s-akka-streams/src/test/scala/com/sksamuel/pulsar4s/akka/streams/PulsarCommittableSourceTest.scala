@@ -73,6 +73,38 @@ class PulsarCommittableSourceTest extends FunSuite with Matchers {
     msgs.map(_.value) shouldBe Seq("a", "b", "c", "d")
   }
 
+  test("pulsar committableSource should negatively acknowledge messages") {
+
+    val topic = Topic("persistent://sample/standalone/ns1/sourcetest_" + UUID.randomUUID)
+    val config = ProducerConfig(topic)
+    val producer = client.producer(config)
+    producer.send("a")
+    producer.send("b")
+    producer.send("c")
+    producer.send("d")
+    producer.close()
+
+    val createFn = () => client.consumer(ConsumerConfig(
+      topics = Seq(topic),
+      subscriptionName = Subscription.generate,
+      negativeAckRedeliveryDelay = Some(5.seconds)
+    ))
+    val f = committableSource(createFn, Some(MessageId.earliest))
+      .take(4)
+      .mapAsync(10) { msg =>
+        if (msg.message.value < "c") {
+          msg.nack().map(_ => Vector.empty)
+        } else {
+          msg.ack().map(_ => Vector(msg.message))
+        }
+      }
+      .mapConcat(identity)
+      .runWith(Sink.seq[ConsumerMessage[String]])
+
+    val msgs = Await.result(f, 15.seconds)
+    msgs.map(_.value) shouldBe Seq("c", "d")
+  }
+
   test("pulsar committableSource should acknowledge messages on multiple topics") {
 
     val topics = (0 to 2).map(_ => Topic("persistent://sample/standalone/ns1/sourcetest_" + UUID.randomUUID))

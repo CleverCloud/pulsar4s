@@ -1,8 +1,12 @@
 package com.sksamuel.pulsar4s
 
+import java.time.Instant
+
 import org.apache.pulsar.client.api.Schema
 import org.apache.pulsar.client.impl.MessageImpl
 import org.apache.pulsar.shade.io.netty.buffer.Unpooled
+
+import scala.concurrent.duration.Duration
 
 trait ProducerMessage[T] {
 
@@ -29,6 +33,8 @@ trait ProducerMessage[T] {
   def replicationClusters: List[String]
 
   def disableReplication: Boolean
+
+  def deliverAt: Option[Long]
 }
 
 object ProducerMessage {
@@ -38,6 +44,18 @@ object ProducerMessage {
   def apply[T](t: T): ProducerMessage[T] = DefaultProducerMessage[T](None, t)
 
   def apply[T](key: String, t: T): ProducerMessage[T] = DefaultProducerMessage[T](Some(key), t)
+
+  def apply[T](t: T, deliverAt: Instant): ProducerMessage[T] =
+    DefaultProducerMessage[T](None, t, deliverAt = Some(deliverAt.getEpochSecond))
+
+  def apply[T](t: T, deliverAfter: Duration): ProducerMessage[T] =
+    DefaultProducerMessage[T](None, t, deliverAt = Some(System.currentTimeMillis + deliverAfter.toMillis))
+
+  def apply[T](key: String, t: T, deliverAt: Instant): ProducerMessage[T] =
+    DefaultProducerMessage[T](Some(key), t, deliverAt = Some(deliverAt.getEpochSecond))
+
+  def apply[T](key: String, t: T, deliverAfter: Duration): ProducerMessage[T] =
+    DefaultProducerMessage[T](Some(key), t, deliverAt = Some(System.currentTimeMillis + deliverAfter.toMillis))
 
   def fromJava[T](msg: JMessage[T]): ProducerMessage[T] = {
     DefaultProducerMessage[T](
@@ -50,7 +68,9 @@ object ProducerMessage {
   }
 
   def toJava[T](msg: ProducerMessage[T], schema: Schema[T]): JMessage[T] = {
-    new MessageImpl(null, null, msg.props.asJava, Unpooled.wrappedBuffer(schema.encode(msg.value)), schema)
+    val javaMsg = new MessageImpl(null, null, msg.props.asJava, Unpooled.wrappedBuffer(schema.encode(msg.value)), schema)
+    msg.deliverAt foreach javaMsg.getMessageBuilder.setDeliverAtTime
+    javaMsg
   }
 }
 
@@ -60,4 +80,5 @@ case class DefaultProducerMessage[T](key: Option[String],
                                      sequenceId: Option[SequenceId] = None,
                                      eventTime: Option[EventTime] = None,
                                      disableReplication: Boolean = false,
-                                     replicationClusters: List[String] = Nil) extends ProducerMessage[T]
+                                     replicationClusters: List[String] = Nil,
+                                     deliverAt: Option[Long] = None) extends ProducerMessage[T]
