@@ -24,7 +24,7 @@ object Build extends AutoPlugin {
     val ReactiveStreamsVersion    = "1.0.2"
     val Json4sVersion             = "3.6.6"
     val ScalaVersion              = "2.11.12"
-    val ScalatestVersion          = "3.0.7"
+    val ScalatestVersion          = "3.0.8"
     val Slf4jVersion              = "1.7.26"
     val SprayJsonVersion          = "1.3.5"
     val Java8CompatVersion        = "0.9.0"
