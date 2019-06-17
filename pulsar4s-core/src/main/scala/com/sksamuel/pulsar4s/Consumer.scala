@@ -57,6 +57,9 @@ trait Consumer[T] extends Closeable {
   def acknowledgeCumulative(message: ConsumerMessage[T]): Unit
   def acknowledgeCumulative(messageId: MessageId): Unit
 
+  def negativeAcknowledge(message: ConsumerMessage[T]): Unit = negativeAcknowledge(message.messageId)
+  def negativeAcknowledge(messageId: MessageId): Unit
+
   final def acknowledgeAsync[F[_] : AsyncHandler](message: ConsumerMessage[T]): F[Unit] =
     acknowledgeAsync(message.messageId)
 
@@ -91,6 +94,8 @@ class DefaultConsumer[T](consumer: JConsumer[T]) extends Consumer[T] with Loggin
 
   override def acknowledgeCumulative(message: ConsumerMessage[T]): Unit = consumer.acknowledgeCumulative(message.messageId)
   override def acknowledgeCumulative(messageId: MessageId): Unit = consumer.acknowledgeCumulative(messageId)
+
+  override def negativeAcknowledge(messageId: MessageId): Unit = consumer.negativeAcknowledge(messageId)
 
   override def acknowledgeAsync[F[_] : AsyncHandler](messageId: MessageId): F[Unit] =
     implicitly[AsyncHandler[F]].acknowledgeAsync(consumer, messageId)
