@@ -88,7 +88,6 @@ object PulsarClient {
     config.authentication.foreach(builder.authentication)
     config.connectionsPerBroker.foreach(builder.connectionsPerBroker)
     config.enableTcpNoDelay.foreach(builder.enableTcpNoDelay)
-    config.enableTls.foreach(builder.enableTls)
     config.enableTlsHostnameVerification.foreach(builder.enableTlsHostnameVerification)
     config.ioThreads.foreach(builder.ioThreads)
     config.listenerThreads.foreach(builder.listenerThreads)
