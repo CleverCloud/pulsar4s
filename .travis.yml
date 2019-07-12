@@ -21,8 +21,7 @@ before_install:
   - docker run -d -it -p 6650:6650 -p 8080:8080 -v $PWD/data:/pulsar/data apachepulsar/pulsar:2.4.0 bin/pulsar standalone --advertised-address 127.0.0.1
 
 scala:
-- 2.11.12
-- 2.12.6
+- 2.12.9
 
 script:
 - sbt clean test
