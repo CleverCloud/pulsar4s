@@ -54,6 +54,9 @@ trait Consumer[T] extends Closeable {
   def acknowledge(message: ConsumerMessage[T]): Unit = acknowledge(message.messageId)
   def acknowledge(messageId: MessageId): Unit
 
+  def negativeAcknowledge(message: ConsumerMessage[T]): Unit = negativeAcknowledge(message.messageId)
+  def negativeAcknowledge(messageId: MessageId): Unit
+
   def acknowledgeCumulative(message: ConsumerMessage[T]): Unit
   def acknowledgeCumulative(messageId: MessageId): Unit
 
@@ -61,6 +64,11 @@ trait Consumer[T] extends Closeable {
     acknowledgeAsync(message.messageId)
 
   def acknowledgeAsync[F[_] : AsyncHandler](messageId: MessageId): F[Unit]
+
+  final def negativeAcknowledgeAsync[F[_] : AsyncHandler](message: ConsumerMessage[T]): F[Unit] =
+    negativeAcknowledgeAsync(message.messageId)
+
+  def negativeAcknowledgeAsync[F[_] : AsyncHandler](messageId: MessageId): F[Unit]
 
   final def acknowledgeCumulativeAsync[F[_] : AsyncHandler](message: ConsumerMessage[T]): F[Unit] =
     acknowledgeCumulativeAsync(message.messageId)
@@ -88,15 +96,17 @@ class DefaultConsumer[T](consumer: JConsumer[T]) extends Consumer[T] with Loggin
   override def receiveAsync[F[_] : AsyncHandler]: F[ConsumerMessage[T]] = implicitly[AsyncHandler[F]].receive(consumer)
 
   override def acknowledge(messageId: MessageId): Unit = consumer.acknowledge(messageId)
-
   override def acknowledgeCumulative(message: ConsumerMessage[T]): Unit = consumer.acknowledgeCumulative(message.messageId)
   override def acknowledgeCumulative(messageId: MessageId): Unit = consumer.acknowledgeCumulative(messageId)
 
   override def acknowledgeAsync[F[_] : AsyncHandler](messageId: MessageId): F[Unit] =
     implicitly[AsyncHandler[F]].acknowledgeAsync(consumer, messageId)
-
   override def acknowledgeCumulativeAsync[F[_] : AsyncHandler](messageId: MessageId): F[Unit] =
     implicitly[AsyncHandler[F]].acknowledgeCumulativeAsync(consumer, messageId)
+
+  override def negativeAcknowledge(messageId: MessageId): Unit = consumer.negativeAcknowledge(messageId)
+  override def negativeAcknowledgeAsync[F[_]: AsyncHandler](messageId: MessageId): F[Unit] =
+    implicitly[AsyncHandler[F]].negativeAcknowledgeAsync(consumer, messageId)
 
   override def stats: ConsumerStats = consumer.getStats
   override def subscription = Subscription(consumer.getSubscription)

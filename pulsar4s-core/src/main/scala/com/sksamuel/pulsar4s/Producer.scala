@@ -142,6 +142,9 @@ class ProducerMessageBuilder[T](producer: JProducer[T]) {
   def build(msg: ProducerMessage[T]): TypedMessageBuilder[T] = {
     import scala.collection.JavaConverters._
     val builder = producer.newMessage().value(msg.value)
+    msg.deliverAt.foreach { da =>
+      builder.deliverAt(da)
+    }
     msg.key.foreach(builder.key)
     msg.sequenceId.map(_.value).foreach(builder.sequenceId)
     msg.eventTime.map(_.value).foreach(builder.eventTime)

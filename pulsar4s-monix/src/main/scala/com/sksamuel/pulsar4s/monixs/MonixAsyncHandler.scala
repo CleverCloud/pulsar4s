@@ -5,6 +5,7 @@ import java.util.concurrent.CompletableFuture
 import com.sksamuel.pulsar4s.{AsyncHandler, ConsumerMessage, MessageId}
 import monix.eval.Task
 import org.apache.pulsar.client.api
+import org.apache.pulsar.client.api.Consumer
 import org.apache.pulsar.client.api.{Reader, TypedMessageBuilder}
 
 import scala.compat.java8.FutureConverters
@@ -14,10 +15,10 @@ import scala.util.{Failure, Success, Try}
 
 class MonixAsyncHandler extends AsyncHandler[Task] {
 
-  implicit def completableTToFuture[T](f: CompletableFuture[T]): Future[T] =
+  implicit def completableTToFuture[T](f: => CompletableFuture[T]): Future[T] =
     FutureConverters.toScala(f)
 
-  implicit def completableVoidToTask(f: CompletableFuture[Void]): Task[Unit] =
+  implicit def completableVoidToTask(f: => CompletableFuture[Void]): Task[Unit] =
     Task.deferFuture(FutureConverters.toScala(f)).map(_ => ())
 
   override def failed(e: Throwable): Task[Nothing] = Task.raiseError(e)
@@ -57,6 +58,9 @@ class MonixAsyncHandler extends AsyncHandler[Task] {
 
   override def acknowledgeCumulativeAsync[T](consumer: api.Consumer[T], messageId: MessageId): Task[Unit] =
     consumer.acknowledgeCumulativeAsync(messageId)
+
+  override def negativeAcknowledgeAsync[T](consumer: Consumer[T], messageId: MessageId): Task[Unit] =
+    Task { consumer.negativeAcknowledge(messageId) }
 
   override def close(reader: Reader[_]): Task[Unit] = reader.closeAsync()
   override def flush(producer: api.Producer[_]): Task[Unit] = producer.flushAsync()

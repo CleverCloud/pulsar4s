@@ -13,8 +13,8 @@ import scala.util.{Failure, Success, Try}
 
 class CatsAsyncHandler extends AsyncHandler[IO] {
 
-  implicit def completableVoidToIO(f: CompletableFuture[Void]): IO[Unit] = completableToIO(f).map(_ => ())
-  implicit def completableToIO[T](f: CompletableFuture[T]): IO[T] =
+  implicit def completableVoidToIO(f: => CompletableFuture[Void]): IO[Unit] = completableToIO(f).map(_ => ())
+  implicit def completableToIO[T](f: => CompletableFuture[T]): IO[T] =
     IO.async[T] { k =>
       f.whenCompleteAsync(new BiConsumer[T, Throwable] {
         override def accept(t: T, e: Throwable): Unit = {
@@ -49,6 +49,9 @@ class CatsAsyncHandler extends AsyncHandler[IO] {
 
   override def acknowledgeCumulativeAsync[T](consumer: api.Consumer[T], messageId: MessageId): IO[Unit] =
     consumer.acknowledgeCumulativeAsync(messageId)
+
+  override def negativeAcknowledgeAsync[T](consumer: api.Consumer[T], messageId: MessageId): IO[Unit] =
+    IO { consumer.negativeAcknowledge(messageId) }
 
   override def close(reader: Reader[_]): IO[Unit] = reader.closeAsync()
   override def flush(producer: api.Producer[_]): IO[Unit] = producer.flushAsync()

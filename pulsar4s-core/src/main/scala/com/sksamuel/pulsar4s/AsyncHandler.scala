@@ -28,6 +28,7 @@ trait AsyncHandler[F[_]] {
   def unsubscribeAsync(consumer: api.Consumer[_]): F[Unit]
 
   def acknowledgeAsync[T](consumer: api.Consumer[T], messageId: MessageId): F[Unit]
+  def negativeAcknowledgeAsync[T](consumer: api.Consumer[T], messageId: MessageId): F[Unit]
   def acknowledgeCumulativeAsync[T](consumer: api.Consumer[T], messageId: MessageId): F[Unit]
 }
 

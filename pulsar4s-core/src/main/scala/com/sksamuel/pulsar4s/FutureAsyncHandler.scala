@@ -49,6 +49,9 @@ class FutureAsyncHandler(implicit ec: ExecutionContext) extends AsyncHandler[Fut
   override def acknowledgeAsync[T](consumer: api.Consumer[T], messageId: MessageId): Future[Unit] =
     consumer.acknowledgeAsync(messageId).toScala
 
+  override def negativeAcknowledgeAsync[T](consumer: JConsumer[T], messageId: MessageId): Future[Unit] =
+    Future.successful(consumer.negativeAcknowledge(messageId))
+
   override def acknowledgeCumulativeAsync[T](consumer: api.Consumer[T], messageId: MessageId): Future[Unit] =
     consumer.acknowledgeCumulativeAsync(messageId).toScala
 
