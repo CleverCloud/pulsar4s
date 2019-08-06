@@ -47,9 +47,10 @@ lazy val monix = Project("pulsar4s-monix", file("pulsar4s-monix"))
 lazy val jackson = Project("pulsar4s-jackson", file("pulsar4s-jackson"))
   .settings(name := "pulsar4s-jackson")
   .settings(libraryDependencies ++= Seq(
+    // For 2.9 releases see https://github.com/FasterXML/jackson/wiki/Jackson-Release-2.9#micro-patches
     "com.fasterxml.jackson.core"    % "jackson-core"          % JacksonVersion,
     "com.fasterxml.jackson.core"    % "jackson-annotations"   % JacksonVersion,
-    "com.fasterxml.jackson.core"    % "jackson-databind"      % JacksonVersion,
+    "com.fasterxml.jackson.core"    % "jackson-databind"      % s"$JacksonVersion.3",
     "com.fasterxml.jackson.module" %% "jackson-module-scala"  % JacksonVersion
   ))
   .dependsOn(core)
