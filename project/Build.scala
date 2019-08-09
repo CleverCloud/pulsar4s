@@ -11,7 +11,7 @@ object Build extends AutoPlugin {
 
   object autoImport {
     val org                       = "com.sksamuel.pulsar4s"
-    val AkkaStreamVersion         = "2.5.23"
+    val AkkaStreamVersion         = "2.5.24"
     val CatsEffectVersion         = "1.4.0"
     val CirceVersion              = "0.11.1"
     val CommonsIoVersion          = "2.4"
