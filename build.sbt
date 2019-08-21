@@ -9,6 +9,7 @@ lazy val root = Project("pulsar4s", file("."))
     monix,
     jackson,
     circe,
+    avro,
     playjson,
     sprayjson,
     json4s,
@@ -83,6 +84,13 @@ lazy val sprayjson = Project("pulsar4s-spray-json", file("pulsar4s-spray-json"))
   .settings(name := "pulsar4s-spray-json")
   .settings(libraryDependencies ++= Seq(
     "io.spray" %% "spray-json" % SprayJsonVersion
+  ))
+  .dependsOn(core)
+
+lazy val avro = Project("pulsar4s-avro", file("pulsar4s-avro"))
+  .settings(name := "pulsar4s-avro")
+  .settings(libraryDependencies ++= Seq(
+    "com.sksamuel.avro4s" %% "avro4s-core" % Avro4sVersion
   ))
   .dependsOn(core)
 
