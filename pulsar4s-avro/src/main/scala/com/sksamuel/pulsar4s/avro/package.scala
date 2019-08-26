@@ -39,7 +39,7 @@ package object avro {
 
     override def encode(t: T): Array[Byte] = {
       val baos = new ByteArrayOutputStream
-      val aos = AvroOutputStream.data[T].to(baos).build(schema)
+      val aos = AvroOutputStream.binary[T].to(baos).build(schema)
       aos.write(t)
       aos.flush()
       aos.close()
@@ -47,7 +47,7 @@ package object avro {
     }
     override def decode(bytes: Array[Byte]): T = {
       val bais = new ByteArrayInputStream(bytes)
-      val ais = AvroInputStream.data[T].from(bais).build(schema)
+      val ais = AvroInputStream.binary[T].from(bais).build(schema)
       val first = ais.iterator.next()
       ais.close()
       first
