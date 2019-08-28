@@ -23,7 +23,7 @@ object Build extends AutoPlugin {
     val PulsarVersion             = "2.4.0"
     val ReactiveStreamsVersion    = "1.0.2"
     val Json4sVersion             = "3.6.7"
-    val Avro4sVersion             = "3.0.0"
+    val Avro4sVersion             = "3.0.1"
     val ScalaVersion              = "2.12.9"
     val ScalatestVersion          = "3.0.8"
     val Slf4jVersion              = "1.7.28"
