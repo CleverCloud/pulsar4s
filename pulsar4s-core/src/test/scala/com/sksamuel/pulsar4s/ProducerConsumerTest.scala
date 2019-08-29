@@ -14,6 +14,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.Future
 import scala.util.Success
+import java.time.Instant
 
 class ProducerConsumerTest extends FunSuite with Matchers {
 
@@ -49,7 +50,7 @@ class ProducerConsumerTest extends FunSuite with Matchers {
     client.close()
   }
 
-  test("producer and consumer synchronous round trip with delays") {
+  test("producer and consumer synchronous round trip with fixed delay") {
 
     val client = PulsarClient("pulsar://localhost:6650")
     val topic = Topic("persistent://sample/standalone/ns1/test_" + UUID.randomUUID)
@@ -58,6 +59,35 @@ class ProducerConsumerTest extends FunSuite with Matchers {
 
     val producer = client.producer(ProducerConfig(topic))
     val messageId = producer.send(ProducerMessage[String]("wibble", 5.seconds))
+    producer.close()
+
+    val consumer = client.consumer(ConsumerConfig(
+      topics = Seq(topic),
+      subscriptionName = Subscription.generate,
+      subscriptionType = Some(SubscriptionType.Shared)
+    ))
+    consumer.seek(messageId.get)
+    val msg = consumer.receive
+    new String(msg.get.data) shouldBe "wibble"
+    consumer.close()
+
+    val end = System.currentTimeMillis()
+
+    assert(end - start >= 5000)
+
+    client.close()
+  }
+
+  test("producer and consumer synchronous round trip with deliverAt") {
+
+    val client = PulsarClient("pulsar://localhost:6650")
+    val topic = Topic("persistent://sample/standalone/ns1/test_" + UUID.randomUUID)
+
+    val start = System.currentTimeMillis
+
+    val producer = client.producer(ProducerConfig(topic))
+    val deliverAt = Instant.now.plusMillis(5.seconds.toMillis)
+    val messageId = producer.send(ProducerMessage[String]("wibble", deliverAt))
     producer.close()
 
     val consumer = client.consumer(ConsumerConfig(

@@ -46,13 +46,13 @@ object ProducerMessage {
   def apply[T](key: String, t: T): ProducerMessage[T] = DefaultProducerMessage[T](Some(key), t)
 
   def apply[T](t: T, deliverAt: Instant): ProducerMessage[T] =
-    DefaultProducerMessage[T](None, t, deliverAt = Some(deliverAt.getEpochSecond))
+    DefaultProducerMessage[T](None, t, deliverAt = Some(deliverAt.toEpochMilli))
 
   def apply[T](t: T, deliverAfter: Duration): ProducerMessage[T] =
     DefaultProducerMessage[T](None, t, deliverAt = Some(System.currentTimeMillis + deliverAfter.toMillis))
 
   def apply[T](key: String, t: T, deliverAt: Instant): ProducerMessage[T] =
-    DefaultProducerMessage[T](Some(key), t, deliverAt = Some(deliverAt.getEpochSecond))
+    DefaultProducerMessage[T](Some(key), t, deliverAt = Some(deliverAt.toEpochMilli))
 
   def apply[T](key: String, t: T, deliverAfter: Duration): ProducerMessage[T] =
     DefaultProducerMessage[T](Some(key), t, deliverAt = Some(System.currentTimeMillis + deliverAfter.toMillis))
