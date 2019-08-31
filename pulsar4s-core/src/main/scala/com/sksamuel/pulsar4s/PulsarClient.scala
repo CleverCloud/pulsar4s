@@ -138,7 +138,7 @@ class DefaultPulsarClient(client: org.apache.pulsar.client.api.PulsarClient) ext
     config.messageRouter.foreach(builder.messageRouter)
     config.messageRoutingMode.foreach(builder.messageRoutingMode)
     config.producerName.foreach(builder.producerName)
-    config.sendTimeout.map(_.toSeconds.toInt).foreach(builder.sendTimeout(_, TimeUnit.MILLISECONDS))
+    config.sendTimeout.map(_.toMillis.toInt).foreach(builder.sendTimeout(_, TimeUnit.MILLISECONDS))
     if (interceptors.nonEmpty)
       builder.intercept(interceptors.map(new ProducerInterceptorAdapter(_, schema)): _*)
     new DefaultProducer(builder.create())
