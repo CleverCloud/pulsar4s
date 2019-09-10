@@ -13,7 +13,7 @@ object Build extends AutoPlugin {
     val org                       = "com.sksamuel.pulsar4s"
     val AkkaStreamVersion         = "2.5.25"
     val CatsEffectVersion         = "1.4.0"
-    val CirceVersion              = "0.11.1"
+    val CirceVersion              = "0.12.0"
     val CommonsIoVersion          = "2.4"
     val ExtsVersion               = "1.61.1"
     val JacksonVersion            = "2.9.9"
