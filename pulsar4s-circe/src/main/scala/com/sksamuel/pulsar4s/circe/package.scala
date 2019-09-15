@@ -32,9 +32,10 @@ package object circe {
   implicit def circeSchema[T: Manifest](implicit
                                         encoder: Encoder[T],
                                         decoder: Decoder[T],
-                                        printer: Json => String = Printer.noSpaces.pretty): Schema[T] = new Schema[T] {
+                                        printer: Json => String = Printer.noSpaces.print): Schema[T] = new Schema[T] {
     override def encode(t: T): Array[Byte] = printer(encoder(t)).getBytes(StandardCharsets.UTF_8)
-    override def decode(bytes: Array[Byte]): T = io.circe.jawn.decode[T](new String(bytes, StandardCharsets.UTF_8)).right.get
+    override def decode(bytes: Array[Byte]): T =
+      io.circe.jawn.decode[T](new String(bytes, StandardCharsets.UTF_8)).fold(throw _, identity)
     override def getSchemaInfo: SchemaInfo =
       new SchemaInfo()
         .setName(manifest[T].runtimeClass.getCanonicalName)
