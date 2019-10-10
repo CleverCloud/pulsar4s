@@ -5,10 +5,11 @@ import java.util.UUID
 import com.sksamuel.pulsar4s._
 import org.apache.pulsar.client.api.Schema
 import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
+import _root_.cats.effect.IO
 
 class CatsAsyncHandlerTest extends FunSuite with Matchers with BeforeAndAfterAll {
 
-  import CatsAsyncHandler._
+  import CatsAsyncHandler.io._
 
   implicit val schema: Schema[String] = Schema.STRING
 
