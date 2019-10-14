@@ -159,9 +159,10 @@ class DefaultPulsarClient(client: org.apache.pulsar.client.api.PulsarClient) ext
     config.readCompacted.foreach(builder.readCompacted)
     config.subscriptionInitialPosition.foreach(builder.subscriptionInitialPosition)
     config.subscriptionType.foreach(builder.subscriptionType)
-    config.topicPattern.map(_.pattern).foreach { pattern =>
-      builder.topicsPattern(pattern)
-    }
+    config.topicPattern.map(_.pattern).foreach(builder.topicsPattern)
+    config.ackTimeout.foreach { t => builder.ackTimeout(t._1, t._2) }
+    config.ackTimeoutTickTime.foreach { tt => builder.ackTimeoutTickTime(tt._1, tt._2) }
+    config.acknowledgmentGroupTime.foreach { gt => builder.acknowledgmentGroupTime(gt._1, gt._2) }
     if (config.topics.nonEmpty)
       builder.topics(config.topics.map(_.name).asJava)
     builder.subscriptionName(config.subscriptionName.name)

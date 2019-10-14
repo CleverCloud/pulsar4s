@@ -37,7 +37,10 @@ case class ConsumerConfig(subscriptionName: Subscription,
                           receiverQueueSize: Option[Int] = None,
                           subscriptionInitialPosition: Option[SubscriptionInitialPosition] = None,
                           subscriptionType: Option[SubscriptionType] = None,
-                          readCompacted: Option[Boolean] = None)
+                          readCompacted: Option[Boolean] = None,
+                          ackTimeout: Option[FiniteDuration] = None,
+                          ackTimeoutTickTime: Option[FiniteDuration] = None,
+                          acknowledgmentGroupTime: Option[FiniteDuration] = None)
 
 case class ReaderConfig(topic: Topic,
                         seek: MessageId,
