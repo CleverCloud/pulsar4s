@@ -22,16 +22,16 @@ class CatsAsyncHandlerTest extends FunSuite with Matchers with BeforeAndAfterAll
     client.close()
   }
 
-  test("async producer should be able to use cats IO with the `io` import") {
-    import CatsAsyncHandler.io._
+  test("async producer should be able to use cats IO with the standard import") {
+    import CatsAsyncHandler._
     val producer = client.producer(ProducerConfig(topic))
     val t = producer.sendAsync("wibble")
     t.unsafeRunSync() should not be null
     producer.close()
   }
 
-  test("async consumer should be able to use cats IO with the `io` import") {
-    import CatsAsyncHandler.io._
+  test("async consumer should be able to use cats IO with the standard import") {
+    import CatsAsyncHandler._
     val consumer = client.consumer(ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription("mysub_" + UUID.randomUUID)))
     consumer.seekEarliest()
     val t = consumer.receiveAsync
@@ -40,14 +40,14 @@ class CatsAsyncHandlerTest extends FunSuite with Matchers with BeforeAndAfterAll
   }
 
   def pulsarResources[F[_]: Sync: AsyncHandler](c: PulsarClient, t: Topic, subscription: Subscription): Resource[F, (Producer[String], Consumer[String])] = {
-    val producer: Resource[F, Producer[String]] = Resource.make(Sync[F].delay { c.producer(ProducerConfig(t)) }){_.closeAsync[F]}
-    val consumer: Resource[F, Consumer[String]] = Resource.make(Sync[F].delay { c.consumer(ConsumerConfig(topics = Seq(t), subscriptionName = subscription)) }){_.closeAsync[F]}
+    val producer: Resource[F, Producer[String]] = Resource.make(Sync[F].delay { c.producer(ProducerConfig(t)) }){_.closeAsync}
+    val consumer: Resource[F, Consumer[String]] = Resource.make(Sync[F].delay { c.consumer(ConsumerConfig(topics = Seq(t), subscriptionName = subscription)) }){_.closeAsync}
     (producer, consumer).tupled
   }
 
   def asyncProgram[F[_]: Async: AsyncHandler](producer: Producer[String], consumer: Consumer[String], message: String): F[ConsumerMessage[String]] = for {
-    _      <- producer.sendAsync[F](message)
-    result <- consumer.receiveAsync[F]
+    _      <- producer.sendAsync(message)
+    result <- consumer.receiveAsync
   } yield result
 
   test("async client methods should work with any monad which implements Async - IO") {

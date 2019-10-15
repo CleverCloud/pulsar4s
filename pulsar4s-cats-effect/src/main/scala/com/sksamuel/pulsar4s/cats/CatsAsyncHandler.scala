@@ -13,7 +13,11 @@ import scala.language.higherKinds
 import scala.util.{Failure, Success, Try}
 
 
-object CatsAsyncHandler {
+object CatsAsyncHandler extends CatsAsyncHandlerLowPriority {
+  implicit val handler: AsyncHandler[IO] = asyncHandlerForCatsEffectAsync[IO]
+}
+
+trait CatsAsyncHandlerLowPriority {
   object CompletableFutureConverters {
     implicit class CompletableOps[T](f: => CompletableFuture[T]) {
       def toF[F[_]: Async]: F[T] =
@@ -71,7 +75,4 @@ object CatsAsyncHandler {
       builder.sendAsync().toF[F].map(MessageId.fromJava)
   }
 
-  object io {
-    implicit val handler: AsyncHandler[IO] = asyncHandlerForCatsEffectAsync[IO]
-  }
 }
