@@ -14,7 +14,7 @@ import scala.util.{Failure, Success, Try}
 
 
 object CatsAsyncHandler extends CatsAsyncHandlerLowPriority {
-  implicit val handler: AsyncHandler[IO] = asyncHandlerForCatsEffectAsync[IO]
+  implicit def handler: AsyncHandler[IO] = asyncHandlerForCatsEffectAsync[IO]
 }
 
 trait CatsAsyncHandlerLowPriority {
