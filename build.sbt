@@ -7,6 +7,7 @@ lazy val root = Project("pulsar4s", file("."))
     cats_effect,
     scalaz,
     monix,
+    zio,
     jackson,
     circe,
     avro,
@@ -44,6 +45,13 @@ lazy val monix = Project("pulsar4s-monix", file("pulsar4s-monix"))
   .settings(name := "pulsar4s-monix")
   .settings(libraryDependencies ++= Seq(
     "io.monix" %% "monix" % MonixVersion
+  ))
+  .dependsOn(core)
+
+lazy val zio = Project("pulsar4s-zio", file("pulsar4s-zio"))
+  .settings(name := "pulsar4s-zio")
+  .settings(libraryDependencies ++= Seq(
+    "dev.zio" %% "zio" % ZIOVersion
   ))
   .dependsOn(core)
 
