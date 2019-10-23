@@ -28,8 +28,8 @@ lazy val cats_effect = Project("pulsar4s-cats-effect", file("pulsar4s-cats-effec
   .settings(name := "pulsar4s-cats-effect")
   .settings(libraryDependencies ++= Seq(
     "org.typelevel" %% "cats-effect"      % CatsEffectVersion,
-    "io.monix"      %% "monix"            % MonixVersion      % Test,
-    "dev.zio"       %% "zio-interop-cats" % ZioInteropVersion % Test
+    "io.monix"      %% "monix"            % MonixVersion          % Test,
+    "dev.zio"       %% "zio-interop-cats" % ZIOInteropCatsVersion % Test
 ))
   .dependsOn(core)
 
@@ -51,7 +51,8 @@ lazy val monix = Project("pulsar4s-monix", file("pulsar4s-monix"))
 lazy val zio = Project("pulsar4s-zio", file("pulsar4s-zio"))
   .settings(name := "pulsar4s-zio")
   .settings(libraryDependencies ++= Seq(
-    "dev.zio" %% "zio" % ZIOVersion
+    "dev.zio" %% "zio" % ZIOVersion,
+    "dev.zio" %% "zio-interop-java" % ZIOInteropJavaVersion
   ))
   .dependsOn(core)
 

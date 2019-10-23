@@ -1,76 +1,66 @@
 package com.sksamuel.pulsar4s.zio
 
-import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CompletionStage
 
 import com.sksamuel.pulsar4s.{AsyncHandler, ConsumerMessage, MessageId}
 import org.apache.pulsar.client.api
 import org.apache.pulsar.client.api.{Consumer, Reader, TypedMessageBuilder}
-import zio.{Task, ZIO}
+import zio.interop.javaz._
+import zio.{Task, UIO}
 
-import scala.compat.java8.FutureConverters
-import scala.concurrent.Future
 import scala.language.implicitConversions
-import scala.util.{Failure, Success, Try}
+import scala.util.Try
 
 class ZioAsyncHandler extends AsyncHandler[Task] {
 
-  implicit def completableTToFuture[T](f: => CompletableFuture[T]): Future[T] =
-    FutureConverters.toScala(f)
-
-  implicit def completableVoidToTask(f: => CompletableFuture[Void]): Task[Unit] =
-    ZIO.fromFuture(_ => FutureConverters.toScala(f)).map(_ => ())
-
-  override def failed(e: Throwable): Task[Nothing] = ZIO.fail(e)
-
-  override def send[T](t: T, producer: api.Producer[T]): Task[MessageId] = {
-    ZIO.fromFuture { _ =>
-      val future = producer.sendAsync(t)
-      FutureConverters.toScala(future)
-    }.map { id => MessageId.fromJava(id) }
-  }
-
-  override def receive[T](consumer: api.Consumer[T]): Task[ConsumerMessage[T]] = {
-    ZIO.fromFuture { _ =>
-      val future = consumer.receiveAsync()
-      FutureConverters.toScala(future)
-    }.map(ConsumerMessage.fromJava)
-  }
-
-  def unsubscribeAsync(consumer: api.Consumer[_]): Task[Unit] = consumer.unsubscribeAsync()
-
-  override def close(producer: api.Producer[_]): Task[Unit] = producer.closeAsync()
-  override def close(consumer: api.Consumer[_]): Task[Unit] = consumer.closeAsync()
-
-  override def seekAsync(consumer: api.Consumer[_], messageId: MessageId): Task[Unit] =
-    consumer.seekAsync(messageId)
+  private def fromFuture[T](javaFutureUIO: UIO[CompletionStage[T]]): Task[T] =
+    javaFutureUIO.toZio
 
   override def transform[A, B](t: Task[A])(fn: A => Try[B]): Task[B] =
-    t.flatMap { a =>
-      fn(a) match {
-        case Success(b) => Task.succeed(b)
-        case Failure(e) => Task.fail(e)
-      }
-    }
+    t >>= { v => Task.fromTry(fn(v)) }
 
-  override def acknowledgeAsync[T](consumer: api.Consumer[T], messageId: MessageId): Task[Unit] =
-    consumer.acknowledgeAsync(messageId)
+  override def failed(e: Throwable): Task[Nothing] =
+    Task.fail(e)
 
-  override def acknowledgeCumulativeAsync[T](consumer: api.Consumer[T], messageId: MessageId): Task[Unit] =
-    consumer.acknowledgeCumulativeAsync(messageId)
-
-  override def negativeAcknowledgeAsync[T](consumer: Consumer[T], messageId: MessageId): Task[Unit] =
-    Task {
-      consumer.negativeAcknowledge(messageId)
-    }
-
-  override def close(reader: Reader[_]): Task[Unit] = reader.closeAsync()
-  override def flush(producer: api.Producer[_]): Task[Unit] = producer.flushAsync()
-
-  override def nextAsync[T](reader: Reader[T]): Task[ConsumerMessage[T]] =
-    Task.fromFuture(_ => reader.readNextAsync()).map(ConsumerMessage.fromJava)
+  override def send[T](t: T, producer: api.Producer[T]): Task[MessageId] =
+    fromFuture(UIO(producer.sendAsync(t))).map(MessageId.fromJava)
 
   override def send[T](builder: TypedMessageBuilder[T]): Task[MessageId] =
-    Task.fromFuture(_ => builder.sendAsync()).map(MessageId.fromJava)
+    fromFuture(UIO(builder.sendAsync())).map(MessageId.fromJava)
+
+  override def receive[T](consumer: api.Consumer[T]): Task[ConsumerMessage[T]] =
+    fromFuture(UIO(consumer.receiveAsync())) >>= (v => Task(ConsumerMessage.fromJava(v)))
+
+  override def close(producer: api.Producer[_]): Task[Unit] =
+    fromFuture(UIO(producer.closeAsync())).unit
+
+  override def close(consumer: api.Consumer[_]): Task[Unit] =
+    fromFuture(UIO(consumer.closeAsync())).unit
+
+  override def close(reader: Reader[_]): Task[Unit] =
+    fromFuture(UIO(reader.closeAsync())).unit
+
+  override def flush(producer: api.Producer[_]): Task[Unit] =
+    fromFuture(UIO(producer.flushAsync())).unit
+
+  override def seekAsync(consumer: api.Consumer[_], messageId: MessageId): Task[Unit] =
+    fromFuture(UIO(consumer.seekAsync(messageId))).unit
+
+  override def nextAsync[T](reader: Reader[T]): Task[ConsumerMessage[T]] =
+    fromFuture(UIO(reader.readNextAsync())) >>= (v => Task(ConsumerMessage.fromJava(v)))
+
+  override def unsubscribeAsync(consumer: api.Consumer[_]): Task[Unit] =
+    fromFuture(UIO(consumer.unsubscribeAsync())).unit
+
+  override def acknowledgeAsync[T](consumer: api.Consumer[T], messageId: MessageId): Task[Unit] =
+    fromFuture(UIO(consumer.acknowledgeAsync(messageId))).unit
+
+  override def negativeAcknowledgeAsync[T](consumer: Consumer[T], messageId: MessageId): Task[Unit] =
+    Task(consumer.negativeAcknowledge(messageId))
+
+  override def acknowledgeCumulativeAsync[T](consumer: api.Consumer[T], messageId: MessageId): Task[Unit] =
+    fromFuture(UIO(consumer.acknowledgeCumulativeAsync(messageId))).unit
+
 }
 
 object ZioAsyncHandler {
