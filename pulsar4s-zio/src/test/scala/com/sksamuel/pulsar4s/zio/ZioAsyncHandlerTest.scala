@@ -23,7 +23,7 @@ class ZioAsyncHandlerTest extends FunSuite with Matchers with BeforeAndAfterAll 
     client.close()
   }
 
-  test("async producer should use monix") {
+  test("async producer should use zio") {
     val producer = client.producer(ProducerConfig(topic))
     val t = producer.sendAsync("wibble")
     val f = unsafeRunToFuture(t)
