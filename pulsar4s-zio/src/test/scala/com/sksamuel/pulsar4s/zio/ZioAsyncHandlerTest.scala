@@ -31,7 +31,7 @@ class ZioAsyncHandlerTest extends FunSuite with Matchers with BeforeAndAfterAll 
     producer.close()
   }
 
-  test("async consumer should use monix") {
+  test("async consumer should use zio") {
     val consumer = client.consumer(ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription("mysub_" + UUID.randomUUID())))
     consumer.seekEarliest()
     val t = consumer.receiveAsync
