@@ -13,7 +13,7 @@ object Build extends AutoPlugin {
     val org                       = "com.sksamuel.pulsar4s"
     val AkkaStreamVersion         = "2.5.26"
     val CatsEffectVersion         = "2.0.0"
-    val CirceVersion              = "0.12.2"
+    val CirceVersion              = "0.12.3"
     val CommonsIoVersion          = "2.4"
     val ExtsVersion               = "1.61.1"
     val JacksonVersion            = "2.9.9"
@@ -29,8 +29,8 @@ object Build extends AutoPlugin {
     val Slf4jVersion              = "1.7.28"
     val SprayJsonVersion          = "1.3.5"
     val Java8CompatVersion        = "0.9.0"
-    val ZioInteropVersion         = "2.0.0.0-RC5"
     val ZIOVersion             = "1.0.0-RC15"
+    val ZioInteropVersion         = "2.0.0.0-RC6"
   }
 
   import autoImport._
