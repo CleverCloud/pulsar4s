@@ -31,7 +31,7 @@ object Build extends AutoPlugin {
     val Java8CompatVersion        = "0.9.0"
     val ZIOVersion                = "1.0.0-RC15"
     val ZIOInteropJavaVersion     = "1.1.0.0-RC5"
-    val ZIOInteropCatsVersion     = "2.0.0.0-RC6"
+    val ZioInteropVersion         = "2.0.0.0-RC7"
   }
 
   import autoImport._
