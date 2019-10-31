@@ -29,7 +29,7 @@ object Build extends AutoPlugin {
     val Slf4jVersion              = "1.7.28"
     val SprayJsonVersion          = "1.3.5"
     val Java8CompatVersion        = "0.9.0"
-    val ZIOVersion                = "1.0.0-RC15"
+    val ZIOVersion                = "1.0.0-RC16"
     val ZIOInteropJavaVersion     = "1.1.0.0-RC5"
     val ZIOInteropCatsVersion     = "2.0.0.0-RC7"
   }
