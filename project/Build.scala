@@ -26,7 +26,7 @@ object Build extends AutoPlugin {
     val Avro4sVersion             = "3.0.2"
     val ScalaVersion              = "2.13.1"
     val ScalatestVersion          = "3.0.8"
-    val Slf4jVersion              = "1.7.28"
+    val Slf4jVersion              = "1.7.29"
     val SprayJsonVersion          = "1.3.5"
     val Java8CompatVersion        = "0.9.0"
     val ZIOVersion                = "1.0.0-RC15"
