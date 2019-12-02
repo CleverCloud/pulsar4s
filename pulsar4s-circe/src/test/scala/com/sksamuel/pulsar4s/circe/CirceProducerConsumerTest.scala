@@ -4,10 +4,10 @@ import java.util.UUID
 
 import com.sksamuel.pulsar4s._
 import io.circe.generic.auto._
-import org.scalatest.FunSuite
-import org.scalatest.Matchers
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
-class CirceProducerConsumerTest extends FunSuite with Matchers {
+class CirceProducerConsumerTest extends AnyFunSuite with Matchers {
 
   test("producer and consumer synchronous round trip") {
 

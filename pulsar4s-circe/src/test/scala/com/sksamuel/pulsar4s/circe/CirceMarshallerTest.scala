@@ -1,9 +1,10 @@
 package com.sksamuel.pulsar4s.circe
 
 import org.apache.pulsar.client.api.Schema
-import org.scalatest.{Matchers, WordSpec}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 
-class CirceMarshallerTest extends WordSpec with Matchers {
+class CirceMarshallerTest extends AnyWordSpec with Matchers {
 
   import io.circe.generic.auto._
 
