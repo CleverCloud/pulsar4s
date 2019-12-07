@@ -6,8 +6,6 @@ import java.util.concurrent.TimeUnit
 
 import org.apache.pulsar.client.api.Schema
 import org.apache.pulsar.client.api.SubscriptionType
-import org.scalatest.FunSuite
-import org.scalatest.Matchers
 
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
@@ -15,8 +13,10 @@ import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.Future
 import scala.util.Success
 import java.time.Instant
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
-class ProducerConsumerTest extends FunSuite with Matchers {
+class ProducerConsumerTest extends AnyFunSuite with Matchers {
 
   implicit val schema: Schema[String] = Schema.STRING
 

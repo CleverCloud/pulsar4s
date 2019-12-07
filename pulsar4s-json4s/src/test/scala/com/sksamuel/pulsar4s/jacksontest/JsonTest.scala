@@ -2,12 +2,13 @@ package com.sksamuel.pulsar4s.jacksontest
 
 import org.apache.pulsar.client.api.Schema
 import org.json4s.DefaultFormats
-import org.scalatest.{Matchers, WordSpec}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 
 case class Place(id: Int, name: String)
 case class Cafe(name: String, place: Place)
 
-class Json4sTest extends WordSpec with Matchers {
+class Json4sTest extends AnyWordSpec with Matchers {
 
   implicit val formats: DefaultFormats.type = DefaultFormats
 

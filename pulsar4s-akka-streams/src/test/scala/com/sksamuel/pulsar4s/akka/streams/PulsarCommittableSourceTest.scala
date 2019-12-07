@@ -15,16 +15,16 @@ import com.sksamuel.pulsar4s.Subscription
 import com.sksamuel.pulsar4s.Topic
 import org.apache.pulsar.client.api.Schema
 import org.apache.pulsar.client.api.SubscriptionInitialPosition
-import org.scalatest.FunSuite
-import org.scalatest.Matchers
 
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
 
-class PulsarCommittableSourceTest extends FunSuite with Matchers {
+class PulsarCommittableSourceTest extends AnyFunSuite with Matchers {
 
   implicit val system: ActorSystem = ActorSystem()
   implicit val materializer: ActorMaterializer = ActorMaterializer()
