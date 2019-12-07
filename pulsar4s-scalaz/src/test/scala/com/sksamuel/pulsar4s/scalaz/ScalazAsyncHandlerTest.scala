@@ -4,9 +4,11 @@ import java.util.UUID
 
 import com.sksamuel.pulsar4s._
 import org.apache.pulsar.client.api.Schema
-import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
-class ScalazAsyncHandlerTest extends FunSuite with Matchers with BeforeAndAfterAll {
+class ScalazAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
 
   implicit val schema: Schema[String] = Schema.STRING
 

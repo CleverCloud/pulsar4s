@@ -1,12 +1,13 @@
 package com.sksamuel.pulsar4s.jacksontest
 
 import org.apache.pulsar.client.api.Schema
-import org.scalatest.{Matchers, WordSpec}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 
 case class Place(id: Int, name: String)
 case class Cafe(name: String, place: Place)
 
-class JacksonTest extends WordSpec with Matchers {
+class JacksonTest extends AnyWordSpec with Matchers {
 
   import com.sksamuel.pulsar4s.jackson._
 

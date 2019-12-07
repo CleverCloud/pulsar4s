@@ -4,10 +4,12 @@ import java.util.UUID
 
 import com.sksamuel.pulsar4s.{ConsumerConfig, ProducerConfig, PulsarClient, Subscription, Topic}
 import org.apache.pulsar.client.api.Schema
-import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
+import org.scalatest.BeforeAndAfterAll
 import zio.DefaultRuntime
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
-class ZioAsyncHandlerTest extends FunSuite with Matchers with BeforeAndAfterAll with DefaultRuntime {
+class ZioAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with DefaultRuntime {
 
   import ZioAsyncHandler._
 

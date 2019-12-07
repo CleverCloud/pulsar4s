@@ -3,12 +3,14 @@ package com.sksamuel.pulsar4s
 import java.util.UUID
 
 import org.apache.pulsar.client.api.Schema
-import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
+import org.scalatest.BeforeAndAfterAll
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
-class FutureAsyncHandlerTest extends FunSuite with Matchers with BeforeAndAfterAll {
+class FutureAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
 
   import scala.concurrent.ExecutionContext.Implicits.global
 

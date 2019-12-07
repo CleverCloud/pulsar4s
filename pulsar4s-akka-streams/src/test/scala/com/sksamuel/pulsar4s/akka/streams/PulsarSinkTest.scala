@@ -8,12 +8,13 @@ import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Source
 import com.sksamuel.pulsar4s.{ConsumerConfig, ProducerConfig, ProducerMessage, PulsarClient, Subscription, Topic}
 import org.apache.pulsar.client.api.Schema
-import org.scalatest.{FunSuite, Matchers}
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
-class PulsarSinkTest extends FunSuite with Matchers {
+class PulsarSinkTest extends AnyFunSuite with Matchers {
 
   implicit val system: ActorSystem = ActorSystem()
   implicit val materializer: ActorMaterializer = ActorMaterializer()
