@@ -3,10 +3,10 @@ package com.sksamuel.pulsar4s.scalaz
 import java.util.concurrent.CompletableFuture
 import java.util.function.BiConsumer
 
-import com.sksamuel.pulsar4s.{AsyncHandler, ConsumerMessage, MessageId}
+import com.sksamuel.pulsar4s.{AsyncHandler, ConsumerMessage, DefaultProducer, MessageId, Producer}
 import org.apache.pulsar.client.api
 import org.apache.pulsar.client.api.Consumer
-import org.apache.pulsar.client.api.{Reader, TypedMessageBuilder}
+import org.apache.pulsar.client.api.{ProducerBuilder, Reader, TypedMessageBuilder}
 import scalaz.concurrent.Task
 
 import scala.language.implicitConversions
@@ -31,6 +31,9 @@ class ScalazAsyncHandler extends AsyncHandler[Task] {
   }
 
   override def failed(e: Throwable): Task[Nothing] = Task.fail(e)
+
+  override def createProducer[T](builder: ProducerBuilder[T]): Task[Producer[T]] =
+    completableToTask(builder.createAsync()).map(new DefaultProducer(_))
 
   override def send[T](t: T, producer: api.Producer[T]): Task[MessageId] =
     completableToTask(producer.sendAsync(t)).map(MessageId.fromJava)

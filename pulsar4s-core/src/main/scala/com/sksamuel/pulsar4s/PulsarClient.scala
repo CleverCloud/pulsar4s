@@ -6,7 +6,7 @@ import java.util.concurrent.TimeUnit
 
 import com.sksamuel.exts.Logging
 import org.apache.pulsar.client.api
-import org.apache.pulsar.client.api.Schema
+import org.apache.pulsar.client.api.{ProducerBuilder, Schema}
 
 import scala.collection.JavaConverters._
 
@@ -26,9 +26,10 @@ object Subscription {
 
 trait PulsarClient {
   def close(): Unit
-  def producer[T](config: ProducerConfig, interceptors: List[ProducerInterceptor[T]] = Nil)(implicit schema: Schema[T]): Producer[T]
-  def consumer[T](config: ConsumerConfig, interceptors: List[ConsumerInterceptor[T]] = Nil)(implicit schema: Schema[T]): Consumer[T]
-  def reader[T](config: ReaderConfig)(implicit schema: Schema[T]): Reader[T]
+  def producer[T: Schema](config: ProducerConfig, interceptors: List[ProducerInterceptor[T]] = Nil): Producer[T]
+  def producerAsync[T: Schema, F[_]: AsyncHandler](config: ProducerConfig, interceptors: List[ProducerInterceptor[T]] = Nil): F[Producer[T]]
+  def consumer[T: Schema](config: ConsumerConfig, interceptors: List[ConsumerInterceptor[T]] = Nil): Consumer[T]
+  def reader[T: Schema](config: ReaderConfig): Reader[T]
 }
 
 trait ProducerInterceptor[T] extends AutoCloseable {
@@ -119,7 +120,7 @@ class DefaultPulsarClient(client: org.apache.pulsar.client.api.PulsarClient) ext
 
   override def close(): Unit = client.close()
 
-  override def producer[T](config: ProducerConfig, interceptors: List[ProducerInterceptor[T]] = Nil)(implicit schema: Schema[T]): Producer[T] = {
+  private def producerBuilder[T](config: ProducerConfig, interceptors: List[ProducerInterceptor[T]])(implicit schema: Schema[T]): ProducerBuilder[T] = {
     logger.info(s"Creating producer with config $config")
     val builder = client.newProducer(schema)
     builder.topic(config.topic.name)
@@ -141,8 +142,14 @@ class DefaultPulsarClient(client: org.apache.pulsar.client.api.PulsarClient) ext
     config.sendTimeout.map(_.toMillis.toInt).foreach(builder.sendTimeout(_, TimeUnit.MILLISECONDS))
     if (interceptors.nonEmpty)
       builder.intercept(interceptors.map(new ProducerInterceptorAdapter(_, schema)): _*)
-    new DefaultProducer(builder.create())
+    builder
   }
+
+  override def producer[T: Schema](config: ProducerConfig, interceptors: List[ProducerInterceptor[T]] = Nil): Producer[T] =
+    new DefaultProducer(producerBuilder(config, interceptors).create())
+
+  override def producerAsync[T: Schema, F[_]: AsyncHandler](config: ProducerConfig, interceptors: List[ProducerInterceptor[T]] = Nil): F[Producer[T]] =
+    implicitly[AsyncHandler[F]].createProducer(producerBuilder(config, interceptors))
 
   override def consumer[T](config: ConsumerConfig, interceptors: List[ConsumerInterceptor[T]] = Nil)(implicit schema: Schema[T]): Consumer[T] = {
     logger.info(s"Creating consumer with config $config")

@@ -5,9 +5,9 @@ import java.util.function.BiConsumer
 
 import cats.implicits._
 import cats.effect._
-import com.sksamuel.pulsar4s.{AsyncHandler, ConsumerMessage, MessageId}
+import com.sksamuel.pulsar4s.{AsyncHandler, ConsumerMessage, DefaultProducer, MessageId, Producer}
 import org.apache.pulsar.client.api
-import org.apache.pulsar.client.api.{Reader, TypedMessageBuilder}
+import org.apache.pulsar.client.api.{ProducerBuilder, Reader, TypedMessageBuilder}
 
 import scala.language.higherKinds
 import scala.util.{Failure, Success, Try}
@@ -37,6 +37,8 @@ trait CatsAsyncHandlerLowPriority {
     import CompletableFutureConverters._
 
     override def failed(e: Throwable): F[Nothing] = Async[F].raiseError(e)
+
+    override def createProducer[T](builder: ProducerBuilder[T]): F[Producer[T]] = builder.createAsync().toF[F].map(new DefaultProducer(_))
 
     override def send[T](t: T, producer: api.Producer[T]): F[MessageId] = producer.sendAsync(t).toF[F].map(MessageId.fromJava)
     override def receive[T](consumer: api.Consumer[T]): F[ConsumerMessage[T]] = consumer.receiveAsync().toF[F].map(ConsumerMessage.fromJava)
