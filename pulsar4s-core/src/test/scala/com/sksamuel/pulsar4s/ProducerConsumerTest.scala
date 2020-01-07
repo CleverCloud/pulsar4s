@@ -8,7 +8,9 @@ import org.apache.pulsar.client.api.Schema
 import org.apache.pulsar.client.api.SubscriptionType
 
 import scala.concurrent.duration._
+import scala.concurrent.Await
 import scala.concurrent.ExecutionContext
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.Future
 import scala.util.Success
@@ -20,7 +22,7 @@ class ProducerConsumerTest extends AnyFunSuite with Matchers {
 
   implicit val schema: Schema[String] = Schema.STRING
 
-  test("producer should return messageId when sending a synchronous messsage") {
+  test("producer should return messageId when sending a synchronous message") {
     val client = PulsarClient("pulsar://localhost:6650")
     val topic = Topic("persistent://sample/standalone/ns1/test_" + UUID.randomUUID)
 
@@ -38,6 +40,24 @@ class ProducerConsumerTest extends AnyFunSuite with Matchers {
     val topic = Topic("persistent://sample/standalone/ns1/test_" + UUID.randomUUID)
 
     val producer = client.producer(ProducerConfig(topic))
+    val messageId = producer.send("wibble")
+    producer.close()
+
+    val consumer = client.consumer(ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription.generate))
+    consumer.seek(messageId.get)
+    val msg = consumer.receive
+    new String(msg.get.data) shouldBe "wibble"
+    consumer.close()
+
+    client.close()
+  }
+
+  test("producer and consumer synchronous round trip with async consumer") {
+
+    val client = PulsarClient("pulsar://localhost:6650")
+    val topic = Topic("persistent://sample/standalone/ns1/test_" + UUID.randomUUID)
+
+    val producer = Await.result(client.producerAsync(ProducerConfig(topic)), 10.seconds)
     val messageId = producer.send("wibble")
     producer.close()
 

@@ -12,6 +12,8 @@ trait AsyncHandler[F[_]] {
   def transform[A, B](f: F[A])(fn: A => Try[B]): F[B]
   def failed(e: Throwable): F[Nothing]
 
+  def createProducer[T](builder: api.ProducerBuilder[T]): F[Producer[T]]
+
   def send[T](t: T, producer: api.Producer[T]): F[MessageId]
   def send[T](builder: TypedMessageBuilder[T]): F[MessageId]
   def receive[T](consumer: api.Consumer[T]): F[ConsumerMessage[T]]

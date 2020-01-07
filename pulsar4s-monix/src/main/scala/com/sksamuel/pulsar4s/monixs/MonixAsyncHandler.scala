@@ -2,11 +2,11 @@ package com.sksamuel.pulsar4s.monixs
 
 import java.util.concurrent.CompletableFuture
 
-import com.sksamuel.pulsar4s.{AsyncHandler, ConsumerMessage, MessageId}
+import com.sksamuel.pulsar4s.{AsyncHandler, ConsumerMessage, DefaultProducer, MessageId, Producer}
 import monix.eval.Task
 import org.apache.pulsar.client.api
 import org.apache.pulsar.client.api.Consumer
-import org.apache.pulsar.client.api.{Reader, TypedMessageBuilder}
+import org.apache.pulsar.client.api.{ProducerBuilder, Reader, TypedMessageBuilder}
 
 import scala.compat.java8.FutureConverters
 import scala.concurrent.Future
@@ -22,6 +22,9 @@ class MonixAsyncHandler extends AsyncHandler[Task] {
     Task.deferFuture(FutureConverters.toScala(f)).map(_ => ())
 
   override def failed(e: Throwable): Task[Nothing] = Task.raiseError(e)
+
+  override def createProducer[T](builder: ProducerBuilder[T]): Task[Producer[T]] =
+    Task.deferFuture(FutureConverters.toScala(builder.createAsync())).map(new DefaultProducer(_))
 
   override def send[T](t: T, producer: api.Producer[T]): Task[MessageId] = {
     Task.deferFuture {
