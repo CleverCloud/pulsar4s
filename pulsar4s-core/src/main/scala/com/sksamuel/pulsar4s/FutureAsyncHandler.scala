@@ -22,7 +22,7 @@ class FutureAsyncHandler(implicit ec: ExecutionContext) extends AsyncHandler[Fut
   override def failed(e: Throwable): Future[Nothing] = Future.failed(e)
 
   override def createProducer[T](builder: api.ProducerBuilder[T]): Future[Producer[T]] = {
-    builder.createAsync().thenApply(new DefaultProducer(_)).toScala
+    builder.createAsync().thenApply[Producer[T]](new DefaultProducer(_)).toScala
   } 
 
   override def send[T](t: T, producer: api.Producer[T]): Future[MessageId] = {
