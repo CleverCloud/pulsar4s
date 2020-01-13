@@ -44,7 +44,7 @@ class CatsAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAfter
   def pulsarResources[F[_]: Sync: AsyncHandler](c: PulsarClient, t: Topic, subscription: Subscription): Resource[F, (Producer[String], Consumer[String])] = {
     val producer: Resource[F, Producer[String]] = Resource.make(Sync[F].delay { c.producer(ProducerConfig(t)) }){_.closeAsync}
     val consumer: Resource[F, Consumer[String]] = Resource.make(Sync[F].delay { c.consumer(ConsumerConfig(topics = Seq(t), subscriptionName = subscription)) }){_.closeAsync}
-    (producer, consumer).tupled
+    for (p <- producer; c <- consumer) yield (p, c)
   }
 
   def asyncProgram[F[_]: Async: AsyncHandler](producer: Producer[String], consumer: Consumer[String], message: String): F[ConsumerMessage[String]] = for {
@@ -74,7 +74,7 @@ class CatsAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAfter
       Subscription("cats_effect_test_StateT_IO")
     ).use { case (producer, consumer) =>
       asyncProgram[F](producer, consumer, msg).run(123)
-    }.map(_.map(_.value)).unsafeRunSync() shouldBe (123, msg)
+    }.map { case (a, msg) => (a, msg.value) }.unsafeRunSync() shouldBe (123, msg)
   }
 
   test("async client methods should work with any monad which implements Async - Monix Task") {
