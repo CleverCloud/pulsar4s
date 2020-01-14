@@ -124,7 +124,7 @@ producer.send(message)
 
 ### Consuming
 
-To recieve a message, create a consumer and invoke either the `receive`, `receive(Duration)`, or the `receiveAsync` methods.
+To receive a message, create a consumer and invoke either the `receive`, `receive(Duration)`, or the `receiveAsync` methods.
 The first two are synchronous and return an instance of `ConsumerMessage`, blocking if necessary, and the latter is asynchronous, returning
 a Future (or other effect) with the `ConsumerMessage` once ready.
 
