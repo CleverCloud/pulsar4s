@@ -7,7 +7,7 @@ scala:
   - 2.13.1
 
 jdk:
-  - openjdk8
+  - oraclejdk11
 
 services:
   - docker
@@ -29,3 +29,5 @@ before_install:
 
 script:
   - sbt ++$TRAVIS_SCALA_VERSION clean test
+
+after_success: "./snapshot_deploy.sh"
