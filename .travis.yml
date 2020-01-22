@@ -4,7 +4,6 @@ language: scala
 
 scala:
   - 2.12.10
-  - 2.13.1
 
 jdk:
   - oraclejdk11
@@ -27,7 +26,11 @@ before_script:
 before_install:
   - docker run -d -it -p 6650:6650 -p 8080:8080 -v $PWD/data:/pulsar/data apachepulsar/pulsar:2.4.2 bin/pulsar standalone --advertised-address 127.0.0.1
 
-script:
-  - sbt ++$TRAVIS_SCALA_VERSION clean test
-
-after_success: "./snapshot_deploy.sh"
+jobs:
+  include:
+    - stage: test
+      name: "sbt cean test"
+      script: "sbt ++$TRAVIS_SCALA_VERSION clean test"
+    - stage: snapshot
+      name: "deploy maven snapshot"
+      script: "./snapshot_deploy.sh"
