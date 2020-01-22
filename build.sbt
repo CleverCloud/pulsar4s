@@ -4,6 +4,9 @@ isTravis in Global := sys.env.get("TRAVIS").isDefined
 val travisBuildNumber = settingKey[String]("Value of the travis build number")
 travisBuildNumber in Global := sys.env.getOrElse("TRAVIS_BUILD_NUMBER", "0")
 
+val travisVersion = settingKey[String]("Value of the travis deployed version string")
+travisVersion in Global := version.value.stripSuffix("-SNAPSHOT") + s".${travisBuildNumber.value}-SNAPSHOT"
+
 val org                       = "com.sksamuel.pulsar4s"
 val AkkaStreamVersion         = "2.6.1"
 val CatsEffectVersion         = "2.0.0"
@@ -42,7 +45,7 @@ lazy val warnUnusedImport = Seq(
 
 lazy val commonSettings = Seq(
   organization := "com.sksamuel.pulsar4s",
-  version := (if (isTravis.value) version.value.stripSuffix("-SNAPSHOT") + s".$travisBuildNumber-SNAPSHOT" else version.value),
+  version := (if (isTravis.value) travisVersion.value else version.value),
   resolvers ++= Seq(Resolver.mavenLocal),
   parallelExecution in Test := false,
   scalacOptions in(Compile, doc) := (scalacOptions in(Compile, doc)).value.filter(_ != "-Xfatal-warnings"),

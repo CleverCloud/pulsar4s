@@ -29,7 +29,7 @@ before_install:
 jobs:
   include:
     - stage: test
-      name: "sbt cean test"
+      name: "sbt clean test"
       script: "sbt ++$TRAVIS_SCALA_VERSION clean test"
     - stage: snapshot
       name: "deploy maven snapshot"
