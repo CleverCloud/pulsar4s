@@ -4,31 +4,30 @@ isTravis in Global := sys.env.get("TRAVIS").isDefined
 val travisBuildNumber = settingKey[String]("Value of the travis build number")
 travisBuildNumber in Global := sys.env.getOrElse("TRAVIS_BUILD_NUMBER", "0")
 
-val travisVersion = settingKey[String]("Value of the travis deployed version string")
-travisVersion in Global := version.value.stripSuffix("-SNAPSHOT") + s".${travisBuildNumber.value}-SNAPSHOT"
+def travisVersion(v: String, tb: String): String = v.stripSuffix("-SNAPSHOT") + s".$tb-SNAPSHOT"
 
-val org                       = "com.sksamuel.pulsar4s"
-val AkkaStreamVersion         = "2.6.1"
-val CatsEffectVersion         = "2.0.0"
-val CirceVersion              = "0.12.3"
-val CommonsIoVersion          = "2.4"
-val ExtsVersion               = "1.61.1"
-val JacksonVersion            = "2.9.9"
-val Log4jVersion              = "2.12.0"
-val MonixVersion              = "3.1.0"
-val PlayJsonVersion           = "2.8.1"
-val PulsarVersion             = "2.4.2"
-val ReactiveStreamsVersion    = "1.0.2"
-val Json4sVersion             = "3.6.7"
-val Avro4sVersion             = "3.0.4"
-val ScalaVersion              = "2.13.1"
-val ScalatestVersion          = "3.1.0"
-val Slf4jVersion              = "1.7.30"
-val SprayJsonVersion          = "1.3.5"
-val Java8CompatVersion        = "0.9.0"
-val ZIOVersion                = "1.0.0-RC16"
-val ZIOInteropJavaVersion     = "1.1.0.0-RC6"
-val ZIOInteropCatsVersion     = "2.0.0.0-RC10"
+val org = "com.sksamuel.pulsar4s"
+val AkkaStreamVersion = "2.6.1"
+val CatsEffectVersion = "2.0.0"
+val CirceVersion = "0.12.3"
+val CommonsIoVersion = "2.4"
+val ExtsVersion = "1.61.1"
+val JacksonVersion = "2.9.9"
+val Log4jVersion = "2.12.0"
+val MonixVersion = "3.1.0"
+val PlayJsonVersion = "2.8.1"
+val PulsarVersion = "2.4.2"
+val ReactiveStreamsVersion = "1.0.2"
+val Json4sVersion = "3.6.7"
+val Avro4sVersion = "3.0.4"
+val ScalaVersion = "2.13.1"
+val ScalatestVersion = "3.1.0"
+val Slf4jVersion = "1.7.30"
+val SprayJsonVersion = "1.3.5"
+val Java8CompatVersion = "0.9.0"
+val ZIOVersion = "1.0.0-RC16"
+val ZIOInteropJavaVersion = "1.1.0.0-RC6"
+val ZIOInteropCatsVersion = "2.0.0.0-RC10"
 
 lazy val commonScalaVersionSettings = Seq(
   scalaVersion := "2.12.8",
@@ -45,7 +44,7 @@ lazy val warnUnusedImport = Seq(
 
 lazy val commonSettings = Seq(
   organization := "com.sksamuel.pulsar4s",
-  version := (if (isTravis.value) travisVersion.value else version.value),
+  version := (if (isTravis.value) travisVersion(version.value, travisBuildNumber.value) else version.value),
   resolvers ++= Seq(Resolver.mavenLocal),
   parallelExecution in Test := false,
   scalacOptions in(Compile, doc) := (scalacOptions in(Compile, doc)).value.filter(_ != "-Xfatal-warnings"),
@@ -80,11 +79,11 @@ lazy val commonJvmSettings = Seq(
 
 lazy val commonDeps = Seq(
   libraryDependencies ++= Seq(
-    "com.sksamuel.exts"         %% "exts"              % ExtsVersion,
-    "org.slf4j"                 % "slf4j-api"          % Slf4jVersion,
-    "org.scalatest"             %% "scalatest"         % ScalatestVersion % "test",
-    "org.apache.logging.log4j"  % "log4j-api"          % Log4jVersion % "test",
-    "org.apache.logging.log4j"  % "log4j-slf4j-impl"   % Log4jVersion % "test"
+    "com.sksamuel.exts" %% "exts" % ExtsVersion,
+    "org.slf4j" % "slf4j-api" % Slf4jVersion,
+    "org.scalatest" %% "scalatest" % ScalatestVersion % "test",
+    "org.apache.logging.log4j" % "log4j-api" % Log4jVersion % "test",
+    "org.apache.logging.log4j" % "log4j-slf4j-impl" % Log4jVersion % "test"
   )
 )
 
@@ -154,8 +153,8 @@ lazy val core = Project("pulsar4s-core", file("pulsar4s-core"))
   .settings(name := "pulsar4s-core")
   .settings(allSettings)
   .settings(libraryDependencies ++= Seq(
-    "org.scala-lang.modules"        %% "scala-java8-compat"         % Java8CompatVersion,
-    "org.apache.pulsar"             %  "pulsar-client"              % PulsarVersion
+    "org.scala-lang.modules" %% "scala-java8-compat" % Java8CompatVersion,
+    "org.apache.pulsar" % "pulsar-client" % PulsarVersion
   ))
 
 lazy val cats_effect = Project("pulsar4s-cats-effect", file("pulsar4s-cats-effect"))
@@ -163,10 +162,10 @@ lazy val cats_effect = Project("pulsar4s-cats-effect", file("pulsar4s-cats-effec
   .settings(name := "pulsar4s-cats-effect")
   .settings(allSettings)
   .settings(libraryDependencies ++= Seq(
-    "org.typelevel" %% "cats-effect"      % CatsEffectVersion,
-    "io.monix"      %% "monix"            % MonixVersion          % Test,
-    "dev.zio"       %% "zio-interop-cats" % ZIOInteropCatsVersion % Test
-))
+    "org.typelevel" %% "cats-effect" % CatsEffectVersion,
+    "io.monix" %% "monix" % MonixVersion % Test,
+    "dev.zio" %% "zio-interop-cats" % ZIOInteropCatsVersion % Test
+  ))
 
 lazy val scalaz = Project("pulsar4s-scalaz", file("pulsar4s-scalaz"))
   .dependsOn(core)
@@ -200,10 +199,10 @@ lazy val jackson = Project("pulsar4s-jackson", file("pulsar4s-jackson"))
   .settings(allSettings)
   .settings(libraryDependencies ++= Seq(
     // For 2.9 releases see https://github.com/FasterXML/jackson/wiki/Jackson-Release-2.9#micro-patches
-    "com.fasterxml.jackson.core"    % "jackson-core"          % JacksonVersion,
-    "com.fasterxml.jackson.core"    % "jackson-annotations"   % JacksonVersion,
-    "com.fasterxml.jackson.core"    % "jackson-databind"      % s"$JacksonVersion.3",
-    "com.fasterxml.jackson.module" %% "jackson-module-scala"  % JacksonVersion
+    "com.fasterxml.jackson.core" % "jackson-core" % JacksonVersion,
+    "com.fasterxml.jackson.core" % "jackson-annotations" % JacksonVersion,
+    "com.fasterxml.jackson.core" % "jackson-databind" % s"$JacksonVersion.3",
+    "com.fasterxml.jackson.module" %% "jackson-module-scala" % JacksonVersion
   ))
 
 lazy val circe = Project("pulsar4s-circe", file("pulsar4s-circe"))
@@ -211,9 +210,9 @@ lazy val circe = Project("pulsar4s-circe", file("pulsar4s-circe"))
   .settings(name := "pulsar4s-circe")
   .settings(allSettings)
   .settings(libraryDependencies ++= Seq(
-    "io.circe" %% "circe-core"     % CirceVersion,
-    "io.circe" %% "circe-generic"  % CirceVersion,
-    "io.circe" %% "circe-parser"   % CirceVersion
+    "io.circe" %% "circe-core" % CirceVersion,
+    "io.circe" %% "circe-generic" % CirceVersion,
+    "io.circe" %% "circe-parser" % CirceVersion
   ))
 
 lazy val playjson = Project("pulsar4s-play-json", file("pulsar4s-play-json"))
@@ -229,8 +228,8 @@ lazy val json4s = Project("pulsar4s-json4s", file("pulsar4s-json4s"))
   .settings(name := "pulsar4s-json4s")
   .settings(allSettings)
   .settings(libraryDependencies ++= Seq(
-    "org.json4s" %% "json4s-core"     % Json4sVersion,
-    "org.json4s" %% "json4s-jackson"  % Json4sVersion
+    "org.json4s" %% "json4s-core" % Json4sVersion,
+    "org.json4s" %% "json4s-jackson" % Json4sVersion
   ))
 
 lazy val sprayjson = Project("pulsar4s-spray-json", file("pulsar4s-spray-json"))
