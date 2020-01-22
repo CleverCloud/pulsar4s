@@ -80,10 +80,10 @@ lazy val commonDeps = Seq(
     "com.sksamuel.exts"         %% "exts"              % ExtsVersion,
     "org.slf4j"                 % "slf4j-api"          % Slf4jVersion,
     "org.scalatest"             %% "scalatest"         % ScalatestVersion % "test",
-    "org.scalatestplus"         %% "mockito-1-10"      % ScalatestPlusVersion % "test"
+    "org.scalatestplus"         %% "mockito-1-10"      % ScalatestPlusVersion % "test",
     "org.mockito"               % "mockito-core"       % MockitoVersion % "test",
     "org.apache.logging.log4j"  % "log4j-api"          % Log4jVersion % "test",
-    "org.apache.logging.log4j"  % "log4j-slf4j-impl"   % Log4jVersion % "test",
+    "org.apache.logging.log4j"  % "log4j-slf4j-impl"   % Log4jVersion % "test"
   )
 )
 
