@@ -5,7 +5,7 @@ import org.apache.pulsar.client.impl.MessageImpl
 import org.apache.pulsar.shade.io.netty.buffer.Unpooled
 
 import scala.collection.JavaConverters._
-import scala.language.implicitConversions
+import scala.util.Try
 
 case class PublishTime(value: Long)
 case class EventTime(value: Long)
@@ -17,6 +17,8 @@ trait ConsumerMessage[T] {
   def key: Option[String]
 
   def value: T
+
+  def valueTry = Try(value)
 
   def data: Array[Byte]
 
@@ -62,9 +64,9 @@ object ConsumerMessage {
 
   def fromJava[T](message: JMessage[T]): ConsumerMessage[T] = {
     require(message != null)
-    DefaultConsumerMessage(
+    ConsumerMessageWithValueTry(
       Option(message.getKey),
-      message.getValue,
+      Try(message.getValue),
       message.getData,
       message.getProperties.asScala.toMap,
       MessageId.fromJava(message.getMessageId),
@@ -78,10 +80,25 @@ object ConsumerMessage {
 
   def toJava[T](message: ConsumerMessage[T], schema: Schema[T]): JMessage[T] = {
     require(message != null)
-    new MessageImpl(message.topic.name, MessageId.toJava(message.messageId).toString, message.props.asJava, Unpooled.wrappedBuffer(schema.encode(message.value)), schema)
+    new MessageImpl(message.topic.name, MessageId.toJava(message.messageId).toString, message.props.asJava, Unpooled.wrappedBuffer(message.data), schema)
   }
 }
 
+case class ConsumerMessageWithValueTry[T](key: Option[String],
+                                          override val valueTry: Try[T],
+                                          data: Array[Byte],
+                                          props: Map[String, String],
+                                          messageId: MessageId,
+                                          sequenceId: SequenceId,
+                                          producerName: ProducerName,
+                                          publishTime: PublishTime,
+                                          eventTime: EventTime,
+                                          topic: Topic) extends ConsumerMessage[T] {
+  def value: T = valueTry.get
+}
+
+
+@deprecated("Use ConsumerMessageWithValueTry", "2.4.6")
 case class DefaultConsumerMessage[T](key: Option[String],
                                      value: T,
                                      data: Array[Byte],

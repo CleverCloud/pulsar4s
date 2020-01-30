@@ -9,7 +9,6 @@ import org.apache.pulsar.client.api.ProducerBuilder
 import zio.interop.javaz._
 import zio.{Task, UIO}
 
-import scala.language.implicitConversions
 import scala.util.Try
 
 class ZioAsyncHandler extends AsyncHandler[Task] {
