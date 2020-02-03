@@ -52,6 +52,22 @@ class PulsarCommittableSourceTest extends AnyFunSuite with Matchers {
     msgs.map(_.message.value) shouldBe Seq("a", "b", "c", "d")
   }
 
+  test("pulsar committableSource should not fail on messages with invalid data") {
+
+    val topic = Topic("persistent://sample/standalone/ns1/sourcetest_" + UUID.randomUUID)
+    val config = ProducerConfig(topic)
+    val producer = client.producer(config)
+    producer.send("a")
+    producer.close()
+
+    val createFn = () => client.consumer(ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription.generate))(Schema.INT64)
+    val f = committableSource(createFn, Some(MessageId.earliest))
+      .take(1)
+      .runWith(Sink.seq[CommittableMessage[java.lang.Long]])
+    val msgs = Await.result(f, 15.seconds)
+    msgs.headOption.flatMap(_.message.valueTry.toOption) shouldBe None
+  }
+
   test("pulsar committableSource should acknowledge messages") {
 
     val topic = Topic("persistent://sample/standalone/ns1/sourcetest_" + UUID.randomUUID)

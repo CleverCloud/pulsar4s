@@ -29,5 +29,6 @@ esdata
 
 .bloop
 .metals
+metals.sbt
 
 data/
