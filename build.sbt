@@ -8,7 +8,7 @@ def travisVersion(v: String, tb: String): String = v.stripSuffix("-SNAPSHOT") + 
 
 val org = "com.sksamuel.pulsar4s"
 val AkkaStreamVersion = "2.5.29" // compatible with Akka 2.5.x and 2.6.x
-val CatsEffectVersion = "2.0.0"
+val CatsEffectVersion = "2.1.1"
 val CirceVersion = "0.12.3"
 val CommonsIoVersion = "2.4"
 val ExtsVersion = "1.61.1"
