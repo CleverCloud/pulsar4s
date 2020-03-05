@@ -6,15 +6,14 @@ import com.sksamuel.pulsar4s.{AsyncHandler, ConsumerMessage, DefaultProducer, Me
 import org.apache.pulsar.client.api
 import org.apache.pulsar.client.api.{Consumer, Reader, TypedMessageBuilder}
 import org.apache.pulsar.client.api.ProducerBuilder
-import zio.interop.javaz._
-import zio.{Task, UIO}
+import zio.{Task, UIO, ZIO}
 
 import scala.util.Try
 
 class ZioAsyncHandler extends AsyncHandler[Task] {
 
   private def fromFuture[T](javaFutureUIO: UIO[CompletionStage[T]]): Task[T] =
-    javaFutureUIO.toZio
+    javaFutureUIO >>= (cs => ZIO.fromCompletionStage(cs))
 
   override def transform[A, B](t: Task[A])(fn: A => Try[B]): Task[B] =
     t >>= { v => Task.fromTry(fn(v)) }
@@ -22,9 +21,8 @@ class ZioAsyncHandler extends AsyncHandler[Task] {
   override def failed(e: Throwable): Task[Nothing] =
     Task.fail(e)
 
-  override def createProducer[T](builder: ProducerBuilder[T]): zio.Task[Producer[T]] = {
-    fromFuture(UIO(builder.createAsync())).map(new DefaultProducer(_))
-  }
+  override def createProducer[T](builder: ProducerBuilder[T]): Task[Producer[T]] =
+    fromFuture(UIO(builder.createAsync())) >>= (p => Task(new DefaultProducer(p)))
 
   override def send[T](t: T, producer: api.Producer[T]): Task[MessageId] =
     fromFuture(UIO(producer.sendAsync(t))).map(MessageId.fromJava)
