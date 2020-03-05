@@ -27,7 +27,7 @@ val SprayJsonVersion = "1.3.5"
 val Java8CompatVersion = "0.9.1"
 val ZIOVersion = "1.0.0-RC18"
 val ZIOInteropJavaVersion = "1.1.0.0-RC6"
-val ZIOInteropCatsVersion = "2.0.0.0-RC10"
+val ZIOInteropCatsVersion = "2.0.0.0-RC11"
 
 lazy val commonScalaVersionSettings = Seq(
   scalaVersion := "2.12.8",
