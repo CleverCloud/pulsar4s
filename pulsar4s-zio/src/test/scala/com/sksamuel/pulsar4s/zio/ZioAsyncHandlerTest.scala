@@ -5,11 +5,10 @@ import java.util.UUID
 import com.sksamuel.pulsar4s.{ConsumerConfig, ProducerConfig, PulsarClient, Subscription, Topic}
 import org.apache.pulsar.client.api.Schema
 import org.scalatest.BeforeAndAfterAll
-import zio.DefaultRuntime
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
-class ZioAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with DefaultRuntime {
+class ZioAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
 
   import ZioAsyncHandler._
 
@@ -25,7 +24,7 @@ class ZioAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAfterA
   test("async producer should use zio") {
     val producer = client.producer(ProducerConfig(topic))
     val t = producer.sendAsync("wibble")
-    val r = unsafeRun(t.either)
+    val r = zio.Runtime.default.unsafeRun(t.either)
     r.right.get should not be null
     producer.close()
   }
@@ -34,7 +33,7 @@ class ZioAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAfterA
     val consumer = client.consumer(ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription("mysub_" + UUID.randomUUID())))
     consumer.seekEarliest()
     val t = consumer.receiveAsync
-    val r = unsafeRun(t.either)
+    val r = zio.Runtime.default.unsafeRun(t.either)
     r shouldBe Symbol("right")
     new String(r.right.get.data) shouldBe "wibble"
     consumer.close()

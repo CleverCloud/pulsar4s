@@ -25,8 +25,7 @@ val ScalatestVersion = "3.1.1"
 val Slf4jVersion = "1.7.30"
 val SprayJsonVersion = "1.3.5"
 val Java8CompatVersion = "0.9.1"
-val ZIOVersion = "1.0.0-RC18"
-val ZIOInteropJavaVersion = "1.1.0.0-RC6"
+val ZIOVersion = "1.0.0-RC18-1"
 val ZIOInteropCatsVersion = "2.0.0.0-RC11"
 
 lazy val commonScalaVersionSettings = Seq(
@@ -189,8 +188,7 @@ lazy val zio = Project("pulsar4s-zio", file("pulsar4s-zio"))
   .settings(name := "pulsar4s-zio")
   .settings(allSettings)
   .settings(libraryDependencies ++= Seq(
-    "dev.zio" %% "zio" % ZIOVersion,
-    "dev.zio" %% "zio-interop-java" % ZIOInteropJavaVersion
+    "dev.zio" %% "zio" % ZIOVersion
   ))
 
 lazy val jackson = Project("pulsar4s-jackson", file("pulsar4s-jackson"))
