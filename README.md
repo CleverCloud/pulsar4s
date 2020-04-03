@@ -243,6 +243,9 @@ libraryDependencies ++= Seq(
 
   // for the akka-streams integration
   "com.sksamuel.pulsar4s" %% "pulsar4s-akka-streams" % pulsar4sVersion,
+  
+  // if you want to use avro for schemas
+  "com.sksamuel.pulsar4s" %% "pulsar4s-avro" % pulsar4sVersion,
 
   // if you want to use circe for schemas
   "com.sksamuel.pulsar4s" %% "pulsar4s-circe" % pulsar4sVersion,
@@ -267,6 +270,9 @@ libraryDependencies ++= Seq(
 
   // if you want to use cats effects
   "com.sksamuel.pulsar4s" %% "pulsar4s-cats-effect" % pulsar4sVersion,
+  
+  // if you want to use zio
+  "com.sksamuel.pulsar4s" %% "pulsar4s-zio" % pulsar4sVersion
 )
 ```
 
