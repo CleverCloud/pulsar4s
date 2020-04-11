@@ -4,7 +4,6 @@ import java.io.Closeable
 import java.util.concurrent.TimeUnit
 
 import scala.concurrent.duration.Duration
-import scala.language.higherKinds
 
 trait Reader[T] extends Closeable {
   def hasMessageAvailable: Boolean

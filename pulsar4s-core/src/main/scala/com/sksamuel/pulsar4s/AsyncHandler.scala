@@ -4,7 +4,6 @@ import org.apache.pulsar.client.api
 import org.apache.pulsar.client.api.TypedMessageBuilder
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.language.higherKinds
 import scala.util.Try
 
 trait AsyncHandler[F[_]] {

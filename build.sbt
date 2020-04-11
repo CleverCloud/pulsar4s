@@ -16,7 +16,7 @@ val JacksonVersion = "2.9.9"
 val Log4jVersion = "2.12.0"
 val MonixVersion = "3.1.0"
 val PlayJsonVersion = "2.7.4" // compatible with 2.7.x and 2.8.x
-val PulsarVersion = "2.4.2"
+val PulsarVersion = "2.5.0"
 val ReactiveStreamsVersion = "1.0.2"
 val Json4sVersion = "3.6.7"
 val Avro4sVersion = "3.0.8"
@@ -29,8 +29,8 @@ val ZIOVersion = "1.0.0-RC18-1"
 val ZIOInteropCatsVersion = "2.0.0.0-RC11"
 
 lazy val commonScalaVersionSettings = Seq(
-  scalaVersion := "2.12.8",
-  crossScalaVersions := Seq("2.12.8", "2.13.1")
+  scalaVersion := ScalaVersion,
+  crossScalaVersions := Seq("2.12.10", "2.13.1")
 )
 
 lazy val warnUnusedImport = Seq(
