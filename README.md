@@ -204,7 +204,26 @@ Once the sink completes the producer will be automatically closed.
 
 The materialized value of the sink is a `Future[Done]` which will be completed once the upstream source has completed.
 
+There is also an implementation of a 'multi-sink'.
+Multi-sink allows to produce to multiple topics in Pulsar, while using just 1 sink.
+Multi-sink expects, in addition to `ProducerMessage[T]`, a `Topic`, so the input format is `(Topic, ProducerMessage[T])`. 
+All producers in the sink are lazily-created, once a tuple with a new topic is received.
+There is also a possibility to provide a collection of topics in the constructing function, to create those topics
+ahead of time if the names are known. New topics read from the stream will also be created on-the-fly.
 
+Example usage of a multi-sink:
+
+```scala
+import com.sksamuel.pulsar4s.akka.streams._
+
+val topic1 = Topic("persistent://sample/standalone/ns1/b")
+val topic2 = Topic("persistent://sample/standalone/ns1/bb")
+val producerFn = (topic: Topic) => client.producer(ProducerConfig(topic))
+val pulsarMultiSink = multiSink(producerFn)
+# or to create those topics ahead of time:
+val pulsarMultiSink2 = multiSink(producerFn, Set(topic1, topic2))
+```
+ 
 ### Full Example
 
 Here is a full example of consuming from a topic for 10 seconds, publising the messages back into another topic.
