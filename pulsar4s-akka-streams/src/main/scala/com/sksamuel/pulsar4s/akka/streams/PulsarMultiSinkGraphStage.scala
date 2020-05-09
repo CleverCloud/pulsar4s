@@ -37,11 +37,9 @@ class PulsarMultiSinkGraphStage[T](createFn: Topic => Producer[T], initTopics: S
       }
 
       private def getProducer(topic: Topic): Producer[T] =
-        producers.getOrElse(topic, {
+        producers.getOrElseUpdate(topic, {
           logger.debug(s"creating new producer for topic $topic")
-          val producer = createFn(topic)
-          producers = producers + (topic -> producer)
-          producer
+          createFn(topic)
         })
 
       override def onPush(): Unit = {
