@@ -4,9 +4,10 @@ import akka.Done
 import akka.stream.stage.{AsyncCallback, GraphStageLogic, GraphStageWithMaterializedValue, InHandler}
 import akka.stream.{Attributes, Inlet, SinkShape}
 import com.sksamuel.exts.Logging
-import com.sksamuel.pulsar4s.{Producer, ProducerMessage, Topic}
+import com.sksamuel.pulsar4s.{AsyncHandler, Producer, ProducerMessage, Topic}
 
-import scala.concurrent.{ExecutionContextExecutor, Future, Promise}
+import scala.concurrent.duration._
+import scala.concurrent.{Await, ExecutionContextExecutor, Future, Promise}
 import scala.util.{Failure, Success}
 
 class PulsarMultiSinkGraphStage[T](createFn: Topic => Producer[T], initTopics: Set[Topic] = Set.empty)
@@ -63,11 +64,15 @@ class PulsarMultiSinkGraphStage[T](createFn: Topic => Producer[T], initTopics: S
       }
 
       override def postStop(): Unit = {
+        lazy val ah: AsyncHandler[Future] = AsyncHandler.handler
         logger.debug("Graph stage stopping; closing producers")
-        producers.foreach { case (_, p) =>
-          p.flush()
-          p.close()
+        val fs = producers.flatMap { case (_, p) =>
+          Seq(
+            p.flushAsync(ah),
+            p.closeAsync(ah)
+          )
         }
+        Await.ready(Future.sequence(fs), 15.seconds)
       }
 
       override def onUpstreamFailure(ex: Throwable): Unit = {
