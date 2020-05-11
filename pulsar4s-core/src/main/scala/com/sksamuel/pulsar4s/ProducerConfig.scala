@@ -44,7 +44,9 @@ case class ConsumerConfig(subscriptionName: Subscription,
                           readCompacted: Option[Boolean] = None,
                           ackTimeout: Option[FiniteDuration] = None,
                           ackTimeoutTickTime: Option[FiniteDuration] = None,
-                          acknowledgmentGroupTime: Option[FiniteDuration] = None)
+                          acknowledgmentGroupTime: Option[FiniteDuration] = None,
+                          deadLetterPolicy: Option[DeadLetterPolicy] = None)
+
 
 case class ReaderConfig(topic: Topic,
                         seek: MessageId,
