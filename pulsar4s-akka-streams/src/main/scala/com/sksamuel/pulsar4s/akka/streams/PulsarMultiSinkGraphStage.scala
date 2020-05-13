@@ -4,7 +4,7 @@ import akka.Done
 import akka.stream.stage.{AsyncCallback, GraphStageLogic, GraphStageWithMaterializedValue, InHandler}
 import akka.stream.{Attributes, Inlet, SinkShape}
 import com.sksamuel.exts.Logging
-import com.sksamuel.pulsar4s.{AsyncHandler, Producer, ProducerMessage, Topic}
+import com.sksamuel.pulsar4s.{Producer, ProducerMessage, Topic}
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContextExecutor, Future, Promise}
