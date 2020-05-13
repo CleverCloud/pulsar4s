@@ -66,12 +66,11 @@ class PulsarMultiSinkGraphStage[T](createFn: Topic => Producer[T], initTopics: S
       }
 
       override def postStop(): Unit = {
-        lazy val ah: AsyncHandler[Future] = AsyncHandler.handler
         logger.debug("Graph stage stopping; closing producers")
         val fs = producers.flatMap { case (_, p) =>
           Seq(
-            p.flushAsync(ah),
-            p.closeAsync(ah)
+            p.flushAsync,
+            p.closeAsync
           )
         }
         Await.ready(Future.sequence(fs), 15.seconds)
