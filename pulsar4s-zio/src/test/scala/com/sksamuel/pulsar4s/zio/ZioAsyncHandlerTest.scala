@@ -14,8 +14,8 @@ class ZioAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAfterA
 
   implicit val schema: Schema[String] = Schema.STRING
 
-  val client = PulsarClient("pulsar://localhost:6650")
-  val topic = Topic("persistent://sample/standalone/ns1/zio_" + UUID.randomUUID())
+  private val client = PulsarClient("pulsar://localhost:6650")
+  private val topic = Topic("persistent://sample/standalone/ns1/zio_" + UUID.randomUUID())
 
   override def afterAll(): Unit = {
     client.close()
