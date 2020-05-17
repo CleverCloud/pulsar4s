@@ -94,16 +94,15 @@ class CatsAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAfter
   test("async client methods should work with any monad which implements Async - ZIO") {
     import CatsAsyncHandler._
     val msg = "hello ZIO via cats-effect"
-    import zio._
+    import zio.{Task, Runtime}
     import zio.interop.catz._
-    val runtime = new DefaultRuntime {}
-    val program = pulsarResources[zio.Task](
+    val program = pulsarResources[Task](
       client,
       Topic("persistent://sample/standalone/ns1/cats_async_zio_task"),
       Subscription("cats_effect_test_zio_task")
     ).use { case (producer, consumer) =>
-      asyncProgram[zio.Task](producer, consumer, msg)
+      asyncProgram[Task](producer, consumer, msg)
     }.map(_.value)
-    runtime.unsafeRun(program) shouldBe msg
+    Runtime.default.unsafeRun(program) shouldBe msg
   }
 }
