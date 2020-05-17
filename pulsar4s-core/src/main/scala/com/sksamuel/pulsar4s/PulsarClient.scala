@@ -110,6 +110,8 @@ object PulsarClient {
     config.keepAliveInterval.map(_.toSeconds.toInt).foreach(builder.keepAliveInterval(_, TimeUnit.SECONDS))
     config.statsInterval.map(_.toMillis).foreach(builder.statsInterval(_, TimeUnit.MILLISECONDS))
     config.tlsTrustCertsFilePath.foreach(builder.tlsTrustCertsFilePath)
+    if(config.additionalProperties.nonEmpty)
+      builder.loadConf(config.additionalProperties.asJava)
     new DefaultPulsarClient(builder.build())
   }
 
@@ -144,6 +146,8 @@ class DefaultPulsarClient(client: org.apache.pulsar.client.api.PulsarClient) ext
     config.sendTimeout.map(_.toMillis.toInt).foreach(builder.sendTimeout(_, TimeUnit.MILLISECONDS))
     if (interceptors.nonEmpty)
       builder.intercept(interceptors.map(new ProducerInterceptorAdapter(_, schema)): _*)
+    if(config.additionalProperties.nonEmpty)
+      builder.loadConf(config.additionalProperties.asJava)
     builder
   }
 
@@ -180,6 +184,8 @@ class DefaultPulsarClient(client: org.apache.pulsar.client.api.PulsarClient) ext
     builder.subscriptionName(config.subscriptionName.name)
     if (interceptors.nonEmpty)
       builder.intercept(interceptors.map(new ConsumerInterceptorAdapter(_, schema)): _*)
+    if(config.additionalProperties.nonEmpty)
+      builder.loadConf(config.additionalProperties.asJava)
     builder.subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)
     new DefaultConsumer(builder.subscribe())
   }
@@ -192,6 +198,8 @@ class DefaultPulsarClient(client: org.apache.pulsar.client.api.PulsarClient) ext
     builder.startMessageId(MessageId.toJava(config.seek))
     config.receiverQueueSize.foreach(builder.receiverQueueSize)
     config.readCompacted.foreach(builder.readCompacted)
+    if(config.additionalProperties.nonEmpty)
+      builder.loadConf(config.additionalProperties.asJava)
     new DefaultReader(builder.create(), config.topic)
   }
 }

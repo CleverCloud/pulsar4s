@@ -23,7 +23,8 @@ case class ProducerConfig(topic: Topic,
                           roundRobinRouterBatchingPartitionSwitchFrequency: Option[Int] = None,
                           producerName: Option[String] = None,
                           sendTimeout: Option[FiniteDuration] = None,
-                          compressionType: Option[CompressionType] = None)
+                          compressionType: Option[CompressionType] = None,
+                          additionalProperties: Map[String, AnyRef] = Map.empty)
 
 case class ConsumerConfig(subscriptionName: Subscription,
                           topics: Seq[Topic] = Nil,
@@ -45,11 +46,12 @@ case class ConsumerConfig(subscriptionName: Subscription,
                           ackTimeout: Option[FiniteDuration] = None,
                           ackTimeoutTickTime: Option[FiniteDuration] = None,
                           acknowledgmentGroupTime: Option[FiniteDuration] = None,
+                          additionalProperties: Map[String, AnyRef] = Map.empty,
                           deadLetterPolicy: Option[DeadLetterPolicy] = None)
-
 
 case class ReaderConfig(topic: Topic,
                         seek: MessageId,
                         receiverQueueSize: Option[Int] = None,
                         reader: Option[String] = None,
-                        readCompacted: Option[Boolean] = None)
+                        readCompacted: Option[Boolean] = None,
+                        additionalProperties: Map[String, AnyRef] = Map.empty)

@@ -18,4 +18,5 @@ case class PulsarClientConfig(serviceUrl: String,
                               statsInterval: Option[FiniteDuration] = None,
                               maxLookupRequests: Option[Int] = None,
                               tlsTrustCertsFilePath: Option[String] = None,
-                              ioThreads: Option[Int] = None)
+                              ioThreads: Option[Int] = None,
+                              additionalProperties: Map[String, AnyRef] = Map.empty)
