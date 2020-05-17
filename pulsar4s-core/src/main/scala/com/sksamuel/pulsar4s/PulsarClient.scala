@@ -177,6 +177,7 @@ class DefaultPulsarClient(client: org.apache.pulsar.client.api.PulsarClient) ext
     config.topicPattern.map(_.pattern).foreach(builder.topicsPattern)
     config.ackTimeout.foreach { t => builder.ackTimeout(t._1, t._2) }
     config.ackTimeoutTickTime.foreach { tt => builder.ackTimeoutTickTime(tt._1, tt._2) }
+    config.deadLetterPolicy.foreach(builder.deadLetterPolicy)
     config.acknowledgmentGroupTime.foreach { gt => builder.acknowledgmentGroupTime(gt._1, gt._2) }
     if (config.topics.nonEmpty)
       builder.topics(config.topics.map(_.name).asJava)
