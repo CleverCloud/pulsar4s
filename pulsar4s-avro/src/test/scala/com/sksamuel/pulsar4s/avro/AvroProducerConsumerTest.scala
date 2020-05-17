@@ -19,7 +19,7 @@ class AvroProducerConsumerTest extends AnyFunSuite with Matchers {
     producer.close()
 
     val consumer = client.consumer[Cafe](ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription.generate))
-    consumer.seek(messageId.get)
+    consumer.seek(MessageId.earliest)
     val msg = consumer.receive
     msg.get.value shouldBe cafe
     consumer.close()

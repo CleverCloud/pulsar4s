@@ -108,8 +108,8 @@ class DefaultConsumer[T](consumer: JConsumer[T]) extends Consumer[T] with Loggin
     implicitly[AsyncHandler[F]].negativeAcknowledgeAsync(consumer, messageId)
 
   override def stats: ConsumerStats = consumer.getStats
-  override def subscription = Subscription(consumer.getSubscription)
-  override def topic = Topic(consumer.getTopic)
+  override def subscription: Subscription = Subscription(consumer.getSubscription)
+  override def topic: Topic = Topic(consumer.getTopic)
 
   override def hasReachedEndOfTopic: Boolean = consumer.hasReachedEndOfTopic
 
