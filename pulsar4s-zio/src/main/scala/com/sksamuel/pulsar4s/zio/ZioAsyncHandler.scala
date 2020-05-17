@@ -6,62 +6,62 @@ import com.sksamuel.pulsar4s.{AsyncHandler, ConsumerMessage, DefaultProducer, Me
 import org.apache.pulsar.client.api
 import org.apache.pulsar.client.api.{Consumer, Reader, TypedMessageBuilder}
 import org.apache.pulsar.client.api.ProducerBuilder
-import zio.{Task, UIO, ZIO}
+import zio.{Task, ZIO}
 
 import scala.util.Try
 
 class ZioAsyncHandler extends AsyncHandler[Task] {
 
-  private def fromFuture[T](javaFutureUIO: UIO[CompletionStage[T]]): Task[T] =
-    javaFutureUIO >>= (cs => ZIO.fromCompletionStage(cs))
+  private def fromFuture[T](javaFutureTask: Task[CompletionStage[T]]): Task[T] =
+    javaFutureTask >>= (cs => ZIO.fromCompletionStage(cs))
 
-  override def transform[A, B](t: Task[A])(fn: A => Try[B]): Task[B] =
-    t >>= { v => Task.fromTry(fn(v)) }
+  override def transform[A, B](task: Task[A])(fn: A => Try[B]): Task[B] =
+    task >>= { v => Task.fromTry(fn(v)) }
 
   override def failed(e: Throwable): Task[Nothing] =
     Task.fail(e)
 
   override def createProducer[T](builder: ProducerBuilder[T]): Task[Producer[T]] =
-    fromFuture(UIO(builder.createAsync())) >>= (p => Task(new DefaultProducer(p)))
+    fromFuture(Task(builder.createAsync())) >>= (p => Task(new DefaultProducer(p)))
 
   override def send[T](t: T, producer: api.Producer[T]): Task[MessageId] =
-    fromFuture(UIO(producer.sendAsync(t))).map(MessageId.fromJava)
+    fromFuture(Task(producer.sendAsync(t))).map(MessageId.fromJava)
 
   override def send[T](builder: TypedMessageBuilder[T]): Task[MessageId] =
-    fromFuture(UIO(builder.sendAsync())).map(MessageId.fromJava)
+    fromFuture(Task(builder.sendAsync())).map(MessageId.fromJava)
 
   override def receive[T](consumer: api.Consumer[T]): Task[ConsumerMessage[T]] =
-    fromFuture(UIO(consumer.receiveAsync())) >>= (v => Task(ConsumerMessage.fromJava(v)))
+    fromFuture(Task(consumer.receiveAsync())) >>= (v => Task(ConsumerMessage.fromJava(v)))
 
   override def close(producer: api.Producer[_]): Task[Unit] =
-    fromFuture(UIO(producer.closeAsync())).unit
+    fromFuture(Task(producer.closeAsync())).unit
 
   override def close(consumer: api.Consumer[_]): Task[Unit] =
-    fromFuture(UIO(consumer.closeAsync())).unit
+    fromFuture(Task(consumer.closeAsync())).unit
 
   override def close(reader: Reader[_]): Task[Unit] =
-    fromFuture(UIO(reader.closeAsync())).unit
+    fromFuture(Task(reader.closeAsync())).unit
 
   override def flush(producer: api.Producer[_]): Task[Unit] =
-    fromFuture(UIO(producer.flushAsync())).unit
+    fromFuture(Task(producer.flushAsync())).unit
 
   override def seekAsync(consumer: api.Consumer[_], messageId: MessageId): Task[Unit] =
-    fromFuture(UIO(consumer.seekAsync(messageId))).unit
+    fromFuture(Task(consumer.seekAsync(messageId))).unit
 
   override def nextAsync[T](reader: Reader[T]): Task[ConsumerMessage[T]] =
-    fromFuture(UIO(reader.readNextAsync())) >>= (v => Task(ConsumerMessage.fromJava(v)))
+    fromFuture(Task(reader.readNextAsync())) >>= (v => Task(ConsumerMessage.fromJava(v)))
 
   override def unsubscribeAsync(consumer: api.Consumer[_]): Task[Unit] =
-    fromFuture(UIO(consumer.unsubscribeAsync())).unit
+    fromFuture(Task(consumer.unsubscribeAsync())).unit
 
   override def acknowledgeAsync[T](consumer: api.Consumer[T], messageId: MessageId): Task[Unit] =
-    fromFuture(UIO(consumer.acknowledgeAsync(messageId))).unit
+    fromFuture(Task(consumer.acknowledgeAsync(messageId))).unit
 
   override def negativeAcknowledgeAsync[T](consumer: Consumer[T], messageId: MessageId): Task[Unit] =
     Task(consumer.negativeAcknowledge(messageId))
 
   override def acknowledgeCumulativeAsync[T](consumer: api.Consumer[T], messageId: MessageId): Task[Unit] =
-    fromFuture(UIO(consumer.acknowledgeCumulativeAsync(messageId))).unit
+    fromFuture(Task(consumer.acknowledgeCumulativeAsync(messageId))).unit
 
 }
 

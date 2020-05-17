@@ -6,7 +6,7 @@ import java.util.concurrent.TimeUnit
 
 import com.sksamuel.exts.Logging
 import org.apache.pulsar.client.api
-import org.apache.pulsar.client.api.{ProducerBuilder, Schema}
+import org.apache.pulsar.client.api.{ProducerBuilder, Schema, SubscriptionInitialPosition}
 
 import scala.collection.JavaConverters._
 
@@ -185,6 +185,7 @@ class DefaultPulsarClient(client: org.apache.pulsar.client.api.PulsarClient) ext
       builder.intercept(interceptors.map(new ConsumerInterceptorAdapter(_, schema)): _*)
     if(config.additionalProperties.nonEmpty)
       builder.loadConf(config.additionalProperties.asJava)
+    builder.subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)
     new DefaultConsumer(builder.subscribe())
   }
 

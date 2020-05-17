@@ -33,6 +33,7 @@ package object circe {
                                         encoder: Encoder[T],
                                         decoder: Decoder[T],
                                         printer: Json => String = Printer.noSpaces.print): Schema[T] = new Schema[T] {
+    override def clone(): Schema[T] = this
     override def encode(t: T): Array[Byte] = printer(encoder(t)).getBytes(StandardCharsets.UTF_8)
     override def decode(bytes: Array[Byte]): T =
       io.circe.jawn.decode[T](new String(bytes, StandardCharsets.UTF_8)).fold(throw _, identity)

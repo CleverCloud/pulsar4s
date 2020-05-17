@@ -40,11 +40,11 @@ class ProducerConsumerTest extends AnyFunSuite with Matchers {
     val topic = Topic("persistent://sample/standalone/ns1/test_" + UUID.randomUUID)
 
     val producer = client.producer(ProducerConfig(topic))
-    val messageId = producer.send("wibble")
+    producer.send("wibble")
     producer.close()
 
     val consumer = client.consumer(ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription.generate))
-    consumer.seek(messageId.get)
+    consumer.seek(MessageId.earliest)
     val msg = consumer.receive
     new String(msg.get.data) shouldBe "wibble"
     consumer.close()
@@ -58,13 +58,13 @@ class ProducerConsumerTest extends AnyFunSuite with Matchers {
     val topic = Topic("persistent://sample/standalone/ns1/test_" + UUID.randomUUID)
 
     val producer = Await.result(client.producerAsync(ProducerConfig(topic)), 10.seconds)
-    val messageId = producer.send("wibble")
+    producer.send("wobble")
     producer.close()
 
     val consumer = client.consumer(ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription.generate))
-    consumer.seek(messageId.get)
+    consumer.seek(MessageId.earliest)
     val msg = consumer.receive
-    new String(msg.get.data) shouldBe "wibble"
+    new String(msg.get.data) shouldBe "wobble"
     consumer.close()
 
     client.close()
@@ -86,22 +86,21 @@ class ProducerConsumerTest extends AnyFunSuite with Matchers {
       subscriptionName = Subscription.generate,
       subscriptionType = Some(SubscriptionType.Shared)
     ))
-    consumer.seek(messageId.get)
+    consumer.seek(MessageId.earliest)
+
     val msg = consumer.receive
     new String(msg.get.data) shouldBe "wibble"
     consumer.close()
 
     val end = System.currentTimeMillis()
-
     assert(end - start >= 5000)
-
     client.close()
   }
 
   test("producer and consumer synchronous round trip with deliverAt") {
 
     val client = PulsarClient("pulsar://localhost:6650")
-    val topic = Topic("persistent://sample/standalone/ns1/test_" + UUID.randomUUID)
+    val topic = Topic("persistent://public/default/test_" + UUID.randomUUID)
 
     val start = System.currentTimeMillis
 
@@ -115,7 +114,7 @@ class ProducerConsumerTest extends AnyFunSuite with Matchers {
       subscriptionName = Subscription.generate,
       subscriptionType = Some(SubscriptionType.Shared)
     ))
-    consumer.seek(messageId.get)
+    consumer.seek(MessageId.earliest)
     val msg = consumer.receive
     new String(msg.get.data) shouldBe "wibble"
     consumer.close()
@@ -130,7 +129,7 @@ class ProducerConsumerTest extends AnyFunSuite with Matchers {
   test("consumers on separate subscriptions should have replay") {
 
     val client = PulsarClient("pulsar://localhost:6650")
-    val topic = Topic("persistent://sample/standalone/ns1/test_" + UUID.randomUUID)
+    val topic = Topic("persistent://public/default/test_" + UUID.randomUUID)
 
     val producer = client.producer(ProducerConfig(topic))
     producer.send("wibble")
