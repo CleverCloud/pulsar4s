@@ -10,7 +10,6 @@ import com.sksamuel.avro4s.AvroOutputStream
 import com.sksamuel.avro4s.Decoder
 import com.sksamuel.avro4s.Encoder
 import com.sksamuel.avro4s.SchemaFor
-import org.apache.avro
 import org.apache.pulsar.client.api.Schema
 import org.apache.pulsar.common.schema.{SchemaInfo, SchemaType}
 
@@ -37,7 +36,7 @@ package object avro {
   @implicitNotFound("No Avro Schema for type ${T} found.")
   implicit def avroSchema[T: Manifest: SchemaFor: Encoder: Decoder]: Schema[T] = new Schema[T] {
 
-    val schema: avro.Schema = AvroSchema[T]
+    val schema: org.apache.avro.Schema = AvroSchema[T]
 
     override def clone(): Schema[T] = this
 
