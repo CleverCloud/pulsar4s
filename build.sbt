@@ -8,7 +8,7 @@ def travisVersion(v: String, tb: String): String = v.stripSuffix("-SNAPSHOT") + 
 
 val org = "com.sksamuel.pulsar4s"
 val AkkaStreamVersion = "2.5.31" // compatible with Akka 2.5.x and 2.6.x
-val CatsEffectVersion = "2.0.0"
+val CatsEffectVersion = "2.1.3"
 val CirceVersion = "0.12.3"
 val CommonsIoVersion = "2.4"
 val ExtsVersion = "1.61.1"
@@ -20,12 +20,12 @@ val PulsarVersion = "2.5.1"
 val ReactiveStreamsVersion = "1.0.2"
 val Json4sVersion = "3.6.7"
 val Avro4sVersion = "3.1.0"
-val ScalaVersion = "2.12.10"
+val ScalaVersion = "2.12.11"
 val ScalatestVersion = "3.1.2"
 val Slf4jVersion = "1.7.30"
 val SprayJsonVersion = "1.3.5"
 val Java8CompatVersion = "0.9.1"
-val ZIOVersion = "1.0.0-RC19"
+val ZIOVersion = "1.0.0-RC19-1"
 val ZIOInteropCatsVersion = "2.0.0.0-RC14"
 
 lazy val commonScalaVersionSettings = Seq(
