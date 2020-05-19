@@ -89,7 +89,7 @@ class CatsAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAfter
     }.map(_.value).runSyncUnsafe() shouldBe msg
   }
 
-  ignore("async client methods should work with any monad which implements Async - ZIO") {
+  test("async client methods should work with any monad which implements Async - ZIO") {
     import CatsAsyncHandler._
     val msg = "hello ZIO via cats-effect"
     import zio.{Task, Runtime}
