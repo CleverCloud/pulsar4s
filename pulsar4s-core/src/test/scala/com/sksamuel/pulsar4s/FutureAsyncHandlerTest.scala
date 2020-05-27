@@ -37,4 +37,16 @@ class FutureAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAft
     new String(Await.result(f, Duration.Inf).data) shouldBe "wibble"
     consumer.close()
   }
+
+  test("async consumer getMessageById should bring future effect into scope by default") {
+    val consumer = client.consumer(ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription("mysub_" + UUID.randomUUID)))
+    consumer.seekEarliest()
+    val receive = consumer.receiveAsync
+    val value = Await.result(receive, Duration.Inf)
+    val t = consumer.getLastMessageIdAsync
+    val r = Await.result(t, Duration.Inf)
+    val zipped = r.toString.split(":") zip value.messageId.toString.split(":")
+    zipped.foreach(t => t._1 shouldBe t._2)
+    consumer.close()
+  }
 }

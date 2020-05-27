@@ -36,4 +36,17 @@ class ScalazAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAft
     new String(t.unsafePerformSync.data) shouldBe "wibble"
     consumer.close()
   }
+
+  test("async consumer getMessageById should use scalaz task") {
+    val consumer = client.consumer(ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription.generate)
+    )
+    consumer.seekEarliest()
+    val receive = consumer.receiveAsync
+    val value = receive.unsafePerformSync
+    val t = consumer.getLastMessageIdAsync
+    val r = t.unsafePerformSync
+    val zipped = r.toString.split(":") zip value.messageId.toString.split(":")
+    zipped.foreach(t => t._1 shouldBe t._2)
+    consumer.close()
+  }
 }

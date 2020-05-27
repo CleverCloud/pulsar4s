@@ -39,6 +39,19 @@ class CatsAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAfter
     consumer.close()
   }
 
+  test("async consumer getMessageById should be able to use cats IO with the standard import") {
+    import CatsAsyncHandler._
+    val consumer = client.consumer(ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription("mysub_" + UUID.randomUUID)))
+    consumer.seekEarliest()
+    val receive = consumer.receiveAsync
+    val value = receive.unsafeRunSync()
+    val t = consumer.getLastMessageIdAsync
+    val r = t.unsafeRunSync()
+    val zipped = r.toString.split(":") zip value.messageId.toString.split(":")
+    zipped.foreach(t => t._1 shouldBe t._2)
+    consumer.close()
+  }
+
   def pulsarResources[F[_]: Sync: AsyncHandler](c: PulsarClient, t: Topic, subscription: Subscription): Resource[F, (Producer[String], Consumer[String])] = {
     val producer: Resource[F, Producer[String]] = Resource.make(Sync[F].delay { c.producer(ProducerConfig(t)) }){_.closeAsync}
     val consumer: Resource[F, Consumer[String]] = Resource.make(Sync[F].delay { c.consumer(ConsumerConfig(topics = Seq(t), subscriptionName = subscription)) }){_.closeAsync}
@@ -103,4 +116,5 @@ class CatsAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAfter
     }.map(_.value)
     Runtime.default.unsafeRun(program) shouldBe msg
   }
+  
 }
