@@ -37,6 +37,11 @@ class FutureAsyncHandler(implicit ec: ExecutionContext) extends AsyncHandler[Fut
 
   override def unsubscribeAsync(consumer: api.Consumer[_]): Future[Unit] = consumer.unsubscribeAsync().toScala
 
+  override def getLastMessageId[T](consumer: api.Consumer[T]): Future[MessageId] = {
+    val future = consumer.getLastMessageIdAsync()
+    FutureConverters.toScala(future).map(MessageId.fromJava)
+  }
+
   override def close(producer: api.Producer[_]): Future[Unit] = producer.closeAsync().toScala
   override def close(consumer: api.Consumer[_]): Future[Unit] = consumer.closeAsync().toScala
 

@@ -40,6 +40,9 @@ class ScalazAsyncHandler extends AsyncHandler[Task] {
 
   override def receive[T](consumer: api.Consumer[T]): Task[ConsumerMessage[T]] =
     completableToTask(consumer.receiveAsync).map(ConsumerMessage.fromJava)
+  
+  override def getLastMessageId[T](consumer: api.Consumer[T]): Task[MessageId] =
+    completableToTask(consumer.getLastMessageIdAsync()).map(MessageId.fromJava)
 
   override def unsubscribeAsync(consumer: api.Consumer[_]): Task[Unit] =
     consumer.unsubscribeAsync()

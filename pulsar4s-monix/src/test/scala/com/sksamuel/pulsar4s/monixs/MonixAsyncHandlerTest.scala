@@ -41,4 +41,18 @@ class MonixAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAfte
     new String(Await.result(f, Duration.Inf).data) shouldBe "wibble"
     consumer.close()
   }
+
+  test("async consumer getMessageById should use monix") {
+    val consumer = client.consumer(ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription("mysub_" + UUID.randomUUID())))
+    consumer.seekEarliest()
+    val receive = consumer.receiveAsync
+    val valueFuture = receive.runToFuture
+    val value = Await.result(valueFuture, Duration.Inf)
+    val t = consumer.getLastMessageIdAsync
+    val rFuture = t.runToFuture
+    val r = Await.result(rFuture, Duration.Inf)
+    val zipped = r.toString.split(":") zip value.messageId.toString.split(":")
+    zipped.foreach(t => t._1 shouldBe t._2)
+    consumer.close()
+  }
 }

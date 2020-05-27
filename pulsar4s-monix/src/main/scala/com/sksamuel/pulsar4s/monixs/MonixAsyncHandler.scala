@@ -40,6 +40,13 @@ class MonixAsyncHandler extends AsyncHandler[Task] {
     }.map(ConsumerMessage.fromJava)
   }
 
+  override def getLastMessageId[T](consumer: api.Consumer[T]): Task[MessageId] = {
+    Task.deferFuture {
+      val future = consumer.getLastMessageIdAsync()
+      FutureConverters.toScala(future)
+    }.map(MessageId.fromJava)
+  }
+
   def unsubscribeAsync(consumer: api.Consumer[_]): Task[Unit] = consumer.unsubscribeAsync()
 
   override def close(producer: api.Producer[_]): Task[Unit] = producer.closeAsync()
