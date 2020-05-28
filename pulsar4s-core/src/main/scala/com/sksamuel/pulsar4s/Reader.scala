@@ -12,6 +12,10 @@ trait Reader[T] extends Closeable {
   def next(duration: Duration): Option[ConsumerMessage[T]]
   def nextAsync[F[_] : AsyncHandler]: F[ConsumerMessage[T]]
   def closeAsync[F[_] : AsyncHandler]: F[Unit]
+  def seek(timestamp: Long): Unit
+  def seek(messageId: MessageId): Unit
+  def seekAsync[F[_] : AsyncHandler](timestamp: Long): F[Unit]
+  def seekAsync[F[_] : AsyncHandler](messageId: MessageId): F[Unit] 
   def hasReachedEndOfTopic: Boolean
 }
 
@@ -29,6 +33,11 @@ class DefaultReader[T](reader: org.apache.pulsar.client.api.Reader[T],
 
   override def close(): Unit = reader.close()
   override def closeAsync[F[_] : AsyncHandler]: F[Unit] = implicitly[AsyncHandler[F]].close(reader)
+
+  override def seek(timestamp: Long): Unit = reader.seek(timestamp)
+  override def seek(messageId: MessageId): Unit = reader.seek(messageId)
+  override def seekAsync[F[_] : AsyncHandler](timestamp: Long): F[Unit] = implicitly[AsyncHandler[F]].seekAsync(reader, timestamp)
+  override def seekAsync[F[_] : AsyncHandler](messageId: MessageId): F[Unit] = implicitly[AsyncHandler[F]].seekAsync(reader, messageId)
 
   /**
     * Returns true if the topic was terminated and this reader

@@ -50,6 +50,12 @@ class ZioAsyncHandler extends AsyncHandler[Task] {
 
   override def seekAsync(consumer: api.Consumer[_], messageId: MessageId): Task[Unit] =
     fromFuture(Task(consumer.seekAsync(messageId))).unit
+  
+  override def seekAsync(reader: api.Reader[_], messageId: MessageId): Task[Unit] =
+    fromFuture(Task(reader.seekAsync(messageId))).unit
+  
+  override def seekAsync(reader: api.Reader[_], timestamp: Long): Task[Unit] =
+    fromFuture(Task(reader.seekAsync(timestamp))).unit
 
   override def nextAsync[T](reader: Reader[T]): Task[ConsumerMessage[T]] =
     fromFuture(Task(reader.readNextAsync())) >>= (v => Task(ConsumerMessage.fromJava(v)))
