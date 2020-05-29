@@ -194,7 +194,15 @@ class DefaultPulsarClient(client: org.apache.pulsar.client.api.PulsarClient) ext
     val builder = client.newReader(schema)
     builder.topic(config.topic.name)
     config.reader.foreach(builder.readerName)
-    builder.startMessageId(MessageId.toJava(config.seek))
+    config.startMessage match {
+      case Message(messageId) => builder.startMessageId(MessageId.toJava(messageId))
+      case RollBack(rollbackDuration, timeunit) => builder.startMessageFromRollbackDuration(rollbackDuration, timeunit)
+    }
+    config.startMessageIdInclusive match {
+      case true => builder.startMessageIdInclusive()
+      case _ => 
+    }
+    
     config.receiverQueueSize.foreach(builder.receiverQueueSize)
     config.readCompacted.foreach(builder.readCompacted)
     if(config.additionalProperties.nonEmpty)

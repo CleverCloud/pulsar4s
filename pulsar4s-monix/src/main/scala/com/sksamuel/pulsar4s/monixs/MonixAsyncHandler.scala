@@ -54,6 +54,13 @@ class MonixAsyncHandler extends AsyncHandler[Task] {
 
   override def seekAsync(consumer: api.Consumer[_], messageId: MessageId): Task[Unit] =
     consumer.seekAsync(messageId)
+  
+  override def seekAsync(reader: api.Reader[_], messageId: MessageId): Task[Unit] =
+    reader.seekAsync(messageId)
+  
+  override def seekAsync(reader: api.Reader[_], timestamp: Long): Task[Unit] =
+    reader.seekAsync(timestamp)
+
 
   override def transform[A, B](t: Task[A])(fn: A => Try[B]): Task[B] =
     t.flatMap { a =>
