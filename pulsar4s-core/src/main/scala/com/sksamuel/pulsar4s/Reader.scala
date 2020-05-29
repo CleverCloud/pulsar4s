@@ -11,6 +11,7 @@ trait Reader[T] extends Closeable {
   def next: ConsumerMessage[T]
   def next(duration: Duration): Option[ConsumerMessage[T]]
   def nextAsync[F[_] : AsyncHandler]: F[ConsumerMessage[T]]
+  def isConnected: Boolean
   def closeAsync[F[_] : AsyncHandler]: F[Unit]
   def seek(timestamp: Long): Unit
   def seek(messageId: MessageId): Unit
@@ -30,6 +31,8 @@ class DefaultReader[T](reader: org.apache.pulsar.client.api.Reader[T],
     Option(reader.readNext(duration.toSeconds.toInt, TimeUnit.SECONDS)).map(ConsumerMessage.fromJava)
 
   override def nextAsync[F[_] : AsyncHandler]: F[ConsumerMessage[T]] = implicitly[AsyncHandler[F]].nextAsync(reader)
+
+  override def isConnected: Boolean = reader.isConnected
 
   override def close(): Unit = reader.close()
   override def closeAsync[F[_] : AsyncHandler]: F[Unit] = implicitly[AsyncHandler[F]].close(reader)
