@@ -96,7 +96,7 @@ class CatsAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAfter
     val msg = "hello ZIO via cats-effect"
     import zio._
     import zio.interop.catz._
-    val runtime = new DefaultRuntime {}
+    val runtime = Runtime.default
     val program = pulsarResources[zio.Task](
       client,
       Topic("persistent://sample/standalone/ns1/cats_async_zio_task"),
