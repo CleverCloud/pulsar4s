@@ -2,7 +2,7 @@ package com.sksamuel.pulsar4s.akka
 
 import akka.Done
 import akka.stream.scaladsl.{Sink, Source}
-import com.sksamuel.pulsar4s.{Consumer, ConsumerMessage, MessageId, Producer, ProducerMessage}
+import com.sksamuel.pulsar4s.{Consumer, ConsumerMessage, MessageId, Producer, ProducerMessage, Topic}
 
 import scala.concurrent.Future
 
@@ -45,4 +45,15 @@ package object streams {
    */
   def sink[T](create: () => Producer[T]): Sink[ProducerMessage[T], Future[Done]] =
     Sink.fromGraph(new PulsarSinkGraphStage(create))
+
+
+  /**
+   * Create a multi-topic Akka Streams sink from a [[Producer]].
+   *
+   * @param create a function to create a new [[Producer]] taking [[com.sksamuel.pulsar4s.Topic]] as a parameter
+   * @return the new [[Sink]].
+   */
+  def multiSink[T](create: Topic => Producer[T], initTopics: Iterable[Topic] = Seq.empty):
+  Sink[(Topic, ProducerMessage[T]), Future[Done]] =
+    Sink.fromGraph(new PulsarMultiSinkGraphStage(create, initTopics.toSet))
 }
