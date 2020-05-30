@@ -23,31 +23,6 @@ case class ProducerConfig(topic: Topic,
                           roundRobinRouterBatchingPartitionSwitchFrequency: Option[Int] = None,
                           producerName: Option[String] = None,
                           sendTimeout: Option[FiniteDuration] = None,
-                          compressionType: Option[CompressionType] = None)
+                          compressionType: Option[CompressionType] = None,
+                          additionalProperties: Map[String, AnyRef] = Map.empty)
 
-case class ConsumerConfig(subscriptionName: Subscription,
-                          topics: Seq[Topic] = Nil,
-                          topicPattern: Option[Regex] = None,
-                          consumerEventListener: Option[ConsumerEventListener] = None,
-                          cryptoFailureAction: Option[ConsumerCryptoFailureAction] = None,
-                          consumerName: Option[String] = None,
-                          cryptoKeyReader: Option[CryptoKeyReader] = None,
-                          autoUpdatePartitions: Option[Boolean] = None,
-                          maxTotalReceiverQueueSizeAcrossPartitions: Option[Int] = None,
-                          negativeAckRedeliveryDelay: Option[FiniteDuration] = None,
-                          patternAutoDiscoveryPeriod: Option[Int] = None,
-                          priorityLevel: Option[Int] = None,
-                          receiverQueueSize: Option[Int] = None,
-                          subscriptionInitialPosition: Option[SubscriptionInitialPosition] = None,
-                          subscriptionTopicsMode: Option[RegexSubscriptionMode] = None,
-                          subscriptionType: Option[SubscriptionType] = None,
-                          readCompacted: Option[Boolean] = None,
-                          ackTimeout: Option[FiniteDuration] = None,
-                          ackTimeoutTickTime: Option[FiniteDuration] = None,
-                          acknowledgmentGroupTime: Option[FiniteDuration] = None)
-
-case class ReaderConfig(topic: Topic,
-                        seek: MessageId,
-                        receiverQueueSize: Option[Int] = None,
-                        reader: Option[String] = None,
-                        readCompacted: Option[Boolean] = None)

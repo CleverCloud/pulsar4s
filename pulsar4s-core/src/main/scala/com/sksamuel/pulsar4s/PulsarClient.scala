@@ -6,7 +6,7 @@ import java.util.concurrent.TimeUnit
 
 import com.sksamuel.exts.Logging
 import org.apache.pulsar.client.api
-import org.apache.pulsar.client.api.{ProducerBuilder, Schema}
+import org.apache.pulsar.client.api.{ProducerBuilder, Schema, SubscriptionInitialPosition}
 
 import scala.collection.JavaConverters._
 
@@ -110,6 +110,8 @@ object PulsarClient {
     config.keepAliveInterval.map(_.toSeconds.toInt).foreach(builder.keepAliveInterval(_, TimeUnit.SECONDS))
     config.statsInterval.map(_.toMillis).foreach(builder.statsInterval(_, TimeUnit.MILLISECONDS))
     config.tlsTrustCertsFilePath.foreach(builder.tlsTrustCertsFilePath)
+    if(config.additionalProperties.nonEmpty)
+      builder.loadConf(config.additionalProperties.asJava)
     new DefaultPulsarClient(builder.build())
   }
 
@@ -144,6 +146,8 @@ class DefaultPulsarClient(client: org.apache.pulsar.client.api.PulsarClient) ext
     config.sendTimeout.map(_.toMillis.toInt).foreach(builder.sendTimeout(_, TimeUnit.MILLISECONDS))
     if (interceptors.nonEmpty)
       builder.intercept(interceptors.map(new ProducerInterceptorAdapter(_, schema)): _*)
+    if(config.additionalProperties.nonEmpty)
+      builder.loadConf(config.additionalProperties.asJava)
     builder
   }
 
@@ -173,12 +177,15 @@ class DefaultPulsarClient(client: org.apache.pulsar.client.api.PulsarClient) ext
     config.topicPattern.map(_.pattern).foreach(builder.topicsPattern)
     config.ackTimeout.foreach { t => builder.ackTimeout(t._1, t._2) }
     config.ackTimeoutTickTime.foreach { tt => builder.ackTimeoutTickTime(tt._1, tt._2) }
+    config.deadLetterPolicy.foreach(builder.deadLetterPolicy)
     config.acknowledgmentGroupTime.foreach { gt => builder.acknowledgmentGroupTime(gt._1, gt._2) }
     if (config.topics.nonEmpty)
       builder.topics(config.topics.map(_.name).asJava)
     builder.subscriptionName(config.subscriptionName.name)
     if (interceptors.nonEmpty)
       builder.intercept(interceptors.map(new ConsumerInterceptorAdapter(_, schema)): _*)
+    if(config.additionalProperties.nonEmpty)
+      builder.loadConf(config.additionalProperties.asJava)
     new DefaultConsumer(builder.subscribe())
   }
 
@@ -187,9 +194,19 @@ class DefaultPulsarClient(client: org.apache.pulsar.client.api.PulsarClient) ext
     val builder = client.newReader(schema)
     builder.topic(config.topic.name)
     config.reader.foreach(builder.readerName)
-    builder.startMessageId(MessageId.toJava(config.seek))
+    config.startMessage match {
+      case Message(messageId) => builder.startMessageId(MessageId.toJava(messageId))
+      case RollBack(rollbackDuration, timeunit) => builder.startMessageFromRollbackDuration(rollbackDuration, timeunit)
+    }
+    config.startMessageIdInclusive match {
+      case true => builder.startMessageIdInclusive()
+      case _ => 
+    }
+    
     config.receiverQueueSize.foreach(builder.receiverQueueSize)
     config.readCompacted.foreach(builder.readCompacted)
+    if(config.additionalProperties.nonEmpty)
+      builder.loadConf(config.additionalProperties.asJava)
     new DefaultReader(builder.create(), config.topic)
   }
 }

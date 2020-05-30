@@ -35,7 +35,10 @@ package object avro {
 
   @implicitNotFound("No Avro Schema for type ${T} found.")
   implicit def avroSchema[T: Manifest: SchemaFor: Encoder: Decoder]: Schema[T] = new Schema[T] {
-    val schema = AvroSchema[T]
+
+    val schema: org.apache.avro.Schema = AvroSchema[T]
+
+    override def clone(): Schema[T] = this
 
     override def encode(t: T): Array[Byte] = {
       val baos = new ByteArrayOutputStream
@@ -45,6 +48,7 @@ package object avro {
       aos.close()
       baos.toByteArray()
     }
+
     override def decode(bytes: Array[Byte]): T = {
       val bais = new ByteArrayInputStream(bytes)
       val ais = AvroInputStream.binary[T].from(bais).build(schema)
@@ -52,6 +56,7 @@ package object avro {
       ais.close()
       first
     }
+
     override def getSchemaInfo: SchemaInfo =
       new SchemaInfo()
         .setName(manifest[T].runtimeClass.getCanonicalName)

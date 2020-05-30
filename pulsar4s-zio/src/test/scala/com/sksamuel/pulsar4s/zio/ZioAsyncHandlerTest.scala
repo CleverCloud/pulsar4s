@@ -7,6 +7,7 @@ import org.apache.pulsar.client.api.Schema
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import java.util.regex.Pattern
 
 class ZioAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
 
@@ -14,8 +15,8 @@ class ZioAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAfterA
 
   implicit val schema: Schema[String] = Schema.STRING
 
-  val client = PulsarClient("pulsar://localhost:6650")
-  val topic = Topic("persistent://sample/standalone/ns1/zio_" + UUID.randomUUID())
+  private val client = PulsarClient("pulsar://localhost:6650")
+  private val topic = Topic("persistent://sample/standalone/ns1/zio_" + UUID.randomUUID())
 
   override def afterAll(): Unit = {
     client.close()
@@ -36,6 +37,18 @@ class ZioAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAfterA
     val r = zio.Runtime.default.unsafeRun(t.either)
     r shouldBe Symbol("right")
     new String(r.right.get.data) shouldBe "wibble"
+    consumer.close()
+  }
+
+  test("async consumer getMessageById should use zio") {
+    val consumer = client.consumer(ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription("mysub_" + UUID.randomUUID())))
+    consumer.seekEarliest()
+    val receive = consumer.receiveAsync
+    val value = zio.Runtime.default.unsafeRun(receive.either)
+    val t = consumer.getLastMessageIdAsync
+    val r = zio.Runtime.default.unsafeRun(t.either)
+    val zipped = r.right.get.toString.split(":") zip value.right.get.messageId.toString.split(":")
+    zipped.foreach(t => t._1 shouldBe t._2)
     consumer.close()
   }
 }

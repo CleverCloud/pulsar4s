@@ -45,10 +45,14 @@ trait CatsAsyncHandlerLowPriority {
 
     override def unsubscribeAsync(consumer: api.Consumer[_]): F[Unit] = consumer.unsubscribeAsync().toF[F].void
 
+    override def getLastMessageId[T](consumer: api.Consumer[T]): F[MessageId] = consumer.getLastMessageIdAsync().toF[F].map(MessageId.fromJava)
+
     override def close(producer: api.Producer[_]): F[Unit] = producer.closeAsync().toF[F].void
     override def close(consumer: api.Consumer[_]): F[Unit] = consumer.closeAsync().toF[F].void
 
     override def seekAsync(consumer: api.Consumer[_], messageId: MessageId): F[Unit] = consumer.seekAsync(messageId).toF[F].void
+    override def seekAsync(reader: api.Reader[_], messageId: MessageId): F[Unit] = reader.seekAsync(messageId).toF[F].void
+    override def seekAsync(reader: api.Reader[_], timestamp: Long): F[Unit] = reader.seekAsync(timestamp).toF[F].void
 
     override def transform[A, B](t: F[A])(fn: A => Try[B]): F[B] =
       t.flatMap { a =>

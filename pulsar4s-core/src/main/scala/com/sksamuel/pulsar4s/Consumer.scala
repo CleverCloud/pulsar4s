@@ -47,6 +47,10 @@ trait Consumer[T] extends Closeable {
   def seekLatest(): Unit = seek(MessageId.latest)
   def seekAsync[F[_] : AsyncHandler](messageId: MessageId): F[Unit]
 
+  def getLastMessageId(): MessageId
+
+  def getLastMessageIdAsync[F[_] : AsyncHandler]: F[MessageId]
+
   def close(): Unit
   def closeAsync[F[_] : AsyncHandler]: F[Unit]
 
@@ -108,8 +112,8 @@ class DefaultConsumer[T](consumer: JConsumer[T]) extends Consumer[T] with Loggin
     implicitly[AsyncHandler[F]].negativeAcknowledgeAsync(consumer, messageId)
 
   override def stats: ConsumerStats = consumer.getStats
-  override def subscription = Subscription(consumer.getSubscription)
-  override def topic = Topic(consumer.getTopic)
+  override def subscription: Subscription = Subscription(consumer.getSubscription)
+  override def topic: Topic = Topic(consumer.getTopic)
 
   override def hasReachedEndOfTopic: Boolean = consumer.hasReachedEndOfTopic
 
@@ -119,6 +123,10 @@ class DefaultConsumer[T](consumer: JConsumer[T]) extends Consumer[T] with Loggin
 
   override def seekAsync[F[_] : AsyncHandler](messageId: MessageId): F[Unit] =
     implicitly[AsyncHandler[F]].seekAsync(consumer, messageId)
+  
+  override def getLastMessageId(): MessageId = consumer.getLastMessageId()
+
+  override def getLastMessageIdAsync[F[_] : AsyncHandler]: F[MessageId] = implicitly[AsyncHandler[F]].getLastMessageId(consumer)
 
   override def close(): Unit = {
     logger.info("Closing consumer")

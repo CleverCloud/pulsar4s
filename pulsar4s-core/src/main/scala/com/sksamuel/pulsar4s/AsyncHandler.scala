@@ -24,9 +24,13 @@ trait AsyncHandler[F[_]] {
   def flush(producer: api.Producer[_]): F[Unit]
 
   def seekAsync(consumer: api.Consumer[_], messageId: MessageId): F[Unit]
+  def seekAsync(reader: api.Reader[_], messageId: MessageId): F[Unit]
+  def seekAsync(reader: api.Reader[_], timestamp: Long): F[Unit]
   def nextAsync[T](reader: api.Reader[T]): F[ConsumerMessage[T]]
 
   def unsubscribeAsync(consumer: api.Consumer[_]): F[Unit]
+
+  def getLastMessageId[T](consumer: api.Consumer[T]): F[MessageId]
 
   def acknowledgeAsync[T](consumer: api.Consumer[T], messageId: MessageId): F[Unit]
   def negativeAcknowledgeAsync[T](consumer: api.Consumer[T], messageId: MessageId): F[Unit]

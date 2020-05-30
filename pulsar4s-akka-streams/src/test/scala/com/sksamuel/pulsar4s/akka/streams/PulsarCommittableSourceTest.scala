@@ -31,7 +31,7 @@ class PulsarCommittableSourceTest extends AnyFunSuite with Matchers {
   implicit val schema: Schema[String] = Schema.STRING
   implicit val executor: ExecutionContextExecutor = system.dispatcher
 
-  val client = PulsarClient("pulsar://localhost:6650")
+  private val client = PulsarClient("pulsar://localhost:6650")
 
   test("pulsar committableSource should read messages from a cluster") {
 
@@ -52,18 +52,24 @@ class PulsarCommittableSourceTest extends AnyFunSuite with Matchers {
     msgs.map(_.message.value) shouldBe Seq("a", "b", "c", "d")
   }
 
-  test("pulsar committableSource should not fail on messages with invalid data") {
+  test("pulsar committableSource should not fail when schema throws an exception") {
 
     val topic = Topic("persistent://sample/standalone/ns1/sourcetest_" + UUID.randomUUID)
     val config = ProducerConfig(topic)
     val producer = client.producer(config)
-    producer.send("a")
+    producer.send("test")
     producer.close()
 
-    val createFn = () => client.consumer(ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription.generate))(Schema.INT64)
-    val f = committableSource(createFn, Some(MessageId.earliest))
-      .take(1)
-      .runWith(Sink.seq[CommittableMessage[java.lang.Long]])
+    val specialStringSchema = new Schema[String] {
+      override def encode(message: String) = ("message:" + message).getBytes("UTF-8")
+      override def decode(data: Array[Byte]) = new String(data, "UTF-8").split(":", 2)(1)
+      override def getSchemaInfo = Schema.STRING.getSchemaInfo
+    }
+
+    val createFn = () => client.consumer(
+      ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription.generate
+    ))(specialStringSchema)
+    val f = committableSource(createFn, Some(MessageId.earliest)).take(1).runWith(Sink.seq[CommittableMessage[String]])
     val msgs = Await.result(f, 15.seconds)
     msgs.headOption.flatMap(_.message.valueTry.toOption) shouldBe None
   }

@@ -6,7 +6,6 @@ import com.sksamuel.pulsar4s._
 import org.apache.pulsar.client.api.Schema
 import org.scalatest.BeforeAndAfterAll
 import _root_.cats.effect._
-import _root_.cats._
 import _root_.cats.data._
 import _root_.cats.implicits._
 import org.scalatest.funsuite.AnyFunSuite
@@ -14,11 +13,10 @@ import org.scalatest.matchers.should.Matchers
 
 class CatsAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
 
-
   implicit val schema: Schema[String] = Schema.STRING
 
-  val client = PulsarClient("pulsar://localhost:6650")
-  val topic = Topic("persistent://sample/standalone/ns1/cats_" + UUID.randomUUID())
+  private val client = PulsarClient("pulsar://localhost:6650")
+  private val topic = Topic("persistent://sample/standalone/ns1/cats_" + UUID.randomUUID())
 
   override def afterAll(): Unit = {
     client.close()
@@ -38,6 +36,19 @@ class CatsAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAfter
     consumer.seekEarliest()
     val t = consumer.receiveAsync
     new String(t.unsafeRunSync().data) shouldBe "wibble"
+    consumer.close()
+  }
+
+  test("async consumer getMessageById should be able to use cats IO with the standard import") {
+    import CatsAsyncHandler._
+    val consumer = client.consumer(ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription("mysub_" + UUID.randomUUID)))
+    consumer.seekEarliest()
+    val receive = consumer.receiveAsync
+    val value = receive.unsafeRunSync()
+    val t = consumer.getLastMessageIdAsync
+    val r = t.unsafeRunSync()
+    val zipped = r.toString.split(":") zip value.messageId.toString.split(":")
+    zipped.foreach(t => t._1 shouldBe t._2)
     consumer.close()
   }
 
@@ -94,16 +105,16 @@ class CatsAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAfter
   test("async client methods should work with any monad which implements Async - ZIO") {
     import CatsAsyncHandler._
     val msg = "hello ZIO via cats-effect"
-    import zio._
+    import zio.{Task, Runtime}
     import zio.interop.catz._
-    val runtime = Runtime.default
-    val program = pulsarResources[zio.Task](
+    val program = pulsarResources[Task](
       client,
       Topic("persistent://sample/standalone/ns1/cats_async_zio_task"),
       Subscription("cats_effect_test_zio_task")
     ).use { case (producer, consumer) =>
-      asyncProgram[zio.Task](producer, consumer, msg)
+      asyncProgram[Task](producer, consumer, msg)
     }.map(_.value)
-    runtime.unsafeRun(program) shouldBe msg
+    Runtime.default.unsafeRun(program) shouldBe msg
   }
+  
 }
