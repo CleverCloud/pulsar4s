@@ -7,7 +7,7 @@ travisBuildNumber in Global := sys.env.getOrElse("TRAVIS_BUILD_NUMBER", "0")
 def travisVersion(v: String, tb: String): String = v.stripSuffix("-SNAPSHOT") + s".$tb-SNAPSHOT"
 
 val org = "com.sksamuel.pulsar4s"
-val AkkaStreamVersion = "2.5.31" // compatible with Akka 2.5.x and 2.6.x
+val AkkaStreamVersion = "2.6.6" // compatible with Akka 2.5.x and 2.6.x
 val CatsEffectVersion = "2.1.3"
 val CirceVersion = "0.12.3"
 val CommonsIoVersion = "2.4"
