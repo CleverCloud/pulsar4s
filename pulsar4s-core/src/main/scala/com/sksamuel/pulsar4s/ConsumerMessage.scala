@@ -2,6 +2,7 @@ package com.sksamuel.pulsar4s
 
 import org.apache.pulsar.client.api.Schema
 import org.apache.pulsar.client.impl.MessageImpl
+import org.apache.pulsar.common.api.proto.PulsarApi.MessageMetadata
 import org.apache.pulsar.shade.io.netty.buffer.Unpooled
 
 import scala.collection.JavaConverters._
@@ -80,7 +81,7 @@ object ConsumerMessage {
 
   def toJava[T](message: ConsumerMessage[T], schema: Schema[T]): JMessage[T] = {
     require(message != null)
-    new MessageImpl(message.topic.name, MessageId.toJava(message.messageId).toString, message.props.asJava, Unpooled.wrappedBuffer(message.data), schema)
+    new MessageImpl(message.topic.name, MessageId.toJava(message.messageId).toString, message.props.asJava, Unpooled.wrappedBuffer(message.data), schema, MessageMetadata.newBuilder())
   }
 }
 
