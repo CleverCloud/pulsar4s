@@ -6,7 +6,7 @@ import java.util.concurrent.TimeUnit
 
 import com.sksamuel.exts.Logging
 import org.apache.pulsar.client.api
-import org.apache.pulsar.client.api.{ProducerBuilder, Schema, SubscriptionInitialPosition}
+import org.apache.pulsar.client.api.{ProducerBuilder, Schema}
 
 import scala.collection.JavaConverters._
 
@@ -144,6 +144,7 @@ class DefaultPulsarClient(client: org.apache.pulsar.client.api.PulsarClient) ext
     config.messageRoutingMode.foreach(builder.messageRoutingMode)
     config.producerName.foreach(builder.producerName)
     config.sendTimeout.map(_.toMillis.toInt).foreach(builder.sendTimeout(_, TimeUnit.MILLISECONDS))
+    config.batcherBuilder.foreach(builder.batcherBuilder)
     if (interceptors.nonEmpty)
       builder.intercept(interceptors.map(new ProducerInterceptorAdapter(_, schema)): _*)
     if(config.additionalProperties.nonEmpty)
