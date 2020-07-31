@@ -3,7 +3,6 @@ package com.sksamuel.pulsar4s
 import org.apache.pulsar.client.api._
 
 import scala.concurrent.duration.FiniteDuration
-import scala.util.matching.Regex
 
 case class ProducerConfig(topic: Topic,
                           encryptionKey: Option[String] = None,
@@ -24,5 +23,6 @@ case class ProducerConfig(topic: Topic,
                           producerName: Option[String] = None,
                           sendTimeout: Option[FiniteDuration] = None,
                           compressionType: Option[CompressionType] = None,
+                          batcherBuilder: Option[BatcherBuilder] = None,
                           additionalProperties: Map[String, AnyRef] = Map.empty)
 
