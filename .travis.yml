@@ -24,7 +24,7 @@ before_script:
   - sudo chmod +x /usr/local/bin/sbt
 
 before_install:
-  - docker run -d -it -p 6650:6650 -p 8080:8080 -v $PWD/data:/pulsar/data apachepulsar/pulsar:2.6.0 bin/pulsar standalone
+  - docker run -d -it -p 6650:6650 -p 8080:8080 -v $PWD/data:/pulsar/data apachepulsar/pulsar:2.6.1 bin/pulsar standalone
 
 jobs:
   include:
