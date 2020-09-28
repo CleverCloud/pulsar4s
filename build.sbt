@@ -54,7 +54,6 @@ lazy val publishSettings = Seq(
   publishMavenStyle := true,
   publishArtifact in Test := false,
   pomIncludeRepository := Function.const(false),
-  releaseCrossBuild := false,
   credentials += Credentials(
     "Sonatype Nexus Repository Manager",
     "oss.sonatype.org",
