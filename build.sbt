@@ -1,7 +1,7 @@
 def isGithubActions = sys.env.getOrElse("CI", "false") == "true"
 def releaseVersion = sys.env.getOrElse("RELEASE_VERSION", "")
 def isRelease = releaseVersion != ""
-def githubRunNumber = sys.env.getOrElse("GITHUB_RUN_NUMBER", "local")
+def githubRunNumber = sys.env.getOrElse("GITHUB_RUN_NUMBER", "")
 def ossrhUsername = sys.env.getOrElse("OSSRH_USERNAME", "")
 def ossrhPassword = sys.env.getOrElse("OSSRH_PASSWORD", "")
 def publishVersion = if (isRelease) releaseVersion else if (isGithubActions) "2.7.0." + githubRunNumber + "-SNAPSHOT" else "0.0.0-LOCAL"
@@ -16,7 +16,7 @@ val JacksonVersion = "2.9.9"
 val Log4jVersion = "2.12.0"
 val MonixVersion = "3.1.0"
 val PlayJsonVersion = "2.7.4" // compatible with 2.7.x and 2.8.x
-val PulsarVersion = "2.6.0"
+val PulsarVersion = "2.6.1"
 val ReactiveStreamsVersion = "1.0.2"
 val Json4sVersion = "3.6.9"
 val Avro4sVersion = "3.1.0"
