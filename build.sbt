@@ -55,7 +55,6 @@ lazy val publishSettings = Seq(
   publishArtifact in Test := false,
   pomIncludeRepository := Function.const(false),
   releaseCrossBuild := false,
-  releasePublishArtifactsAction := PgpKeys.publishSigned.value,
   credentials += Credentials(
     "Sonatype Nexus Repository Manager",
     "oss.sonatype.org",
