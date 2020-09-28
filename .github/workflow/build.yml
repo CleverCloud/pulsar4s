@@ -25,6 +25,9 @@ jobs:
         with:
           java-version: 11
 
+      - name: Launch pulsar docker
+        run: docker run -d -it -p 6650:6650 -p 8080:8080 -v /tmp/data:/pulsar/data apachepulsar/pulsar:2.6.1 bin/pulsar standalone
+
       - name: Import GPG key
         id: import_gpg
         uses: crazy-max/ghaction-import-gpg@v3
@@ -59,6 +62,9 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 11
+
+      - name: Launch pulsar docker
+        run: docker run -d -it -p 6650:6650 -p 8080:8080 -v /tmp/data:/pulsar/data apachepulsar/pulsar:2.6.1 bin/pulsar standalone
 
       - name: Import GPG key
         id: import_gpg
