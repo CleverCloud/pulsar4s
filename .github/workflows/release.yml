@@ -9,9 +9,12 @@ on:
       branch:
         description: "The branch to release from"
         required: true
+      scala_version:
+        description: "The full scala version, eg 2.12.10"
+        required: true
 
 jobs:
-  scala-2_12:
+  release:
     runs-on: ubuntu-latest
     steps:
       - name: checkout the repo
@@ -42,50 +45,10 @@ jobs:
           echo "email:       ${{ steps.import_gpg.outputs.email }}"
 
       - name: run tests
-        run: sbt ++2.12.10 test
+        run: sbt ++${{ github.event.inputs.scala_version }} test
 
       - name: publish release
-        run: sbt ++2.12.10 publishSigned
-        env:
-          RELEASE_VERSION: ${{ github.event.inputs.version }}
-          OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
-          OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
-
-  scala-2_13:
-    runs-on: ubuntu-latest
-    steps:
-      - name: checkout the repo
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-
-      - name: Set up JDK
-        uses: actions/setup-java@v1
-        with:
-          java-version: 11
-
-      - name: Launch pulsar docker
-        run: docker run -d -it -p 6650:6650 -p 8080:8080 -v /tmp/data:/pulsar/data apachepulsar/pulsar:2.6.1 bin/pulsar standalone
-
-      - name: Import GPG key
-        id: import_gpg
-        uses: crazy-max/ghaction-import-gpg@v3
-        with:
-          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
-          passphrase: ${{ secrets.PGP_PASSPHRASE }}
-
-      - name: GPG user IDs
-        run: |
-          echo "fingerprint: ${{ steps.import_gpg.outputs.fingerprint }}"
-          echo "keyid:       ${{ steps.import_gpg.outputs.keyid }}"
-          echo "name:        ${{ steps.import_gpg.outputs.name }}"
-          echo "email:       ${{ steps.import_gpg.outputs.email }}"
-
-      - name: run tests
-        run: sbt ++2.13.3 test
-
-      - name: publish release
-        run: sbt ++2.13.3 publish
+        run: sbt ++${{ github.event.inputs.scala_version }} publishSigned
         env:
           RELEASE_VERSION: ${{ github.event.inputs.version }}
           OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
