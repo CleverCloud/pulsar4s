@@ -1,0 +1,47 @@
+name: pr
+
+on:
+  pull_request:
+    paths-ignore:
+      - 'doc/**'
+      - 'docs/**'
+      - '*.md'
+
+jobs:
+  scala-2_12:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout the repo
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK
+        uses: actions/setup-java@v1
+        with:
+          java-version: 11
+
+      - name: Launch pulsar docker
+        run: docker run -d -it -p 6650:6650 -p 8080:8080 -v /tmp/data:/pulsar/data apachepulsar/pulsar:2.6.1 bin/pulsar standalone
+
+      - name: run tests
+        run: sbt ++2.12.10 test
+
+  scala-2_13:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout the repo
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK
+        uses: actions/setup-java@v1
+        with:
+          java-version: 11
+
+      - name: Launch pulsar docker
+        run: docker run -d -it -p 6650:6650 -p 8080:8080 -v /tmp/data:/pulsar/data apachepulsar/pulsar:2.6.1 bin/pulsar standalone
+
+      - name: run tests
+        run: sbt ++2.13.3 test
