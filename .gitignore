@@ -31,4 +31,6 @@ esdata
 .metals
 metals.sbt
 
+.vscode
+
 data/
