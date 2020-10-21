@@ -11,6 +11,7 @@ import com.sksamuel.avro4s.Decoder
 import com.sksamuel.avro4s.Encoder
 import com.sksamuel.avro4s.SchemaFor
 import org.apache.pulsar.client.api.Schema
+import org.apache.pulsar.client.api.schema.SchemaInfoProvider
 import org.apache.pulsar.common.schema.{SchemaInfo, SchemaType}
 
 import scala.annotation.implicitNotFound
@@ -33,34 +34,53 @@ import scala.annotation.implicitNotFound
   */
 package object avro {
 
-  @implicitNotFound("No Avro Schema for type ${T} found.")
-  implicit def avroSchema[T: Manifest: SchemaFor: Encoder: Decoder]: Schema[T] = new Schema[T] {
+  private class AvroPulsarSchema[T: Manifest: SchemaFor: Encoder: Decoder](
+    // Note that this is a `var` because we need to implement `setSchemaInfoProvider`
+    private var schemaInfoProvider: Option[SchemaInfoProvider] = None
+  ) extends Schema[T] {
 
-    val schema: org.apache.avro.Schema = AvroSchema[T]
+    private val generatedAvroSchema: org.apache.avro.Schema = AvroSchema[T]
 
-    override def clone(): Schema[T] = this
-
-    override def encode(t: T): Array[Byte] = {
-      val baos = new ByteArrayOutputStream
-      val aos = AvroOutputStream.binary[T].to(baos).build(schema)
-      aos.write(t)
-      aos.flush()
-      aos.close()
-      baos.toByteArray()
+    private def avroSchemaByVersion(schemaVersion: Option[Array[Byte]]): org.apache.avro.Schema = {
+      val schemaFromVersion = for {
+        provider <- schemaInfoProvider
+        version <- schemaVersion
+        // Pulsar's `SchemaInfoProvider`s use a local cache so calling `get` on the future should be ok.
+        pulsarSchemaInfo = provider.getSchemaByVersion(version).get
+        parser = new org.apache.avro.Schema.Parser
+      } yield parser.parse(pulsarSchemaInfo.getSchemaDefinition)
+      schemaFromVersion.getOrElse(generatedAvroSchema)
     }
 
-    override def decode(bytes: Array[Byte]): T = {
-      val bais = new ByteArrayInputStream(bytes)
-      val ais = AvroInputStream.binary[T].from(bais).build(schema)
-      val first = ais.iterator.next()
-      ais.close()
-      first
+    override def supportSchemaVersioning: Boolean = true
+
+    override def setSchemaInfoProvider(schemaInfoProvider: SchemaInfoProvider): Unit = {
+      this.schemaInfoProvider = Option(schemaInfoProvider)
     }
 
-    override def getSchemaInfo: SchemaInfo =
+    override def getSchemaInfo: SchemaInfo = {
       new SchemaInfo()
         .setName(manifest[T].runtimeClass.getCanonicalName)
         .setType(SchemaType.AVRO)
-        .setSchema(schema.toString.getBytes(StandardCharsets.UTF_8))
+        .setSchema(generatedAvroSchema.toString.getBytes(StandardCharsets.UTF_8))
+    }
+
+    override def encode(t: T): Array[Byte] = {
+      val baos = new ByteArrayOutputStream
+      val aos = AvroOutputStream.binary[T].to(baos).build(generatedAvroSchema)
+      try aos.write(t) finally aos.close()
+      baos.toByteArray()
+    }
+
+    override def decode(bytes: Array[Byte], schemaVersionNullable: Array[Byte]): T = {
+      val avroSchema = avroSchemaByVersion(Option(schemaVersionNullable))
+      val ais = AvroInputStream.binary[T].from(new ByteArrayInputStream(bytes)).build(avroSchema)
+      try ais.iterator.next() finally ais.close()
+    }
+
+    override def clone(): Schema[T] = new AvroPulsarSchema(schemaInfoProvider)
   }
+
+  @implicitNotFound("No Avro Schema for type ${T} found.")
+  implicit def avroSchema[T: Manifest: SchemaFor: Encoder: Decoder]: Schema[T] = new AvroPulsarSchema[T]()
 }
