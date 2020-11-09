@@ -22,7 +22,7 @@ jobs:
           java-version: 11
 
       - name: Launch pulsar docker
-        run: docker run -d -it -p 6650:6650 -p 8080:8080 -v /tmp/data:/pulsar/data apachepulsar/pulsar:2.6.1 bin/pulsar standalone
+        run: docker run -d -it -p 6650:6650 -p 8080:8080 -v /tmp/data:/pulsar/data apachepulsar/pulsar:2.6.2 bin/pulsar standalone
 
       - name: run tests
         run: sbt ++2.12.10 test
@@ -41,7 +41,7 @@ jobs:
           java-version: 11
 
       - name: Launch pulsar docker
-        run: docker run -d -it -p 6650:6650 -p 8080:8080 -v /tmp/data:/pulsar/data apachepulsar/pulsar:2.6.1 bin/pulsar standalone
+        run: docker run -d -it -p 6650:6650 -p 8080:8080 -v /tmp/data:/pulsar/data apachepulsar/pulsar:2.6.2 bin/pulsar standalone
 
       - name: run tests
         run: sbt ++2.13.3 test
