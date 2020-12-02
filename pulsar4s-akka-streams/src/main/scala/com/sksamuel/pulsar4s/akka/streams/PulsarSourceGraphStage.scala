@@ -18,6 +18,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.Failure
 import scala.util.Success
+import scala.util.control.NonFatal
 
 trait Control {
 
@@ -73,13 +74,21 @@ class PulsarSourceGraphStage[T](create: () => Consumer[T], seek: Option[MessageI
     val logic: GraphStageLogic with Control = new GraphStageLogic(shape) with OutHandler with Control {
       setHandler(out, this)
 
-      var consumer: Consumer[T] = _
-      var callback: AsyncCallback[ConsumerMessage[T]] = _
+      @inline private def consumer: Consumer[T] =
+        consumerOpt.getOrElse(throw new IllegalStateException("Consumer not initialized!"))
+      private var consumerOpt: Option[Consumer[T]] = None
+      private var callback: AsyncCallback[ConsumerMessage[T]] = _
 
       override def preStart(): Unit = {
-        consumer = create()
-        seek foreach consumer.seek
-        callback = getAsyncCallback(msg => push(out, msg))
+        try {
+          consumerOpt = Some(create())
+          seek foreach consumer.seek
+          callback = getAsyncCallback(msg => push(out, msg))
+        } catch {
+          case NonFatal(e) =>
+            logger.error("Error creating consumer!", e)
+            failStage(e)
+        }
       }
 
       override def onPull(): Unit = {
@@ -100,7 +109,7 @@ class PulsarSourceGraphStage[T](create: () => Consumer[T], seek: Option[MessageI
 
       override def shutdown()(implicit ec: ExecutionContext): Future[Done] = {
         completeStage()
-        consumer.closeAsync.map(_ => Done)
+        consumerOpt.fold(Future.successful(Done))(_.closeAsync.map(_ => Done))
       }
 
       override def stats: ConsumerStats = consumer.stats

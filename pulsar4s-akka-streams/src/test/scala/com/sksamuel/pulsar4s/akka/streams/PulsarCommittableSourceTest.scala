@@ -2,6 +2,7 @@ package com.sksamuel.pulsar4s.akka.streams
 
 import java.util.UUID
 
+import akka.Done
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Keep
@@ -18,6 +19,8 @@ import org.apache.pulsar.client.api.SubscriptionInitialPosition
 
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContextExecutor
+import scala.util.Failure
+import scala.util.Try
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import org.scalatest.funsuite.AnyFunSuite
@@ -32,6 +35,12 @@ class PulsarCommittableSourceTest extends AnyFunSuite with Matchers {
   implicit val executor: ExecutionContextExecutor = system.dispatcher
 
   private val client = PulsarClient("pulsar://localhost:6650")
+
+  private val specialStringSchema = new Schema[String] {
+    override def encode(message: String) = ("message:" + message).getBytes("UTF-8")
+    override def decode(data: Array[Byte]) = new String(data, "UTF-8").split(":", 2)(1)
+    override def getSchemaInfo = Schema.STRING.getSchemaInfo
+  }
 
   test("pulsar committableSource should read messages from a cluster") {
 
@@ -60,18 +69,56 @@ class PulsarCommittableSourceTest extends AnyFunSuite with Matchers {
     producer.send("test")
     producer.close()
 
-    val specialStringSchema = new Schema[String] {
-      override def encode(message: String) = ("message:" + message).getBytes("UTF-8")
-      override def decode(data: Array[Byte]) = new String(data, "UTF-8").split(":", 2)(1)
-      override def getSchemaInfo = Schema.STRING.getSchemaInfo
-    }
-
     val createFn = () => client.consumer(
       ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription.generate
     ))(specialStringSchema)
     val f = committableSource(createFn, Some(MessageId.earliest)).take(1).runWith(Sink.seq[CommittableMessage[String]])
     val msgs = Await.result(f, 15.seconds)
     msgs.headOption.flatMap(_.message.valueTry.toOption) shouldBe None
+  }
+
+  test("pulsar committableSource should fail when creation function throws an exception") {
+
+    val topic = Topic("persistent://sample/standalone/ns1/sourcetest_" + UUID.randomUUID)
+    val config = ProducerConfig(topic)
+    val producer = client.producer(config)
+    producer.send("test")
+    producer.close()
+
+    val exception = new RuntimeException("failed!")
+    def createFn(shouldThrow: Boolean) = () => {
+      if (shouldThrow) throw exception
+      client.consumer(
+        ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription.generate
+      ))(specialStringSchema)
+    }
+    val successFt = committableSource(
+      createFn(shouldThrow = false),
+      Some(MessageId.earliest)
+    ).take(1).runWith(Sink.seq[CommittableMessage[String]])
+    val msgs = Await.result(successFt, 15.seconds)
+    msgs.headOption.flatMap(_.message.valueTry.toOption) shouldBe None
+    val failureFt = committableSource(
+      createFn(shouldThrow = true),
+      Some(MessageId.earliest)
+    ).take(1).runWith(Sink.seq[CommittableMessage[String]])
+    Try(Await.result(failureFt, 15.seconds)) shouldBe Failure(exception)
+  }
+
+  test("shutdown of failed source does not cause an exception") {
+
+    val topic = Topic("persistent://sample/standalone/ns1/sourcetest_" + UUID.randomUUID)
+    val config = ProducerConfig(topic)
+    val producer = client.producer(config)
+    producer.send("test")
+    producer.close()
+
+    val exception = new RuntimeException
+    val createFn = () => throw exception
+    val (control, doneFt) = committableSource(createFn, Some(MessageId.earliest))
+      .toMat(Sink.ignore)(Keep.both).run()
+    Try(Await.result(doneFt, 15.seconds)) shouldBe Failure(exception)
+    Await.result(control.shutdown(), 1.second) shouldBe Done
   }
 
   test("pulsar committableSource should acknowledge messages") {

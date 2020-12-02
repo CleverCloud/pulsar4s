@@ -18,6 +18,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.Failure
 import scala.util.Success
+import scala.util.control.NonFatal
 
 trait CommittableMessage[T] {
   def ack(cumulative: Boolean = false): Future[Done]
@@ -35,14 +36,22 @@ class PulsarCommittableSourceGraphStage[T](create: () => Consumer[T], seek: Opti
   private class PulsarCommittableSourceLogic(shape: Shape) extends GraphStageLogic(shape) with OutHandler with Control {
     setHandler(out, this)
 
-    var consumer: Consumer[T] = _
-    var receiveCallback: AsyncCallback[CommittableMessage[T]] = _
+    @inline private def consumer: Consumer[T] =
+      consumerOpt.getOrElse(throw new IllegalStateException("Consumer not initialized!"))
+    private var consumerOpt: Option[Consumer[T]] = None
+    private var receiveCallback: AsyncCallback[CommittableMessage[T]] = _
 
     override def preStart(): Unit = {
-      implicit val context: ExecutionContext = super.materializer.executionContext
-      consumer = create()
-      seek foreach consumer.seek
-      receiveCallback = getAsyncCallback(push(out, _))
+      try {
+        implicit val context: ExecutionContext = super.materializer.executionContext
+        consumerOpt = Some(create())
+        seek foreach consumer.seek
+        receiveCallback = getAsyncCallback(push(out, _))
+      } catch {
+        case NonFatal(e) =>
+          logger.error("Error creating consumer!", e)
+          failStage(e)
+      }
     }
 
     override def onPull(): Unit = {
@@ -78,7 +87,7 @@ class PulsarCommittableSourceGraphStage[T](create: () => Consumer[T], seek: Opti
 
     override def shutdown()(implicit ec: ExecutionContext): Future[Done] = {
       completeStage()
-      consumer.closeAsync.map(_ => Done)
+      consumerOpt.fold(Future.successful(Done))(_.closeAsync.map(_ => Done))
     }
 
     def stats: ConsumerStats = consumer.stats
