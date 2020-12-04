@@ -168,7 +168,7 @@ class DefaultPulsarClient(client: org.apache.pulsar.client.api.PulsarClient) ext
     config.maxTotalReceiverQueueSizeAcrossPartitions.foreach(builder.maxTotalReceiverQueueSizeAcrossPartitions)
     config.negativeAckRedeliveryDelay.foreach { d => builder.negativeAckRedeliveryDelay(d._1, d._2) }
     config.autoUpdatePartitions.foreach(builder.autoUpdatePartitions)
-    config.patternAutoDiscoveryPeriod.foreach(builder.patternAutoDiscoveryPeriod)
+    config.patternAutoDiscoveryPeriod.foreach { d => builder.patternAutoDiscoveryPeriod(d.length.toInt, d.unit) }
     config.priorityLevel.foreach(builder.priorityLevel)
     config.receiverQueueSize.foreach(builder.receiverQueueSize)
     config.readCompacted.foreach(builder.readCompacted)
