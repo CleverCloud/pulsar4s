@@ -4,6 +4,10 @@ import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import com.sksamuel.pulsar4s.ProducerMessage
 
+import scala.concurrent.Await
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
+
 object Example {
 
   import com.sksamuel.pulsar4s.{ConsumerConfig, MessageId, ProducerConfig, PulsarClient, Subscription, Topic}
@@ -25,7 +29,6 @@ object Example {
     .map { consumerMessage => ProducerMessage(consumerMessage.data) }
     .to(sink(producerFn)).run()
 
-  Thread.sleep(10000)
-  control.stop()
+  Await.result(control.shutdown(), 10.seconds)
 
 }

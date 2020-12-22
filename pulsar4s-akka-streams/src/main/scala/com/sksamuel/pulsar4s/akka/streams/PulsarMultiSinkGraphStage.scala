@@ -8,7 +8,7 @@ import com.sksamuel.pulsar4s.{Producer, ProducerMessage, Topic}
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContextExecutor, Future, Promise}
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 
 class PulsarMultiSinkGraphStage[T](createFn: Topic => Producer[T], initTopics: Set[Topic] = Set.empty)
   extends GraphStageWithMaterializedValue[SinkShape[(Topic, ProducerMessage[T])], Future[Done]]
@@ -28,12 +28,17 @@ class PulsarMultiSinkGraphStage[T](createFn: Topic => Producer[T], initTopics: S
       implicit def context: ExecutionContextExecutor = super.materializer.executionContext
 
       var producers: Map[Topic, Producer[T]] = _
-      var next: AsyncCallback[(Topic, ProducerMessage[T])] = _
+      var produceCallback: AsyncCallback[Try[_]] = _
       var error: Throwable = _
 
       override def preStart(): Unit = {
         producers = initTopics.map(t => t -> createFn(t)).toMap
-        next = getAsyncCallback { _ => pull(in) }
+        produceCallback = getAsyncCallback {
+          case Success(_) => pull(in)
+          case Failure(e) =>
+            logger.error("Failing pulsar sink stage", e)
+            failStage(e)
+        }
         pull(in)
       }
 
@@ -52,12 +57,7 @@ class PulsarMultiSinkGraphStage[T](createFn: Topic => Producer[T], initTopics: S
           val (topic, message) = grab(in)
           logger.debug(s"Sending message $message to $topic")
           val producer = getProducer(topic)
-          producer.sendAsync(message).onComplete {
-            case Success(_) => next.invoke(topic -> message)
-            case Failure(e) =>
-              logger.error("Failing pulsar sink stage", e)
-              failStage(e)
-          }
+          producer.sendAsync(message).onComplete(produceCallback.invoke)
         } catch {
           case e: Throwable =>
             logger.error("Failing pulsar sink stage", e)
