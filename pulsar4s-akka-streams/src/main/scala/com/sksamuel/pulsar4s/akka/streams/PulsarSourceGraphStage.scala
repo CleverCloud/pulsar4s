@@ -88,6 +88,8 @@ class PulsarSourceGraphStage[T](create: () => Consumer[T], seek: Option[MessageI
 
     val logic: GraphStageLogic with Control = new GraphStageLogic(shape) with OutHandler with Control {
       setHandler(out, this)
+            
+      implicit def ec: ExecutionContext = materializer.executionContext
 
       @inline private def consumer: Consumer[T] =
         consumerOpt.getOrElse(throw new IllegalStateException("Consumer not initialized!"))
@@ -106,7 +108,12 @@ class PulsarSourceGraphStage[T](create: () => Consumer[T], seek: Option[MessageI
 
       override def preStart(): Unit = {
         try {
-          consumerOpt = Some(create())
+          val consumer = create()
+          consumerOpt = Some(consumer)
+          stopped.future.onComplete { _ =>
+            // Note: unlike the committable source, we don't expect acks so we can close immediately
+            close()
+          }
           seek foreach consumer.seek
         } catch {
           case NonFatal(e) =>
@@ -116,9 +123,8 @@ class PulsarSourceGraphStage[T](create: () => Consumer[T], seek: Option[MessageI
       }
 
       override def onPull(): Unit = {
-        implicit val context: ExecutionContext = super.materializer.executionContext
         logger.debug("Pull received; asking consumer for message")
-        consumer.receiveAsync.onComplete(receiveCallback.invoke)
+        consumer.receiveAsync.onComplete(receiveCallback.invoke(_))
       }
 
       override def postStop(): Unit = stopped.success(Done)
@@ -128,10 +134,13 @@ class PulsarSourceGraphStage[T](create: () => Consumer[T], seek: Option[MessageI
         stopped.future
       }
 
+      private def close()(implicit ec: ExecutionContext): Future[Done] =
+        consumerOpt.fold(Future.successful(Done))(_.closeAsync.map(_ => Done))
+
       override def shutdown()(implicit ec: ExecutionContext): Future[Done] =
         for {
           _ <- complete()
-          _ <- consumerOpt.fold(Future.successful(()))(_.closeAsync)
+          _ <- close()
         } yield Done
 
       override def stats: ConsumerStats = consumer.stats

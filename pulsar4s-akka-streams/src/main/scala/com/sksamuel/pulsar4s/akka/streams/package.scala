@@ -5,8 +5,11 @@ import akka.stream.scaladsl.{Sink, Source}
 import com.sksamuel.pulsar4s.{Consumer, ConsumerMessage, MessageId, Producer, ProducerMessage, Topic}
 
 import scala.concurrent.Future
+import scala.concurrent.duration._
 
 package object streams {
+
+  private[streams] val DefaultCloseDelay = 30.seconds
 
   /**
    * Create an Akka Streams source for the given [[Consumer]] that produces [[ConsumerMessage]]s and auto-acknowledges.
@@ -28,14 +31,23 @@ package object streams {
    * @param seek an optional [[MessageId]] to seek to. Note that seeking will not work on multi-topic subscriptions.
    *             Prefer setting `subscriptionInitialPosition` in `ConsumerConfig` instead if you need to start at the
    *             earliest or latest offset.
+   * @param closeDelay the maximum amount of time to wait after the source completes before closing the consumer,
+   *                   assuming the consumer is not already closed explicitly by `shutdown` or `drainAndShutdown`.
    * @return the new [[Source]].
    */
   def committableSource[T](
     create: () => Consumer[T],
-    seek: Option[MessageId] = None
+    seek: Option[MessageId] = None,
+    closeDelay: FiniteDuration = DefaultCloseDelay,
   ): Source[CommittableMessage[T], Control] = {
-    Source.fromGraph(new PulsarCommittableSourceGraphStage[T](create, seek))
+    Source.fromGraph(new PulsarCommittableSourceGraphStage[T](create, seek, closeDelay))
   }
+
+  @deprecated("added for binary compatibility", "2.7.1")
+  private[streams] def committableSource[T](
+    create: () => Consumer[T],
+    seek: Option[MessageId],
+  ): Source[CommittableMessage[T], Control] = committableSource(create, seek, 30.seconds)
 
   /**
    * Create an Akka Streams sink from a [[Producer]].

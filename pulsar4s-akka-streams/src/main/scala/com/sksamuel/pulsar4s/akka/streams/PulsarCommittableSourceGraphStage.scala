@@ -17,6 +17,7 @@ import org.apache.pulsar.client.api.ConsumerStats
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.Promise
+import scala.concurrent.duration._
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
@@ -28,9 +29,15 @@ trait CommittableMessage[T] {
   def message: ConsumerMessage[T]
 }
 
-class PulsarCommittableSourceGraphStage[T](create: () => Consumer[T], seek: Option[MessageId])
-  extends GraphStageWithMaterializedValue[SourceShape[CommittableMessage[T]], Control]
-    with Logging {
+class PulsarCommittableSourceGraphStage[T](
+  create: () => Consumer[T],
+  seek: Option[MessageId],
+  closeDelay: FiniteDuration,
+) extends GraphStageWithMaterializedValue[SourceShape[CommittableMessage[T]], Control]
+  with Logging {
+
+  @deprecated("Use main constructor", "2.7.1")
+  def this(create: () => Consumer[T], seek: Option[MessageId]) = this(create, seek, closeDelay = DefaultCloseDelay)
 
   private val out = Outlet[CommittableMessage[T]]("pulsar.out")
   override def shape: SourceShape[CommittableMessage[T]] = SourceShape(out)
@@ -58,26 +65,31 @@ class PulsarCommittableSourceGraphStage[T](create: () => Consumer[T], seek: Opti
   private class PulsarCommittableSourceLogic(shape: Shape) extends GraphStageLogic(shape) with OutHandler with Control {
     setHandler(out, this)
 
+    implicit def ec: ExecutionContext = materializer.executionContext
+
     @inline private def consumer: Consumer[T] =
       consumerOpt.getOrElse(throw new IllegalStateException("Consumer not initialized!"))
     private var consumerOpt: Option[Consumer[T]] = None
-    private var receiveCallback: AsyncCallback[Try[ConsumerMessage[T]]] = _
+    private var receiveCallback: AsyncCallback[Try[ConsumerMessage[T]]] = getAsyncCallback {
+      case Success(msg) =>
+        logger.debug(s"Message received: $msg")
+        push(out, new CommittableMessageImpl(consumer, msg))
+      case Failure(e) =>
+        logger.warn("Error when receiving message", e)
+        failStage(e)
+    }
     private val stopped: Promise[Done] = Promise()
     private val stopCallback: AsyncCallback[Unit] = getAsyncCallback(_ => completeStage())
 
     override def preStart(): Unit = {
       try {
-        implicit val context: ExecutionContext = super.materializer.executionContext
-        consumerOpt = Some(create())
-        seek foreach consumer.seek
-        receiveCallback = getAsyncCallback {
-          case Success(msg) =>
-            logger.debug(s"Message received: $msg")
-            push(out, new CommittableMessageImpl(consumer, msg))
-          case Failure(e) =>
-            logger.warn("Error when receiving message", e)
-            failStage(e)
+        val consumer = create()
+        consumerOpt = Some(consumer)
+        stopped.future.onComplete { _ =>
+          // Schedule to stop after a delay to give unacked messages time to finish
+          materializer.scheduleOnce(closeDelay, () => close())
         }
+        seek foreach consumer.seek
       } catch {
         case NonFatal(e) =>
           logger.error("Error creating consumer!", e)
@@ -86,9 +98,12 @@ class PulsarCommittableSourceGraphStage[T](create: () => Consumer[T], seek: Opti
     }
 
     override def onPull(): Unit = {
-      implicit val context: ExecutionContext = super.materializer.executionContext
       logger.debug("Pull received; asking consumer for message")
       consumer.receiveAsync.onComplete(receiveCallback.invoke)
+    }
+
+    private def close()(implicit ec: ExecutionContext): Future[Done] = {
+      consumerOpt.fold(Future.successful(Done))(_.closeAsync.map(_ => Done))
     }
 
     override def complete()(implicit ec: ExecutionContext): Future[Done] = {
@@ -97,14 +112,15 @@ class PulsarCommittableSourceGraphStage[T](create: () => Consumer[T], seek: Opti
     }
 
     override def postStop(): Unit = stopped.success(Done)
-
-    override def shutdown()(implicit ec: ExecutionContext): Future[Done] =
+    
+    override def shutdown()(implicit ec: ExecutionContext): Future[Done] = {
       for {
         _ <- complete()
-        _ <- consumerOpt.fold(Future.successful(()))(_.closeAsync)
+        _ <- close()
       } yield Done
+    }
 
-    def stats: ConsumerStats = consumer.stats
+    override def stats: ConsumerStats = consumer.stats
   }
 
   override def createLogicAndMaterializedValue(inheritedAttributes: Attributes): (GraphStageLogic, Control) = {
