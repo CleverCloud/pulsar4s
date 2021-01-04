@@ -25,6 +25,7 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.apache.pulsar.client.api.PulsarClientException
 
 
 class PulsarCommittableSourceTest extends AnyFunSuite with Matchers {
@@ -263,6 +264,71 @@ class PulsarCommittableSourceTest extends AnyFunSuite with Matchers {
     // unless the control shuts down the consumer, the source would never end, and this future would not complete
     val msgs = Await.result(drained, 2.minutes)
     msgs.size should be > 0
+
+    producer.close()
+  }
+
+  test("consumer is already closed when drainAndShutdown completes successfully") {
+
+    val topic = Topic("persistent://sample/standalone/ns1/sourcetest_" + UUID.randomUUID)
+    val config = ProducerConfig(topic)
+    val producer = client.producer(config)
+
+    Future {
+      while (true) {
+        producer.send("a")
+        Thread.sleep(500)
+      }
+    }
+
+    val consumer = client.consumer(ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription.generate))
+    val createFn = () => consumer
+    val (control, f) = committableSource(createFn, Some(MessageId.earliest))
+      .mapAsync(10)(msg => msg.ack().map(_ => msg.message))
+      .toMat(Sink.seq[ConsumerMessage[String]])(Keep.both)
+      .run()
+
+    Thread.sleep(1000)
+    val drained = control.drainAndShutdown(f)
+
+    // unless the control shuts down the consumer, the source would never end, and this future would not complete
+    val msgs = Await.result(drained, 2.minutes)
+    msgs.size should be > 0
+
+    the[PulsarClientException] thrownBy consumer.receive.get should have message "Consumer already closed"
+
+    producer.close()
+  }
+
+  test("consumer closes after delay when stopped") {
+
+    val topic = Topic("persistent://sample/standalone/ns1/sourcetest_" + UUID.randomUUID)
+    val config = ProducerConfig(topic)
+    val producer = client.producer(config)
+
+    Future {
+      while (true) {
+        producer.send("a")
+        Thread.sleep(500)
+      }
+    }
+
+    val consumer = client.consumer(ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription.generate))
+    val createFn = () => consumer
+    val (control, f) = committableSource(createFn, Some(MessageId.earliest), closeDelay = 2.seconds)
+      .mapAsync(10)(msg => msg.ack().map(_ => msg.message))
+      .toMat(Sink.seq[ConsumerMessage[String]])(Keep.both)
+      .run()
+
+    Thread.sleep(1000)
+
+    control.complete()
+
+    val msgs = Await.result(f, 1.second)
+    msgs.size should be > 0
+    noException should be thrownBy consumer.receive.get
+    Thread.sleep(2.seconds.toMillis)
+    the[PulsarClientException] thrownBy consumer.receive.get should have message "Consumer already closed"
 
     producer.close()
   }
