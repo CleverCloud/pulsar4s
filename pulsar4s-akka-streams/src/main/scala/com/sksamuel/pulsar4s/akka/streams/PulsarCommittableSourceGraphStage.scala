@@ -16,8 +16,10 @@ import org.apache.pulsar.client.api.ConsumerStats
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.Promise
 import scala.util.Failure
 import scala.util.Success
+import scala.util.Try
 import scala.util.control.NonFatal
 
 trait CommittableMessage[T] {
@@ -33,20 +35,49 @@ class PulsarCommittableSourceGraphStage[T](create: () => Consumer[T], seek: Opti
   private val out = Outlet[CommittableMessage[T]]("pulsar.out")
   override def shape: SourceShape[CommittableMessage[T]] = SourceShape(out)
 
+  private class CommittableMessageImpl[T](
+    val consumer: Consumer[T],
+    val message: ConsumerMessage[T]
+  )(implicit ec: ExecutionContext) extends CommittableMessage[T] {
+    def messageId: MessageId = message.messageId
+    override def ack(cumulative: Boolean): Future[Done] = {
+      logger.debug(s"Acknowledging message: $message")
+      val ackFuture = if (cumulative) {
+        consumer.acknowledgeCumulativeAsync(message.messageId)
+      } else {
+        consumer.acknowledgeAsync(message.messageId)
+      }
+      ackFuture.map(_ => Done)
+    }
+    override def nack(): Future[Done] = {
+      logger.debug(s"Negatively acknowledging message: $message")
+      consumer.negativeAcknowledgeAsync(message.messageId).map(_ => Done)
+    }
+  }
+
   private class PulsarCommittableSourceLogic(shape: Shape) extends GraphStageLogic(shape) with OutHandler with Control {
     setHandler(out, this)
 
     @inline private def consumer: Consumer[T] =
       consumerOpt.getOrElse(throw new IllegalStateException("Consumer not initialized!"))
     private var consumerOpt: Option[Consumer[T]] = None
-    private var receiveCallback: AsyncCallback[CommittableMessage[T]] = _
+    private var receiveCallback: AsyncCallback[Try[ConsumerMessage[T]]] = _
+    private val stopped: Promise[Done] = Promise()
+    private val stopCallback: AsyncCallback[Unit] = getAsyncCallback(_ => completeStage())
 
     override def preStart(): Unit = {
       try {
         implicit val context: ExecutionContext = super.materializer.executionContext
         consumerOpt = Some(create())
         seek foreach consumer.seek
-        receiveCallback = getAsyncCallback(push(out, _))
+        receiveCallback = getAsyncCallback {
+          case Success(msg) =>
+            logger.debug(s"Message received: $msg")
+            push(out, new CommittableMessageImpl(consumer, msg))
+          case Failure(e) =>
+            logger.warn("Error when receiving message", e)
+            failStage(e)
+        }
       } catch {
         case NonFatal(e) =>
           logger.error("Error creating consumer!", e)
@@ -57,38 +88,21 @@ class PulsarCommittableSourceGraphStage[T](create: () => Consumer[T], seek: Opti
     override def onPull(): Unit = {
       implicit val context: ExecutionContext = super.materializer.executionContext
       logger.debug("Pull received; asking consumer for message")
-
-      consumer.receiveAsync.onComplete {
-        case Success(msg) =>
-          logger.debug(s"Message received: $msg")
-          receiveCallback.invoke(new CommittableMessage[T] {
-            override def message: ConsumerMessage[T] = msg
-            override def ack(cumulative: Boolean): Future[Done] = {
-              logger.debug(s"Acknowledging message: $msg")
-              val ackFuture = if (cumulative) {
-                consumer.acknowledgeCumulativeAsync(msg.messageId)
-              } else {
-                consumer.acknowledgeAsync(msg.messageId)
-              }
-              ackFuture.map(_ => Done)
-            }
-            override def nack(): Future[Done] = {
-              logger.debug(s"Negatively acknowledging message: $msg")
-              consumer.negativeAcknowledgeAsync(msg.messageId).map(_ => Done)
-            }
-          })
-        case Failure(e) =>
-          logger.warn("Error when receiving message", e)
-          failStage(e)
-      }
+      consumer.receiveAsync.onComplete(receiveCallback.invoke)
     }
 
-    override def stop(): Unit = completeStage()
-
-    override def shutdown()(implicit ec: ExecutionContext): Future[Done] = {
-      completeStage()
-      consumerOpt.fold(Future.successful(Done))(_.closeAsync.map(_ => Done))
+    override def complete()(implicit ec: ExecutionContext): Future[Done] = {
+      stopCallback.invoke(())
+      stopped.future
     }
+
+    override def postStop(): Unit = stopped.success(Done)
+
+    override def shutdown()(implicit ec: ExecutionContext): Future[Done] =
+      for {
+        _ <- complete()
+        _ <- consumerOpt.fold(Future.successful(()))(_.closeAsync)
+      } yield Done
 
     def stats: ConsumerStats = consumer.stats
   }

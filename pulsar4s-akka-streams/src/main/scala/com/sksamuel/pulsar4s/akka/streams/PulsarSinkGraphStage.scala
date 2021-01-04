@@ -7,7 +7,7 @@ import com.sksamuel.exts.Logging
 import com.sksamuel.pulsar4s.{Producer, ProducerMessage}
 
 import scala.concurrent.{ExecutionContextExecutor, Future, Promise}
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 
 class PulsarSinkGraphStage[T](createFn: () => Producer[T])
   extends GraphStageWithMaterializedValue[SinkShape[ProducerMessage[T]], Future[Done]]
@@ -26,12 +26,18 @@ class PulsarSinkGraphStage[T](createFn: () => Producer[T])
       implicit def context: ExecutionContextExecutor = super.materializer.executionContext
 
       var producer: Producer[T] = _
-      var next: AsyncCallback[ProducerMessage[T]] = _
+      var produceCallback: AsyncCallback[Try[_]] = _
       var error: Throwable = _
 
       override def preStart(): Unit = {
         producer = createFn()
-        next = getAsyncCallback { _ => pull(in) }
+        produceCallback = getAsyncCallback {
+          case Success(_) =>
+            pull(in)
+          case Failure(e) =>
+            logger.error("Failing pulsar sink stage", e)
+            failStage(e)
+        }
         pull(in)
       }
 
@@ -39,12 +45,7 @@ class PulsarSinkGraphStage[T](createFn: () => Producer[T])
         try {
           val t = grab(in)
           logger.debug(s"Sending message $t")
-          producer.sendAsync(t).onComplete {
-            case Success(_) => next.invoke(t)
-            case Failure(e) =>
-              logger.error("Failing pulsar sink stage", e)
-              failStage(e)
-          }
+          producer.sendAsync(t).onComplete(produceCallback.invoke)
         } catch {
           case e: Throwable =>
             logger.error("Failing pulsar sink stage", e)

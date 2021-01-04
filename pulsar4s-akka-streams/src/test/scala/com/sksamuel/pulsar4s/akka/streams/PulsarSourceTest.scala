@@ -101,7 +101,7 @@ class PulsarSourceTest extends AnyFunSuite with Matchers {
 
     Future {
       Thread.sleep(1000)
-      control.stop()
+      control.complete()
     }
 
     // unless the control shuts down the consumer, the source would never end, and this future would not complete
