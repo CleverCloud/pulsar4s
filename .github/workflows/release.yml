@@ -9,9 +9,11 @@ on:
       branch:
         description: "The branch to release from"
         required: true
+        default: 'master'
       scala_version:
-        description: "The full scala version, eg 2.12.10"
+        description: "The full scala version, eg 2.12.12"
         required: true
+        default: '2.12.12'
 
 jobs:
   release:
