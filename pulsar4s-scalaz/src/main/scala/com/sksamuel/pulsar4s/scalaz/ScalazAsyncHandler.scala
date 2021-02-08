@@ -3,12 +3,13 @@ package com.sksamuel.pulsar4s.scalaz
 import java.util.concurrent.CompletableFuture
 import java.util.function.BiConsumer
 
-import com.sksamuel.pulsar4s.{AsyncHandler, ConsumerMessage, DefaultProducer, MessageId, Producer}
+import com.sksamuel.pulsar4s
+import com.sksamuel.pulsar4s.{AsyncHandler, ConsumerMessage, DefaultConsumer, DefaultProducer, DefaultReader, MessageId, Producer}
 import org.apache.pulsar.client.api
-import org.apache.pulsar.client.api.Consumer
-import org.apache.pulsar.client.api.{ProducerBuilder, Reader, TypedMessageBuilder}
+import org.apache.pulsar.client.api.{Consumer, ConsumerBuilder, ProducerBuilder, PulsarClient, Reader, ReaderBuilder, TypedMessageBuilder}
 import scalaz.concurrent.Task
 
+import scala.collection.JavaConverters.iterableAsScalaIterableConverter
 import scala.language.implicitConversions
 import scala.util.{Failure, Success, Try}
 
@@ -19,13 +20,11 @@ class ScalazAsyncHandler extends AsyncHandler[Task] {
 
   implicit def completableToTask[T](f: => CompletableFuture[T]): Task[T] = {
     Task.async[T] { k =>
-      f.whenCompleteAsync(new BiConsumer[T, Throwable] {
-        override def accept(t: T, e: Throwable): Unit = {
-          if (e != null)
-            k.apply(scalaz.\/.left(e))
-          else
-            k.apply(scalaz.\/.right(t))
-        }
+      f.whenCompleteAsync((t: T, e: Throwable) => {
+        if (e != null)
+          k.apply(scalaz.\/.left(e))
+        else
+          k.apply(scalaz.\/.right(t))
       })
     }
   }
@@ -35,14 +34,23 @@ class ScalazAsyncHandler extends AsyncHandler[Task] {
   override def createProducer[T](builder: ProducerBuilder[T]): Task[Producer[T]] =
     completableToTask(builder.createAsync()).map(new DefaultProducer(_))
 
+  override def createConsumer[T](builder: ConsumerBuilder[T]): Task[pulsar4s.Consumer[T]] =
+    completableToTask(builder.subscribeAsync()).map(new DefaultConsumer(_))
+
+  override def createReader[T](builder: ReaderBuilder[T]): Task[pulsar4s.Reader[T]] =
+    completableToTask(builder.createAsync()).map(new DefaultReader(_))
+
   override def send[T](t: T, producer: api.Producer[T]): Task[MessageId] =
     completableToTask(producer.sendAsync(t)).map(MessageId.fromJava)
 
   override def receive[T](consumer: api.Consumer[T]): Task[ConsumerMessage[T]] =
     completableToTask(consumer.receiveAsync).map(ConsumerMessage.fromJava)
-  
+
+  override def receiveBatch[T](consumer: Consumer[T]): Task[Vector[ConsumerMessage[T]]] =
+    completableToTask(consumer.batchReceiveAsync).map(_.asScala.map(ConsumerMessage.fromJava).toVector)
+
   override def getLastMessageId[T](consumer: api.Consumer[T]): Task[MessageId] =
-    completableToTask(consumer.getLastMessageIdAsync()).map(MessageId.fromJava)
+    completableToTask(consumer.getLastMessageIdAsync).map(MessageId.fromJava)
 
   override def unsubscribeAsync(consumer: api.Consumer[_]): Task[Unit] =
     consumer.unsubscribeAsync()
@@ -75,6 +83,7 @@ class ScalazAsyncHandler extends AsyncHandler[Task] {
   override def close(reader: Reader[_]): Task[Unit] = reader.closeAsync()
   override def close(producer: api.Producer[_]): Task[Unit] = producer.closeAsync()
   override def close(consumer: api.Consumer[_]): Task[Unit] = consumer.closeAsync()
+  override def close(client: PulsarClient): Task[Unit] = client.closeAsync()
 
   override def flush(producer: api.Producer[_]): Task[Unit] = producer.flushAsync()
 

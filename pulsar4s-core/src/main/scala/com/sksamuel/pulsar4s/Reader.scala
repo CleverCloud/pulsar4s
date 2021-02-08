@@ -20,10 +20,10 @@ trait Reader[T] extends Closeable {
   def hasReachedEndOfTopic: Boolean
 }
 
-class DefaultReader[T](reader: org.apache.pulsar.client.api.Reader[T],
-                       override val topic: Topic) extends Reader[T] {
-
+class DefaultReader[T](reader: org.apache.pulsar.client.api.Reader[T]) extends Reader[T] {
   override def hasMessageAvailable: Boolean = reader.hasMessageAvailable
+
+  override lazy val topic: Topic = Topic(reader.getTopic)
 
   override def next: ConsumerMessage[T] = ConsumerMessage.fromJava(reader.readNext)
 

@@ -1,12 +1,11 @@
 package com.sksamuel.pulsar4s
 
-import java.util.UUID
-import java.util.{Set => JSet}
 import java.util.concurrent.TimeUnit
+import java.util.{UUID, Set => JSet}
 
 import com.sksamuel.exts.Logging
 import org.apache.pulsar.client.api
-import org.apache.pulsar.client.api.{ProducerBuilder, Schema}
+import org.apache.pulsar.client.api.{ConsumerBuilder, ProducerBuilder, ReaderBuilder, Schema}
 
 import scala.collection.JavaConverters._
 
@@ -19,32 +18,52 @@ case class Subscription(name: String)
 object Subscription {
 
   /**
-    * Generates a [[Subscription]] with a random UUID as the name.
-    */
+   * Generates a [[Subscription]] with a random UUID as the name.
+   */
   def generate: Subscription = Subscription(UUID.randomUUID.toString)
 }
 
 trait PulsarClient {
   def close(): Unit
+
   def producer[T: Schema](config: ProducerConfig, interceptors: List[ProducerInterceptor[T]] = Nil): Producer[T]
-  def producerAsync[T: Schema, F[_]: AsyncHandler](config: ProducerConfig, interceptors: List[ProducerInterceptor[T]] = Nil): F[Producer[T]]
+
   def consumer[T: Schema](config: ConsumerConfig, interceptors: List[ConsumerInterceptor[T]] = Nil): Consumer[T]
+
   def reader[T: Schema](config: ReaderConfig): Reader[T]
+}
+
+trait PulsarAsyncClient extends PulsarClient {
+  def closeAsync[F[_] : AsyncHandler]: F[Unit]
+
+  def producerAsync[T: Schema, F[_] : AsyncHandler](config: ProducerConfig, interceptors: List[ProducerInterceptor[T]] = Nil): F[Producer[T]]
+
+  def consumerAsync[T: Schema, F[_] : AsyncHandler](config: ConsumerConfig, interceptors: List[ConsumerInterceptor[T]] = Nil): F[Consumer[T]]
+
+  def readerAsync[T: Schema, F[_] : AsyncHandler](config: ReaderConfig): F[Reader[T]]
 }
 
 trait ProducerInterceptor[T] extends AutoCloseable {
   def beforeSend(message: ProducerMessage[T]): ProducerMessage[T]
+
   def onAck(message: ProducerMessage[T], messageId: MessageId): Unit
+
   def onError(message: ProducerMessage[T], t: Throwable): Unit
 }
 
 trait ConsumerInterceptor[T] extends AutoCloseable {
   def beforeConsume(message: ConsumerMessage[T]): ConsumerMessage[T]
+
   def onAck(messageId: MessageId): Unit
+
   def onError(messageId: MessageId, throwable: Throwable): Unit
+
   def onAckCumulative(messageId: MessageId): Unit
+
   def onErrorCumulative(messageId: MessageId, throwable: Throwable): Unit
+
   def onNegativeAcksSend(messageIds: Set[MessageId]): Unit
+
   def onAckTimeoutSend(messageIds: Set[MessageId]): Unit
 }
 
@@ -93,7 +112,7 @@ class ProducerInterceptorAdapter[T](interceptor: ProducerInterceptor[T], schema:
 
 object PulsarClient {
 
-  def apply(config: PulsarClientConfig): PulsarClient = {
+  def apply(config: PulsarClientConfig): PulsarAsyncClient = {
     val builder = org.apache.pulsar.client.api.PulsarClient.builder().serviceUrl(config.serviceUrl)
     config.ioThreads.foreach(builder.ioThreads)
     config.allowTlsInsecureConnection.foreach(builder.allowTlsInsecureConnection)
@@ -110,15 +129,16 @@ object PulsarClient {
     config.keepAliveInterval.map(_.toSeconds.toInt).foreach(builder.keepAliveInterval(_, TimeUnit.SECONDS))
     config.statsInterval.map(_.toMillis).foreach(builder.statsInterval(_, TimeUnit.MILLISECONDS))
     config.tlsTrustCertsFilePath.foreach(builder.tlsTrustCertsFilePath)
-    if(config.additionalProperties.nonEmpty)
+    if (config.additionalProperties.nonEmpty)
       builder.loadConf(config.additionalProperties.asJava)
+
     new DefaultPulsarClient(builder.build())
   }
 
-  def apply(serviceUrl: String): PulsarClient = apply(PulsarClientConfig(serviceUrl))
+  def apply(serviceUrl: String): PulsarAsyncClient = apply(PulsarClientConfig(serviceUrl))
 }
 
-class DefaultPulsarClient(client: org.apache.pulsar.client.api.PulsarClient) extends PulsarClient with Logging {
+class DefaultPulsarClient(client: org.apache.pulsar.client.api.PulsarClient) extends PulsarAsyncClient with Logging {
 
   override def close(): Unit = client.close()
 
@@ -147,19 +167,12 @@ class DefaultPulsarClient(client: org.apache.pulsar.client.api.PulsarClient) ext
     config.batcherBuilder.foreach(builder.batcherBuilder)
     if (interceptors.nonEmpty)
       builder.intercept(interceptors.map(new ProducerInterceptorAdapter(_, schema)): _*)
-    if(config.additionalProperties.nonEmpty)
+    if (config.additionalProperties.nonEmpty)
       builder.loadConf(config.additionalProperties.asJava)
     builder
   }
 
-  override def producer[T: Schema](config: ProducerConfig, interceptors: List[ProducerInterceptor[T]] = Nil): Producer[T] =
-    new DefaultProducer(producerBuilder(config, interceptors).create())
-
-  override def producerAsync[T: Schema, F[_]: AsyncHandler](config: ProducerConfig, interceptors: List[ProducerInterceptor[T]] = Nil): F[Producer[T]] =
-    implicitly[AsyncHandler[F]].createProducer(producerBuilder(config, interceptors))
-
-  override def consumer[T](config: ConsumerConfig, interceptors: List[ConsumerInterceptor[T]] = Nil)(implicit schema: Schema[T]): Consumer[T] = {
-    logger.info(s"Creating consumer with config $config")
+  private def consumerBuilder[T](config: ConsumerConfig, interceptors: List[ConsumerInterceptor[T]] = Nil)(implicit schema: Schema[T]): ConsumerBuilder[T] = {
     val builder = client.newConsumer(schema)
     config.consumerEventListener.foreach(builder.consumerEventListener)
     config.consumerName.foreach(builder.consumerName)
@@ -185,13 +198,13 @@ class DefaultPulsarClient(client: org.apache.pulsar.client.api.PulsarClient) ext
     builder.subscriptionName(config.subscriptionName.name)
     if (interceptors.nonEmpty)
       builder.intercept(interceptors.map(new ConsumerInterceptorAdapter(_, schema)): _*)
-    if(config.additionalProperties.nonEmpty)
+    if (config.additionalProperties.nonEmpty)
       builder.loadConf(config.additionalProperties.asJava)
-    new DefaultConsumer(builder.subscribe())
+
+    builder
   }
 
-  override def reader[T](config: ReaderConfig)(implicit schema: Schema[T]): Reader[T] = {
-    logger.info(s"Creating reader for config $config")
+  private def readerBuilder[T](config: ReaderConfig)(implicit schema: Schema[T]): ReaderBuilder[T] = {
     val builder = client.newReader(schema)
     builder.topic(config.topic.name)
     config.reader.foreach(builder.readerName)
@@ -199,15 +212,37 @@ class DefaultPulsarClient(client: org.apache.pulsar.client.api.PulsarClient) ext
       case Message(messageId) => builder.startMessageId(MessageId.toJava(messageId))
       case RollBack(rollbackDuration, timeunit) => builder.startMessageFromRollbackDuration(rollbackDuration, timeunit)
     }
-    config.startMessageIdInclusive match {
-      case true => builder.startMessageIdInclusive()
-      case _ => 
+    if (config.startMessageIdInclusive) {
+      builder.startMessageIdInclusive()
     }
-    
+
     config.receiverQueueSize.foreach(builder.receiverQueueSize)
     config.readCompacted.foreach(builder.readCompacted)
-    if(config.additionalProperties.nonEmpty)
+    if (config.additionalProperties.nonEmpty)
       builder.loadConf(config.additionalProperties.asJava)
-    new DefaultReader(builder.create(), config.topic)
+
+    builder
+  }
+
+  override def producer[T: Schema](config: ProducerConfig, interceptors: List[ProducerInterceptor[T]] = Nil): Producer[T] =
+    new DefaultProducer(producerBuilder(config, interceptors).create())
+
+  override def consumer[T: Schema](config: ConsumerConfig, interceptors: List[ConsumerInterceptor[T]] = Nil): Consumer[T] =
+    new DefaultConsumer(consumerBuilder(config, interceptors).subscribe())
+
+  override def reader[T: Schema](config: ReaderConfig): Reader[T] =
+    new DefaultReader(readerBuilder(config).create())
+
+  override def closeAsync[F[_] : AsyncHandler]: F[Unit] =
+    implicitly[AsyncHandler[F]].close(client)
+
+  override def producerAsync[T: Schema, F[_] : AsyncHandler](config: ProducerConfig, interceptors: List[ProducerInterceptor[T]] = Nil): F[Producer[T]] =
+    implicitly[AsyncHandler[F]].createProducer(producerBuilder(config, interceptors))
+
+  override def consumerAsync[T: Schema, F[_] : AsyncHandler](config: ConsumerConfig, interceptors: List[ConsumerInterceptor[T]]): F[Consumer[T]] =
+    implicitly[AsyncHandler[F]].createConsumer(consumerBuilder(config, interceptors))
+
+  override def readerAsync[T: Schema, F[_] : AsyncHandler](config: ReaderConfig): F[Reader[T]] = {
+    implicitly[AsyncHandler[F]].createReader(readerBuilder(config))
   }
 }

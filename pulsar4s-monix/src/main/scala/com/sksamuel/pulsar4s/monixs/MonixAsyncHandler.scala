@@ -2,13 +2,15 @@ package com.sksamuel.pulsar4s.monixs
 
 import java.util.concurrent.CompletableFuture
 
-import com.sksamuel.pulsar4s.{AsyncHandler, ConsumerMessage, DefaultProducer, MessageId, Producer}
+import com.sksamuel.pulsar4s
+import com.sksamuel.pulsar4s.{AsyncHandler, ConsumerMessage, DefaultConsumer, DefaultProducer, DefaultReader, MessageId, Producer}
 import monix.eval.Task
 import org.apache.pulsar.client.api
-import org.apache.pulsar.client.api.Consumer
-import org.apache.pulsar.client.api.{ProducerBuilder, Reader, TypedMessageBuilder}
+import org.apache.pulsar.client.api.{Consumer, ConsumerBuilder, ProducerBuilder, PulsarClient, Reader, ReaderBuilder, TypedMessageBuilder}
 
+import scala.collection.JavaConverters.iterableAsScalaIterableConverter
 import scala.compat.java8.FutureConverters
+import scala.compat.java8.FutureConverters.CompletionStageOps
 import scala.concurrent.Future
 import scala.language.implicitConversions
 import scala.util.{Failure, Success, Try}
@@ -26,6 +28,12 @@ class MonixAsyncHandler extends AsyncHandler[Task] {
   override def createProducer[T](builder: ProducerBuilder[T]): Task[Producer[T]] =
     Task.deferFuture(FutureConverters.toScala(builder.createAsync())).map(new DefaultProducer(_))
 
+  override def createConsumer[T](builder: ConsumerBuilder[T]): Task[pulsar4s.Consumer[T]] =
+    Task.deferFuture(FutureConverters.toScala(builder.subscribeAsync())).map(new DefaultConsumer(_))
+
+  override def createReader[T](builder: ReaderBuilder[T]): Task[pulsar4s.Reader[T]] =
+    Task.deferFuture(FutureConverters.toScala(builder.createAsync())).map(new DefaultReader(_))
+
   override def send[T](t: T, producer: api.Producer[T]): Task[MessageId] = {
     Task.deferFuture {
       val future = producer.sendAsync(t)
@@ -40,9 +48,14 @@ class MonixAsyncHandler extends AsyncHandler[Task] {
     }.map(ConsumerMessage.fromJava)
   }
 
+  override def receiveBatch[T](consumer: Consumer[T]): Task[Vector[ConsumerMessage[T]]] =
+    Task.deferFuture {
+      FutureConverters.toScala(consumer.batchReceiveAsync())
+    }.map(_.asScala.map(ConsumerMessage.fromJava).toVector)
+
   override def getLastMessageId[T](consumer: api.Consumer[T]): Task[MessageId] = {
     Task.deferFuture {
-      val future = consumer.getLastMessageIdAsync()
+      val future = consumer.getLastMessageIdAsync
       FutureConverters.toScala(future)
     }.map(MessageId.fromJava)
   }
@@ -80,6 +93,8 @@ class MonixAsyncHandler extends AsyncHandler[Task] {
     Task { consumer.negativeAcknowledge(messageId) }
 
   override def close(reader: Reader[_]): Task[Unit] = reader.closeAsync()
+  override def close(client: PulsarClient): Task[Unit] = client.closeAsync()
+
   override def flush(producer: api.Producer[_]): Task[Unit] = producer.flushAsync()
 
   override def nextAsync[T](reader: Reader[T]): Task[ConsumerMessage[T]] =
