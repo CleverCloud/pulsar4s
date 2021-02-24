@@ -10,7 +10,6 @@ import org.apache.pulsar.client.api.{Consumer, ConsumerBuilder, ProducerBuilder,
 
 import scala.collection.JavaConverters.iterableAsScalaIterableConverter
 import scala.compat.java8.FutureConverters
-import scala.compat.java8.FutureConverters.CompletionStageOps
 import scala.concurrent.Future
 import scala.language.implicitConversions
 import scala.util.{Failure, Success, Try}
@@ -101,7 +100,7 @@ class MonixAsyncHandler extends AsyncHandler[Task] {
     Task.deferFuture(reader.readNextAsync()).map(ConsumerMessage.fromJava)
 
   override def hasMessageAvailable(reader: Reader[_]): Task[Boolean] =
-    Task.deferFuture(reader.hasMessageAvailableAsync)
+    Task.deferFuture(reader.hasMessageAvailableAsync).map(identity(_))
 
   override def send[T](builder: TypedMessageBuilder[T]): Task[MessageId] =
     Task.deferFuture(builder.sendAsync()).map(MessageId.fromJava)
