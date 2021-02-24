@@ -16,7 +16,6 @@ case class TopicPartition(name: String)
 case class Subscription(name: String)
 
 object Subscription {
-
   /**
    * Generates a [[Subscription]] with a random UUID as the name.
    */
@@ -25,11 +24,8 @@ object Subscription {
 
 trait PulsarClient {
   def close(): Unit
-
   def producer[T: Schema](config: ProducerConfig, interceptors: List[ProducerInterceptor[T]] = Nil): Producer[T]
-
   def consumer[T: Schema](config: ConsumerConfig, interceptors: List[ConsumerInterceptor[T]] = Nil): Consumer[T]
-
   def reader[T: Schema](config: ReaderConfig): Reader[T]
 }
 
@@ -173,6 +169,7 @@ class DefaultPulsarClient(client: org.apache.pulsar.client.api.PulsarClient) ext
   }
 
   private def consumerBuilder[T](config: ConsumerConfig, interceptors: List[ConsumerInterceptor[T]] = Nil)(implicit schema: Schema[T]): ConsumerBuilder[T] = {
+    logger.info(s"Creating consumer with config $config")
     val builder = client.newConsumer(schema)
     config.consumerEventListener.foreach(builder.consumerEventListener)
     config.consumerName.foreach(builder.consumerName)
@@ -201,10 +198,13 @@ class DefaultPulsarClient(client: org.apache.pulsar.client.api.PulsarClient) ext
     if (config.additionalProperties.nonEmpty)
       builder.loadConf(config.additionalProperties.asJava)
 
+    logger.info(s"Creating consumer with builder ${builder.toString}")
+
     builder
   }
 
   private def readerBuilder[T](config: ReaderConfig)(implicit schema: Schema[T]): ReaderBuilder[T] = {
+    logger.info(s"Creating reader with config $config")
     val builder = client.newReader(schema)
     builder.topic(config.topic.name)
     config.reader.foreach(builder.readerName)

@@ -87,6 +87,9 @@ class FutureAsyncHandler(implicit ec: ExecutionContext) extends AsyncHandler[Fut
   override def nextAsync[T](reader: api.Reader[T]): Future[ConsumerMessage[T]] =
     reader.readNextAsync().toScala.map(ConsumerMessage.fromJava)
 
+  override def hasMessageAvailable(reader: api.Reader[_]): Future[Boolean] =
+    reader.hasMessageAvailableAsync.toScala.map(identity(_))
+
   override def send[T](builder: TypedMessageBuilder[T]): Future[MessageId] =
     builder.sendAsync().toScala.map(MessageId.fromJava)
 }

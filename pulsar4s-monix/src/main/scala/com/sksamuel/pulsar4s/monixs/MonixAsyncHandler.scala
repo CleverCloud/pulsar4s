@@ -100,6 +100,9 @@ class MonixAsyncHandler extends AsyncHandler[Task] {
   override def nextAsync[T](reader: Reader[T]): Task[ConsumerMessage[T]] =
     Task.deferFuture(reader.readNextAsync()).map(ConsumerMessage.fromJava)
 
+  override def hasMessageAvailable(reader: Reader[_]): Task[Boolean] =
+    Task.deferFuture(reader.hasMessageAvailableAsync)
+
   override def send[T](builder: TypedMessageBuilder[T]): Task[MessageId] =
     Task.deferFuture(builder.sendAsync()).map(MessageId.fromJava)
 }

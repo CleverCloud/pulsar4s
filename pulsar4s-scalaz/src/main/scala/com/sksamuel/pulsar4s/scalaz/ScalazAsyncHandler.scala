@@ -90,6 +90,9 @@ class ScalazAsyncHandler extends AsyncHandler[Task] {
   override def nextAsync[T](reader: Reader[T]): Task[ConsumerMessage[T]] =
     reader.readNextAsync().map(ConsumerMessage.fromJava)
 
+  override def hasMessageAvailable(reader: Reader[_]): Task[Boolean] =
+    reader.hasMessageAvailableAsync.map(identity(_))
+
   override def send[T](builder: TypedMessageBuilder[T]): Task[MessageId] =
     builder.sendAsync().map(MessageId.fromJava)
 }
