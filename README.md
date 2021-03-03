@@ -253,6 +253,39 @@ Thread.sleep(10000)
 control.close()
 ```
 
+## FS2 Support
+
+Pulsar4s integrates with the [fs2](https://fs2.io/) library - it provides both a source and a sink.
+To use this, you need to add a dependency on the `pulsar4s-{effect}` + `pulsar4s-fs2` module.
+
+### Example
+
+```scala
+import com.sksamuel.pulsar4s._
+import com.sksamuel.pulsar4s.cats.CatsAsyncHandler._
+import com.sksamuel.pulsar4s.fs2.Streams
+
+import org.apache.pulsar.client.api.Schema
+
+implicit val schema: Schema[Array[Byte]] = Schema.BYTES
+
+val client = PulsarClient("pulsar://localhost:6650")
+
+val intopic = Topic("persistent://sample/standalone/ns1/in")
+val outtopic = Topic("persistent://sample/standalone/ns1/out")
+
+Streams.batch[IO, Array[Byte]](client.consumerAsync[Array[Byte], IO](ConsumerConfig(
+  subscriptionName = Subscription("mysub"),
+  topics = Seq(intopic),
+  subscriptionInitialPosition = Some(SubscriptionInitialPosition.Earliest)
+)))
+  .map(_.map(ProducerMessage(_.value)))
+  .through(Streams.committableSink(client.producerAsync[Array[Byte], IO](ProducerConfig(outtopic))))
+  .compile
+  .drain
+
+```
+
 ## Example SBT Setup
 
 ```scala
@@ -289,7 +322,10 @@ libraryDependencies ++= Seq(
 
   // if you want to use cats effects
   "com.sksamuel.pulsar4s" %% "pulsar4s-cats-effect" % pulsar4sVersion,
-  
+
+  // if you want to use fs2
+  "com.sksamuel.pulsar4s" %% "pulsar4s-fs2" % pulsar4sVersion,
+
   // if you want to use zio
   "com.sksamuel.pulsar4s" %% "pulsar4s-zio" % pulsar4sVersion
 )
