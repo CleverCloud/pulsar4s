@@ -19,7 +19,7 @@ trait ConsumerMessage[T] {
 
   def value: T
 
-  def valueTry = Try(value)
+  def valueTry: Try[T] = Try(value)
 
   def data: Array[Byte]
 

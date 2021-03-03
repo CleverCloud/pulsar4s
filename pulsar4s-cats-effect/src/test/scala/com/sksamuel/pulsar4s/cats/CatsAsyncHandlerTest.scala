@@ -2,14 +2,16 @@ package com.sksamuel.pulsar4s.cats
 
 import java.util.UUID
 
+import _root_.cats.data._
+import _root_.cats.effect._
+import _root_.cats.implicits._
 import com.sksamuel.pulsar4s._
 import org.apache.pulsar.client.api.Schema
 import org.scalatest.BeforeAndAfterAll
-import _root_.cats.effect._
-import _root_.cats.data._
-import _root_.cats.implicits._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+
+import scala.util.Random
 
 class CatsAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
 
@@ -52,26 +54,91 @@ class CatsAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAfter
     consumer.close()
   }
 
-  def pulsarResources[F[_]: Sync: AsyncHandler](c: PulsarClient, t: Topic, subscription: Subscription): Resource[F, (Producer[String], Consumer[String])] = {
-    val producer: Resource[F, Producer[String]] = Resource.make(Sync[F].delay { c.producer(ProducerConfig(t)) }){_.closeAsync}
-    val consumer: Resource[F, Consumer[String]] = Resource.make(Sync[F].delay { c.consumer(ConsumerConfig(topics = Seq(t), subscriptionName = subscription)) }){_.closeAsync}
+  def syncResources[F[_] : Async : AsyncHandler](c: PulsarClient, t: Topic, subscription: Subscription): Resource[F, (Producer[String], Consumer[String])] = {
+    val producer: Resource[F, Producer[String]] = Resource.make(Sync[F].delay {
+      c.producer(ProducerConfig(t))
+    }) {
+      _.closeAsync
+    }
+    val consumer: Resource[F, Consumer[String]] = Resource.make(Sync[F].delay {
+      c.consumer(ConsumerConfig(topics = Seq(t), subscriptionName = subscription))
+    }) {
+      _.closeAsync
+    }
     for (p <- producer; c <- consumer) yield (p, c)
   }
 
-  def asyncProgram[F[_]: Async: AsyncHandler](producer: Producer[String], consumer: Consumer[String], message: String): F[ConsumerMessage[String]] = for {
-    _      <- producer.sendAsync(message)
+  def asyncResources[F[_] : Async : AsyncHandler](c: PulsarAsyncClient, t: Topic, subscription: Subscription): Resource[F, (Producer[String], Consumer[String])] = {
+    for {
+      producer <- Resource.make(c.producerAsync(ProducerConfig(t)))(_.closeAsync)
+      consumer <- Resource.make(c.consumerAsync(ConsumerConfig(
+        topics = Seq(t),
+        subscriptionName = subscription,
+      )))(c => c.unsubscribeAsync *> c.closeAsync)
+    } yield producer -> consumer
+  }
+
+  def asyncProgram[F[_] : Async : AsyncHandler](producer: Producer[String], consumer: Consumer[String], message: String): F[ConsumerMessage[String]] = for {
+    _ <- producer.sendAsync(message)
     result <- consumer.receiveAsync
   } yield result
+
+  def asyncBatchProgram[F[_] : Async : AsyncHandler](producer: Producer[String], consumer: Consumer[String], message: String): F[Vector[ConsumerMessage[String]]] = for {
+    _ <- (0 to 5).toList.map(id => producer.sendAsync[F](s"${message}_$id")).sequence
+    result <- consumer.receiveBatchAsync
+  } yield result
+
+  test("async consumer/producer/reader should be lazy") {
+    import CatsAsyncHandler._
+    val topic = Topic("persistent://sample/standalone/ns1/" + UUID.randomUUID().toString)
+
+    val program = Resource.make(client.producerAsync(ProducerConfig(topic)))(_.closeAsync).use {
+      _.sendAsync("test_message")
+    }
+    val checkAvailable = Resource.make(client.readerAsync(ReaderConfig(topic, startMessage = Message(MessageId.earliest))))(_.closeAsync).use {
+      _.hasMessageAvailableAsync
+    }
+
+    checkAvailable.unsafeRunSync() shouldBe false
+    (program *> checkAvailable).unsafeRunSync() shouldBe true
+  }
+
+  def processResource[F[_] : Async : AsyncHandler, X](
+    pulsarResource: Resource[F, (Producer[String], Consumer[String])])(
+    pr: (Producer[String], Consumer[String]) => F[X]
+  ): F[X] =
+    pulsarResource.use {
+      case (producer, consumer) =>
+        pr(producer, consumer)
+    }
+
+  test("async batch methods should return batch instead of single message") {
+    import CatsAsyncHandler._
+    val msg = "hello_batch"
+    val topic = Topic("persistent://sample/standalone/ns1/batch_cats_test")
+    val subscription = Subscription("batch_cats_test")
+
+    processResource[IO, Vector[ConsumerMessage[String]]](syncResources[IO](client, topic, subscription)) { (producer, consumer) =>
+      asyncBatchProgram[IO](producer, consumer, msg)
+    }.map(_.length).unsafeRunSync() should be > 1
+
+    processResource[IO, Vector[ConsumerMessage[String]]](asyncResources[IO](client, topic, subscription)) { (producer, consumer) =>
+      asyncBatchProgram[IO](producer, consumer, msg)
+    }.map(_.length).unsafeRunSync() should be > 1
+  }
 
   test("async client methods should work with any monad which implements Async - IO") {
     import CatsAsyncHandler._
     val msg = "hello cats-effect IO"
-    pulsarResources[IO](
-      client,
-      Topic("persistent://sample/standalone/ns1/cats_async_io"),
-      Subscription("cats_effect_test_IO")
-    ).use { case (producer, consumer) =>
-        asyncProgram[IO](producer, consumer, msg)
+    val topic = Topic("persistent://sample/standalone/ns1/cats_async_io")
+    val subscription = Subscription("cats_effect_test_IO")
+
+    processResource[IO, ConsumerMessage[String]](syncResources[IO](client, topic, subscription)) { (producer, consumer) =>
+      asyncProgram[IO](producer, consumer, msg)
+    }.map(_.value).unsafeRunSync() shouldBe msg
+
+    processResource[IO, ConsumerMessage[String]](asyncResources[IO](client, topic, subscription)) { (producer, consumer) =>
+      asyncProgram[IO](producer, consumer, msg)
     }.map(_.value).unsafeRunSync() shouldBe msg
   }
 
@@ -79,42 +146,54 @@ class CatsAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAfter
     import CatsAsyncHandler._
     type F[T] = StateT[IO, Int, T] // this would be `StateT[IO, Int, ?]` with kind projector
     val msg = "hello cats-effect monad transformers"
-    pulsarResources[IO](
-      client,
-      Topic("persistent://sample/standalone/ns1/cats_async_statet_io"),
-      Subscription("cats_effect_test_StateT_IO")
-    ).use { case (producer, consumer) =>
-      asyncProgram[F](producer, consumer, msg).run(123)
-    }.map { case (a, msg) => (a, msg.value) }.unsafeRunSync() shouldBe (123, msg)
+    val topic = Topic("persistent://sample/standalone/ns1/cats_async_statet_io")
+    val subscription = Subscription("cats_effect_test_StateT_IO")
+    val rnd = Random.nextInt()
+
+    processResource[IO, (Int, ConsumerMessage[String])](syncResources[IO](client, topic, subscription)) { (producer, consumer) =>
+      asyncProgram[F](producer, consumer, msg).run(rnd)
+    }.map { case (a, msg) => (a, msg.value) }.unsafeRunSync() shouldBe(rnd, msg)
+
+    processResource[IO, (Int, ConsumerMessage[String])](asyncResources[IO](client, topic, subscription)) { (producer, consumer) =>
+      asyncProgram[F](producer, consumer, msg).run(rnd)
+    }.map { case (a, msg) => (a, msg.value) }.unsafeRunSync() shouldBe(rnd, msg)
   }
 
   test("async client methods should work with any monad which implements Async - Monix Task") {
+    import CatsAsyncHandler._
     import monix.eval.Task
     import monix.execution.Scheduler.Implicits.global
-    import CatsAsyncHandler._
     val msg = "hello monix via cats-effect"
-    pulsarResources[Task](
-      client,
-      Topic("persistent://sample/standalone/ns1/cats_async_monix_task"),
-      Subscription("cats_effect_test_monix_task")
-    ).use { case (producer, consumer) =>
+    val topic = Topic("persistent://sample/standalone/ns1/cats_async_monix_task")
+    val subscription = Subscription("cats_effect_test_monix_task")
+
+    processResource[Task, ConsumerMessage[String]](syncResources[Task](client, topic, subscription)) { (producer, consumer) =>
+      asyncProgram[Task](producer, consumer, msg)
+    }.map(_.value).runSyncUnsafe() shouldBe msg
+
+    processResource[Task, ConsumerMessage[String]](asyncResources[Task](client, topic, subscription)) { (producer, consumer) =>
       asyncProgram[Task](producer, consumer, msg)
     }.map(_.value).runSyncUnsafe() shouldBe msg
   }
 
   test("async client methods should work with any monad which implements Async - ZIO") {
     import CatsAsyncHandler._
-    val msg = "hello ZIO via cats-effect"
-    import zio.{Task, Runtime}
     import zio.interop.catz._
-    val program = pulsarResources[Task](
-      client,
-      Topic("persistent://sample/standalone/ns1/cats_async_zio_task"),
-      Subscription("cats_effect_test_zio_task")
-    ).use { case (producer, consumer) =>
+    import zio.{Runtime, Task}
+
+    val msg = "hello ZIO via cats-effect"
+    val topic = Topic("persistent://sample/standalone/ns1/cats_async_zio_task")
+    val subscription = Subscription("cats_effect_test_zio_task")
+
+    val sync = processResource[Task, ConsumerMessage[String]](syncResources[Task](client, topic, subscription)) { (producer, consumer) =>
       asyncProgram[Task](producer, consumer, msg)
     }.map(_.value)
-    Runtime.default.unsafeRun(program) shouldBe msg
+
+    val async = processResource[Task, ConsumerMessage[String]](asyncResources[Task](client, topic, subscription)) { (producer, consumer) =>
+      asyncProgram[Task](producer, consumer, msg)
+    }.map(_.value)
+
+    Runtime.default.unsafeRun(sync) shouldBe msg
+    Runtime.default.unsafeRun(async) shouldBe msg
   }
-  
 }

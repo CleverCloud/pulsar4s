@@ -26,6 +26,8 @@ trait Consumer[T] extends Closeable {
 
   def receiveAsync[F[_] : AsyncHandler]: F[ConsumerMessage[T]]
 
+  def receiveBatchAsync[F[_]: AsyncHandler]: F[Vector[ConsumerMessage[T]]]
+
   def stats: ConsumerStats
 
   def subscription: Subscription
@@ -97,6 +99,9 @@ class DefaultConsumer[T](consumer: JConsumer[T]) extends Consumer[T] with Loggin
   }
 
   override def receiveAsync[F[_] : AsyncHandler]: F[ConsumerMessage[T]] = implicitly[AsyncHandler[F]].receive(consumer)
+
+  override def receiveBatchAsync[F[_] : AsyncHandler]: F[Vector[ConsumerMessage[T]]] =
+    implicitly[AsyncHandler[F]].receiveBatch(consumer)
 
   override def acknowledge(messageId: MessageId): Unit = consumer.acknowledge(messageId)
   override def acknowledgeCumulative(message: ConsumerMessage[T]): Unit = consumer.acknowledgeCumulative(message.messageId)

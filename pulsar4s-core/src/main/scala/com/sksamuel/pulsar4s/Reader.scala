@@ -7,6 +7,7 @@ import scala.concurrent.duration.Duration
 
 trait Reader[T] extends Closeable {
   def hasMessageAvailable: Boolean
+  def hasMessageAvailableAsync[F[_]: AsyncHandler]: F[Boolean]
   def topic: Topic
   def next: ConsumerMessage[T]
   def next(duration: Duration): Option[ConsumerMessage[T]]
@@ -20,10 +21,12 @@ trait Reader[T] extends Closeable {
   def hasReachedEndOfTopic: Boolean
 }
 
-class DefaultReader[T](reader: org.apache.pulsar.client.api.Reader[T],
-                       override val topic: Topic) extends Reader[T] {
-
+class DefaultReader[T](reader: org.apache.pulsar.client.api.Reader[T]) extends Reader[T] {
   override def hasMessageAvailable: Boolean = reader.hasMessageAvailable
+
+  override def hasMessageAvailableAsync[F[_] : AsyncHandler]: F[Boolean] = implicitly[AsyncHandler[F]].hasMessageAvailable(reader)
+
+  override lazy val topic: Topic = Topic(reader.getTopic)
 
   override def next: ConsumerMessage[T] = ConsumerMessage.fromJava(reader.readNext)
 
