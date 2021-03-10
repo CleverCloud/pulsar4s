@@ -41,7 +41,7 @@ object Streams {
   def batch[F[_] : Applicative : AsyncHandler, T](
     consumer: F[Consumer[T]]
   ): Stream[F, CommittableMessage[F, ConsumerMessage[T]]] =
-    Stream.resource(Resource.make(consumer)(c => c.unsubscribeAsync *> c.closeAsync))
+    Stream.resource(Resource.make(consumer)(_.closeAsync))
       .flatMap { consumer =>
         Stream
           .repeatEval(consumer.receiveBatchAsync[F])
@@ -52,7 +52,7 @@ object Streams {
   def single[F[_] : Applicative : AsyncHandler, T](
     consumer: F[Consumer[T]]
   ): Stream[F, CommittableMessage[F, ConsumerMessage[T]]] =
-    Stream.resource(Resource.make(consumer)(c => c.unsubscribeAsync *> c.closeAsync))
+    Stream.resource(Resource.make(consumer)(_.closeAsync))
       .flatMap { consumer =>
         Stream
           .repeatEval(consumer.receiveAsync[F])
@@ -62,7 +62,7 @@ object Streams {
   def reader[F[_] : Applicative : AsyncHandler, T](
     reader: F[Reader[T]]
   ): Stream[F, ConsumerMessage[T]] =
-    Stream.resource(Resource.make(reader)(r => r.closeAsync))
+    Stream.resource(Resource.make(reader)(_.closeAsync))
       .flatMap { reader =>
         Stream
           .repeatEval(reader.nextAsync[F])
@@ -71,7 +71,7 @@ object Streams {
   def sink[F[_] : Applicative : AsyncHandler, T](
     producer: F[Producer[T]]
   ): Pipe[F, ProducerMessage[T], MessageId] = messages =>
-    Stream.resource(Resource.make(producer)(p => p.closeAsync))
+    Stream.resource(Resource.make(producer)(_.closeAsync))
       .flatMap { producer =>
         messages.evalMap(producer.sendAsync(_))
       }
@@ -79,7 +79,7 @@ object Streams {
   def committableSink[F[_] : Applicative : BracketThrow : AsyncHandler , T](
     producer: F[Producer[T]]
   ): Pipe[F, CommittableMessage[F, ProducerMessage[T]], MessageId] = messages =>
-    Stream.resource(Resource.make(producer)(p => p.closeAsync))
+    Stream.resource(Resource.make(producer)(_.closeAsync))
       .flatMap { producer =>
         messages.evalMap { message =>
           Bracket[F, Throwable].guaranteeCase(producer.sendAsync(message.data)) {
