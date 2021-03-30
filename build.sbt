@@ -8,7 +8,7 @@ def publishVersion = if (isRelease) releaseVersion else if (isGithubActions) "2.
 
 val org = "com.sksamuel.pulsar4s"
 val AkkaStreamVersion = "2.5.32" // compatible with Akka 2.5.x and 2.6.x
-val CatsEffectVersion = "2.1.4"
+val CatsEffectVersion = "2.4.1"
 val CirceVersion = "0.12.3"
 val CommonsIoVersion = "2.4"
 val ExtsVersion = "1.61.1"
