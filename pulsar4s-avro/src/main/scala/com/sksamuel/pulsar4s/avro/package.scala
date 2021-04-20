@@ -59,10 +59,11 @@ package object avro {
     }
 
     override def getSchemaInfo: SchemaInfo = {
-      new SchemaInfo()
-        .setName(manifest[T].runtimeClass.getCanonicalName)
-        .setType(SchemaType.AVRO)
-        .setSchema(generatedAvroSchema.toString.getBytes(StandardCharsets.UTF_8))
+      SchemaInfo.builder()
+        .name(manifest[T].runtimeClass.getCanonicalName)
+        .`type`(SchemaType.AVRO)
+        .schema(generatedAvroSchema.toString.getBytes(StandardCharsets.UTF_8))
+        .build()
     }
 
     override def encode(t: T): Array[Byte] = {
