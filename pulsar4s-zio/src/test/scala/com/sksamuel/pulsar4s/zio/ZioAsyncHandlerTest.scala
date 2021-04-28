@@ -7,6 +7,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.Eventually
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.time.{Millis, Span}
 
 class ZioAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with Eventually {
 
@@ -43,7 +44,7 @@ class ZioAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAfterA
     val consumer = client.consumer(ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription("mysub_" + UUID.randomUUID())))
     consumer.seekEarliest()
     val receive = consumer.receiveAsync
-    eventually {
+    eventually(PatienceConfig(timeout = Span(2000, Millis))) {
       val value = zio.Runtime.default.unsafeRun(receive.either)
       val t = consumer.getLastMessageIdAsync
       val r = zio.Runtime.default.unsafeRun(t.either)
