@@ -3,9 +3,10 @@ package com.sksamuel.pulsar4s.scalaz
 import java.util.concurrent.CompletableFuture
 
 import com.sksamuel.pulsar4s
-import com.sksamuel.pulsar4s.{AsyncHandler, ConsumerMessage, DefaultConsumer, DefaultProducer, DefaultReader, MessageId, Producer}
+import com.sksamuel.pulsar4s.{AsyncHandler, ConsumerMessage, DefaultConsumer, DefaultProducer, DefaultReader, MessageId, Producer, TransactionContext}
 import org.apache.pulsar.client.api
 import org.apache.pulsar.client.api.{Consumer, ConsumerBuilder, ProducerBuilder, PulsarClient, Reader, ReaderBuilder, TypedMessageBuilder}
+import org.apache.pulsar.client.api.transaction.Transaction
 import scalaz.concurrent.Task
 
 import scala.collection.JavaConverters.iterableAsScalaIterableConverter
@@ -39,9 +40,6 @@ class ScalazAsyncHandler extends AsyncHandler[Task] {
   override def createReader[T](builder: ReaderBuilder[T]): Task[pulsar4s.Reader[T]] =
     completableToTask(builder.createAsync()).map(new DefaultReader(_))
 
-  override def send[T](t: T, producer: api.Producer[T]): Task[MessageId] =
-    completableToTask(producer.sendAsync(t)).map(MessageId.fromJava)
-
   override def receive[T](consumer: api.Consumer[T]): Task[ConsumerMessage[T]] =
     completableToTask(consumer.receiveAsync).map(ConsumerMessage.fromJava)
 
@@ -73,8 +71,14 @@ class ScalazAsyncHandler extends AsyncHandler[Task] {
   override def acknowledgeAsync[T](consumer: api.Consumer[T], messageId: MessageId): Task[Unit] =
     consumer.acknowledgeAsync(messageId)
 
+  override def acknowledgeAsync[T](consumer: api.Consumer[T], messageId: MessageId, txn: Transaction): Task[Unit] =
+    consumer.acknowledgeAsync(messageId, txn)
+
   override def acknowledgeCumulativeAsync[T](consumer: api.Consumer[T], messageId: MessageId): Task[Unit] =
     consumer.acknowledgeCumulativeAsync(messageId)
+
+  override def acknowledgeCumulativeAsync[T](consumer: api.Consumer[T], messageId: MessageId, txn: Transaction): Task[Unit] =
+    consumer.acknowledgeCumulativeAsync(messageId, txn)
 
   override def negativeAcknowledgeAsync[T](consumer: Consumer[T], messageId: MessageId): Task[Unit] =
     Task { consumer.negativeAcknowledge(messageId) }
@@ -94,6 +98,24 @@ class ScalazAsyncHandler extends AsyncHandler[Task] {
 
   override def send[T](builder: TypedMessageBuilder[T]): Task[MessageId] =
     builder.sendAsync().map(MessageId.fromJava)
+
+  override def withTransaction[E, A](
+    builder: api.transaction.TransactionBuilder,
+    action: TransactionContext => Task[Either[E, A]]
+  ): Task[Either[E, A]] = {
+    def close[T](txn: TransactionContext, commit: Boolean, result: T): Task[T] =
+      (if (commit) txn.commit(this) else txn.abort(this)).map(_ => result)
+    startTransaction(builder).flatMap { txn =>
+      action(txn)
+        .flatMap(result => (if (result.isRight) txn.commit(this) else txn.abort(this)).map(_ => result))
+        .onFinish(errorOpt => if (errorOpt.isDefined) txn.abort(this) else Task.now(()))
+    }
+  }
+
+  override def startTransaction(builder: api.transaction.TransactionBuilder): Task[TransactionContext] =
+    builder.build().map(TransactionContext(_))
+  override def commitTransaction(txn: Transaction): Task[Unit] = txn.commit()
+  override def abortTransaction(txn: Transaction): Task[Unit] = txn.abort()
 }
 
 object ScalazAsyncHandler {

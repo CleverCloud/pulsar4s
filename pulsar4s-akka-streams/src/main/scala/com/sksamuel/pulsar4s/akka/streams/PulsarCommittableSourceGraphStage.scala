@@ -12,6 +12,7 @@ import com.sksamuel.exts.Logging
 import com.sksamuel.pulsar4s.Consumer
 import com.sksamuel.pulsar4s.ConsumerMessage
 import com.sksamuel.pulsar4s.MessageId
+import com.sksamuel.pulsar4s.TransactionContext
 import org.apache.pulsar.client.api.ConsumerStats
 
 import scala.concurrent.ExecutionContext
@@ -23,10 +24,14 @@ import scala.util.Success
 import scala.util.Try
 import scala.util.control.NonFatal
 
-trait CommittableMessage[T] {
-  def ack(cumulative: Boolean = false): Future[Done]
+trait CommittableMessage[T] extends TransactionalCommittableMessageOps {
   def nack(): Future[Done]
   def message: ConsumerMessage[T]
+  def tx(implicit txn: TransactionContext): TransactionalCommittableMessageOps
+}
+
+trait TransactionalCommittableMessageOps {
+  def ack(cumulative: Boolean = false): Future[Done]
 }
 
 class PulsarCommittableSourceGraphStage[T](
@@ -44,17 +49,22 @@ class PulsarCommittableSourceGraphStage[T](
 
   private class CommittableMessageImpl[T](
     val consumer: Consumer[T],
-    val message: ConsumerMessage[T]
+    val message: ConsumerMessage[T],
+    val ctx: Option[TransactionContext] = None
   )(implicit ec: ExecutionContext) extends CommittableMessage[T] {
     def messageId: MessageId = message.messageId
     override def ack(cumulative: Boolean): Future[Done] = {
       logger.debug(s"Acknowledging message: $message")
+      val txnOps = ctx.map(consumer.tx(_)).getOrElse(consumer)
       val ackFuture = if (cumulative) {
-        consumer.acknowledgeCumulativeAsync(message.messageId)
+        txnOps.acknowledgeCumulativeAsync(message.messageId)
       } else {
-        consumer.acknowledgeAsync(message.messageId)
+        txnOps.acknowledgeAsync(message.messageId)
       }
       ackFuture.map(_ => Done)
+    }
+    override def tx(implicit ctx: TransactionContext): TransactionalCommittableMessageOps = {
+      new CommittableMessageImpl(consumer, message, Some(ctx))
     }
     override def nack(): Future[Done] = {
       logger.debug(s"Negatively acknowledging message: $message")
