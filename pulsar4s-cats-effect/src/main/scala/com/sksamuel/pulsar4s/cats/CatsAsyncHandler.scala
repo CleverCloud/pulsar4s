@@ -28,7 +28,7 @@ trait CatsAsyncHandlerLowPriority {
     implicit class CompletableOps[F[_]: Async, T](f: => F[CompletableFuture[T]]) {
       def liftF: F[T] = {
         f.flatMap { f =>
-          Async[F].suspend {
+          Async[F].defer {
             if (f.isDone) {
               try {
                 Async[F].pure(f.get())
