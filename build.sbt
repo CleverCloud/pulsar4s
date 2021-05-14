@@ -24,7 +24,7 @@ val ScalaVersion = "2.12.11"
 val ScalatestVersion = "3.2.8"
 val Slf4jVersion = "1.7.30"
 val SprayJsonVersion = "1.3.6"
-val Java8CompatVersion = "0.9.1"
+val Java8CompatVersion = "1.0.0"
 val ZIOVersion = "1.0.7"
 val ZIOInteropCatsVersion = "2.1.4.1"
 
