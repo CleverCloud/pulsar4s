@@ -37,10 +37,12 @@ package object circe {
     override def encode(t: T): Array[Byte] = printer(encoder(t)).getBytes(StandardCharsets.UTF_8)
     override def decode(bytes: Array[Byte]): T =
       io.circe.jawn.decode[T](new String(bytes, StandardCharsets.UTF_8)).fold(throw _, identity)
-    override def getSchemaInfo: SchemaInfo =
-      new SchemaInfo()
-        .setName(manifest[T].runtimeClass.getCanonicalName)
-        .setType(SchemaType.JSON)
-        .setSchema("""{"type":"any"}""".getBytes("UTF-8"))
+    override def getSchemaInfo: SchemaInfo = {
+      SchemaInfo.builder()
+        .name(manifest[T].runtimeClass.getCanonicalName)
+        .`type`(SchemaType.BYTES)
+        .schema(Array.empty[Byte])
+        .build()
+    }
   }
 }
