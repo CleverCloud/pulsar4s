@@ -2,11 +2,11 @@ package com.sksamuel.pulsar4s
 
 import java.io.Closeable
 import java.util.concurrent.TimeUnit
-
 import com.sksamuel.exts.Logging
 import org.apache.pulsar.client.api.ConsumerStats
 
 import scala.concurrent.duration.FiniteDuration
+import scala.language.higherKinds
 import scala.util.Try
 
 trait Consumer[T] extends Closeable {

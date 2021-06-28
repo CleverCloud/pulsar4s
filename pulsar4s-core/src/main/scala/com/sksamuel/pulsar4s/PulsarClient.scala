@@ -2,12 +2,12 @@ package com.sksamuel.pulsar4s
 
 import java.util.concurrent.TimeUnit
 import java.util.{UUID, Set => JSet}
-
 import com.sksamuel.exts.Logging
 import org.apache.pulsar.client.api
 import org.apache.pulsar.client.api.{ConsumerBuilder, ProducerBuilder, ReaderBuilder, Schema}
 
 import scala.collection.JavaConverters._
+import scala.language.higherKinds
 
 case class Topic(name: String)
 
