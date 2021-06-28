@@ -41,19 +41,20 @@ jobs:
           echo "keyid:       ${{ steps.import_gpg.outputs.keyid }}"
           echo "name:        ${{ steps.import_gpg.outputs.name }}"
           echo "email:       ${{ steps.import_gpg.outputs.email }}"
-      - name: run tests
+
+      - name: run tests 2.12
         run: sbt ++2.12.13 test
 
-      - name: publish snapshot
+      - name: publish snapshot 2.12
         run: sbt ++2.12.13 publish
         env:
           OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
 
-      - name: run tests
+      - name: run tests 2.13
         run: sbt ++2.13.6 test
 
-      - name: publish snapshot
+      - name: publish snapshot 2.13
         run: sbt ++2.13.6 publish
         env:
           OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
