@@ -175,8 +175,8 @@ lazy val scalaz = Project("pulsar4s-scalaz", file("pulsar4s-scalaz"))
   .settings(name := "pulsar4s-scalaz")
   .settings(allSettings)
   .settings(libraryDependencies ++= Seq(
-    "org.scalaz" %% "scalaz-core" % "7.2.31",
-    "org.scalaz" %% "scalaz-concurrent" % "7.2.31"
+    "org.scalaz" %% "scalaz-core" % "7.2.32",
+    "org.scalaz" %% "scalaz-concurrent" % "7.2.32"
   ))
 
 lazy val monix = Project("pulsar4s-monix", file("pulsar4s-monix"))
