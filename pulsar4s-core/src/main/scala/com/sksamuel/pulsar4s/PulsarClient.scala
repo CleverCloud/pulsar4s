@@ -139,7 +139,7 @@ class DefaultPulsarClient(client: org.apache.pulsar.client.api.PulsarClient) ext
   override def close(): Unit = client.close()
 
   private def producerBuilder[T](config: ProducerConfig, interceptors: List[ProducerInterceptor[T]])(implicit schema: Schema[T]): ProducerBuilder[T] = {
-    logger.info(s"Creating producer with config $config")
+    logger.debug(s"Creating producer with config $config")
     val builder = client.newProducer(schema)
     builder.topic(config.topic.name)
     config.encryptionKey.foreach(builder.addEncryptionKey)

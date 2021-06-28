@@ -1,19 +1,19 @@
 package com.sksamuel.pulsar4s.cats
 
 import java.util.UUID
-
 import _root_.cats.data._
 import _root_.cats.effect._
 import _root_.cats.implicits._
 import com.sksamuel.pulsar4s._
 import org.apache.pulsar.client.api.Schema
 import org.scalatest.BeforeAndAfterAll
+import org.scalatest.concurrent.Eventually
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
 import scala.util.Random
 
-class CatsAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
+class CatsAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with Eventually {
 
   implicit val schema: Schema[String] = Schema.STRING
 
@@ -98,8 +98,9 @@ class CatsAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAfter
     val checkAvailable = Resource.make(client.readerAsync(ReaderConfig(topic, startMessage = Message(MessageId.earliest))))(_.closeAsync).use {
       _.hasMessageAvailableAsync
     }
-
-    checkAvailable.unsafeRunSync() shouldBe false
+    eventually {
+      checkAvailable.unsafeRunSync() shouldBe false
+    }
     (program *> checkAvailable).unsafeRunSync() shouldBe true
   }
 
