@@ -1,6 +1,6 @@
 package com.sksamuel.pulsar4s
 
-import org.apache.pulsar.client.impl.TopicMessageIdImpl
+import org.apache.pulsar.client.impl.{MessageIdImpl, TopicMessageIdImpl}
 
 import scala.language.implicitConversions
 
@@ -15,6 +15,9 @@ sealed trait MessageId {
   def bytes: Array[Byte] = underlying.toByteArray
   def topic: Option[Topic]
   def topicPartition: Option[TopicPartition]
+  def ledgerId: Option[Long]
+  def entryId: Option[Long]
+  def partitionIndex: Option[Int]
 }
 
 private case class Pulsar4sMessageIdImpl(underlying: JMessageId) extends MessageId {
@@ -29,6 +32,18 @@ private case class Pulsar4sMessageIdImpl(underlying: JMessageId) extends Message
   override def toString: String = underlying match {
     case tmi: TopicMessageIdImpl => s"${tmi.getTopicPartitionName} ${tmi.getInnerMessageId}"
     case mi => mi.toString
+  }
+  override def ledgerId: Option[Long] = underlying match {
+    case m: MessageIdImpl => Option(m.getLedgerId)
+    case _ => None
+  }
+  override def entryId: Option[Long] = underlying match {
+    case m: MessageIdImpl => Option(m.getEntryId)
+    case _ => None
+  }
+  override def partitionIndex: Option[Int] = underlying match {
+    case m: MessageIdImpl => Some(m.getPartitionIndex)
+    case _ => None
   }
 }
 

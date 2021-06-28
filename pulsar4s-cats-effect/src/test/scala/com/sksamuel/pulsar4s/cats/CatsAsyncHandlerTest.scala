@@ -11,6 +11,7 @@ import org.scalatest.concurrent.Eventually
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
+import scala.language.higherKinds
 import scala.util.Random
 
 class CatsAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with Eventually {
@@ -49,8 +50,9 @@ class CatsAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAfter
     val value = receive.unsafeRunSync()
     val t = consumer.getLastMessageIdAsync
     val r = t.unsafeRunSync()
-    val zipped = r.toString.split(":") zip value.messageId.toString.split(":")
-    zipped.foreach(t => t._1 shouldBe t._2)
+    r.ledgerId shouldBe value.messageId.ledgerId
+    r.entryId shouldBe value.messageId.entryId
+    r.partitionIndex shouldBe value.messageId.partitionIndex
     consumer.close()
   }
 
