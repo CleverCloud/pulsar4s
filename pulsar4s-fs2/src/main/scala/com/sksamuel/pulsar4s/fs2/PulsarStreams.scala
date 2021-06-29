@@ -13,7 +13,7 @@ trait CommittableMessage[F[_], X] {
   def map[Y](f: X => Y): CommittableMessage[F, Y]
 }
 
-object Streams {
+object PulsarStreams {
   import _root_.fs2.{Pipe, Stream}
 
   private final class DelegateCommittableMessage[F[_] : AsyncHandler, T](

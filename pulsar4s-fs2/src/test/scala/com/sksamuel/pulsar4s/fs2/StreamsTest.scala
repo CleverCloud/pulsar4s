@@ -37,7 +37,7 @@ class StreamsTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
 
     (for {
       _ <- publishMessages[IO](client, topic, messages)
-      read <- Streams.reader[IO, String](client.readerAsync[String, IO](ReaderConfig(
+      read <- PulsarStreams.reader[IO, String](client.readerAsync[String, IO](ReaderConfig(
         topic = topic,
         startMessage = Message(MessageId.earliest)
       ))).take(messages.size).map(_.value).compile.toList
@@ -51,12 +51,12 @@ class StreamsTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
 
     (for {
       _ <- publishMessages[IO](client, topic, messages)
-      batch <- Streams.batch[IO, String](client.consumerAsync[String, IO](ConsumerConfig(
+      batch <- PulsarStreams.batch[IO, String](client.consumerAsync[String, IO](ConsumerConfig(
         subscriptionName = Subscription("fs2_subscription_batch"),
         topics = Seq(topic),
         subscriptionInitialPosition = Some(SubscriptionInitialPosition.Earliest)
       ))).take(messages.size).map(_.data.value).compile.toList
-      single <- Streams.single[IO, String](client.consumerAsync[String, IO](ConsumerConfig(
+      single <- PulsarStreams.single[IO, String](client.consumerAsync[String, IO](ConsumerConfig(
         subscriptionName = Subscription("fs2_subscription_single"),
         topics = Seq(topic),
         subscriptionInitialPosition = Some(SubscriptionInitialPosition.Earliest)
@@ -77,7 +77,7 @@ class StreamsTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
     (for {
       _ <- publishMessages[IO](client, topic, messages)
 
-      _ <- Streams.batch[IO, String](client.consumerAsync[String, IO](ConsumerConfig(
+      _ <- PulsarStreams.batch[IO, String](client.consumerAsync[String, IO](ConsumerConfig(
         subscriptionName = Subscription("fs2_subscription_batch"),
         topics = Seq(topic),
         subscriptionInitialPosition = Some(SubscriptionInitialPosition.Earliest)
@@ -86,11 +86,11 @@ class StreamsTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
         .map(_.map { message =>
           ProducerMessage(message.value)
         })
-        .through(Streams.committableSink(client.producerAsync[String, IO](ProducerConfig(topic2))))
+        .through(PulsarStreams.committableSink(client.producerAsync[String, IO](ProducerConfig(topic2))))
         .compile
         .drain
 
-      batch <- Streams.batch[IO, String](client.consumerAsync[String, IO](ConsumerConfig(
+      batch <- PulsarStreams.batch[IO, String](client.consumerAsync[String, IO](ConsumerConfig(
         subscriptionName = Subscription("fs2_subscription_batch"),
         topics = Seq(topic2),
         subscriptionInitialPosition = Some(SubscriptionInitialPosition.Earliest)
