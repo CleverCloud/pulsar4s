@@ -37,7 +37,7 @@ class PulsarCommittableSourceTest extends AnyFunSuite with Matchers {
   private val client = PulsarClient("pulsar://localhost:6650")
 
   private val specialStringSchema = new Schema[String] {
-    override def clone(): AnyRef = this
+    override def clone(): Schema[String] = this
     override def encode(message: String) = ("message:" + message).getBytes("UTF-8")
     override def decode(data: Array[Byte]) = new String(data, "UTF-8").split(":", 2)(1)
     override def getSchemaInfo = Schema.STRING.getSchemaInfo
