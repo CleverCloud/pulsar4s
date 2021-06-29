@@ -18,6 +18,7 @@ val MonixVersion = "3.1.0"
 val PlayJsonVersion = "2.7.4" // compatible with 2.7.x and 2.8.x
 val PulsarVersion = "2.7.2"
 val ReactiveStreamsVersion = "1.0.2"
+val FunctionalStreamsVersion = "2.5.2"
 val Json4sVersion = "3.6.11"
 val Avro4sVersion = "3.1.0"
 val ScalaVersion = "2.13.5"
@@ -170,6 +171,17 @@ lazy val cats_effect = Project("pulsar4s-cats-effect", file("pulsar4s-cats-effec
     "org.typelevel" %% "cats-effect" % CatsEffectVersion,
     "io.monix" %% "monix" % MonixVersion % Test,
     "dev.zio" %% "zio-interop-cats" % ZIOInteropCatsVersion % Test
+  ))
+
+lazy val fs2 = Project("pulsar4s-fs2", file("pulsar4s-fs2"))
+  .dependsOn(core)
+  .dependsOn(cats_effect)
+  .settings(name := "pulsar4s-fs2")
+  .settings(allSettings)
+  .settings(libraryDependencies ++= Seq(
+    "org.typelevel" %% "cats-effect" % CatsEffectVersion,
+    "co.fs2" %% "fs2-core" % FunctionalStreamsVersion,
+    "co.fs2" %% "fs2-reactive-streams" % FunctionalStreamsVersion
   ))
 
 lazy val scalaz = Project("pulsar4s-scalaz", file("pulsar4s-scalaz"))
