@@ -1,7 +1,6 @@
 package com.sksamuel.pulsar4s.scalaz
 
 import java.util.concurrent.CompletableFuture
-import java.util.function.BiConsumer
 
 import com.sksamuel.pulsar4s
 import com.sksamuel.pulsar4s.{AsyncHandler, ConsumerMessage, DefaultConsumer, DefaultProducer, DefaultReader, MessageId, Producer}
