@@ -1,9 +1,5 @@
 package com.sksamuel.pulsar4s
 
-import org.apache.pulsar.client.api._
-
-import scala.concurrent.duration.FiniteDuration
-import scala.util.matching.Regex
 import java.util.concurrent.TimeUnit
 
 sealed trait StartMessage
