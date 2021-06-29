@@ -16,6 +16,7 @@ As a simple wrapper over the Java client, we benefit from the reliability and pe
 * Uses scala.concurrent.duration.Duration
 * Provides case classes rather than Java beans
 * [Akka Streams](https://github.com/sksamuel/pulsar4s#akka-streams) source and sink
+* [FS2](https://github.com/typelevel/fs2) Reader and Writer
 * Circe, SprayJson, PlayJson and Jackson implementations of Schema typeclass
 
 ## Using the client
