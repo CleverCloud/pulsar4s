@@ -50,7 +50,6 @@ class CatsAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAfter
     val value = receive.unsafeRunSync()
     val t = consumer.getLastMessageIdAsync
     val r = t.unsafeRunSync()
-    r.ledgerId shouldBe value.messageId.ledgerId
     r.entryId shouldBe value.messageId.entryId
     r.partitionIndex shouldBe value.messageId.partitionIndex
     consumer.close()

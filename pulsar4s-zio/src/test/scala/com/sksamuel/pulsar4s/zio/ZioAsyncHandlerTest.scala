@@ -44,14 +44,11 @@ class ZioAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAfterA
     val consumer = client.consumer(ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription("mysub_" + UUID.randomUUID())))
     consumer.seekEarliest()
     val receive = consumer.receiveAsync
-    eventually {
-      val value = zio.Runtime.default.unsafeRun(receive.either).right.get
-      val t = consumer.getLastMessageIdAsync
-      val r = zio.Runtime.default.unsafeRun(t.either).right.get
-      r.ledgerId shouldBe value.messageId.ledgerId
-      r.entryId shouldBe value.messageId.entryId
-      r.partitionIndex shouldBe value.messageId.partitionIndex
-    }
+    val value = zio.Runtime.default.unsafeRun(receive.either).right.get
+    val t = consumer.getLastMessageIdAsync
+    val r = zio.Runtime.default.unsafeRun(t.either).right.get
+    r.entryId shouldBe value.messageId.entryId
+    r.partitionIndex shouldBe value.messageId.partitionIndex
     consumer.close()
   }
 }

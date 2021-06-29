@@ -45,7 +45,6 @@ class ScalazAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAft
     val value = receive.unsafePerformSync
     val t = consumer.getLastMessageIdAsync
     val r = t.unsafePerformSync
-    r.ledgerId shouldBe value.messageId.ledgerId
     r.entryId shouldBe value.messageId.entryId
     r.partitionIndex shouldBe value.messageId.partitionIndex
     consumer.close()

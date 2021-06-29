@@ -1,10 +1,10 @@
 package com.sksamuel.pulsar4s
 
 import java.io.Closeable
-
 import com.sksamuel.exts.Logging
 import org.apache.pulsar.client.api.{ProducerStats, TypedMessageBuilder}
 
+import scala.language.higherKinds
 import scala.util.Try
 
 trait Producer[T] extends Closeable with Logging {
