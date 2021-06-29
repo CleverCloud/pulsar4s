@@ -27,7 +27,6 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.apache.pulsar.client.api.PulsarClientException
 
-
 class PulsarCommittableSourceTest extends AnyFunSuite with Matchers {
 
   implicit val system: ActorSystem = ActorSystem()

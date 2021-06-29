@@ -46,6 +46,8 @@ lazy val commonSettings = Seq(
   version := publishVersion,
   resolvers ++= Seq(Resolver.mavenLocal),
   parallelExecution in Test := false,
+  parallelExecution in Global := false,
+  concurrentRestrictions in Global += Tags.limit(Tags.Test, 1),
   scalacOptions in(Compile, doc) := (scalacOptions in(Compile, doc)).value.filter(_ != "-Xfatal-warnings"),
   scalacOptions ++= Seq("-unchecked", "-deprecation", "-encoding", "utf8")
 )

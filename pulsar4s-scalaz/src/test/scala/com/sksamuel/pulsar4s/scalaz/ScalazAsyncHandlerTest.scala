@@ -12,8 +12,8 @@ class ScalazAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAft
 
   implicit val schema: Schema[String] = Schema.STRING
 
-  val client = PulsarClient("pulsar://localhost:6650")
-  val topic = Topic("persistent://sample/standalone/ns1/scalaz_" + UUID.randomUUID())
+  val client: PulsarAsyncClient = PulsarClient("pulsar://localhost:6650")
+  val topic: Topic = Topic("persistent://sample/standalone/ns1/scalaz_" + UUID.randomUUID())
 
   override def afterAll(): Unit = {
     client.close()
@@ -45,8 +45,9 @@ class ScalazAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAft
     val value = receive.unsafePerformSync
     val t = consumer.getLastMessageIdAsync
     val r = t.unsafePerformSync
-    val zipped = r.toString.split(":") zip value.messageId.toString.split(":")
-    zipped.foreach(t => t._1 shouldBe t._2)
+    r.ledgerId shouldBe value.messageId.ledgerId
+    r.entryId shouldBe value.messageId.entryId
+    r.partitionIndex shouldBe value.messageId.partitionIndex
     consumer.close()
   }
 }
