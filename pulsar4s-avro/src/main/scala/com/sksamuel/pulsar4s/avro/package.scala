@@ -12,6 +12,7 @@ import com.sksamuel.avro4s.Encoder
 import com.sksamuel.avro4s.SchemaFor
 import org.apache.pulsar.client.api.Schema
 import org.apache.pulsar.client.api.schema.SchemaInfoProvider
+import org.apache.pulsar.client.impl.schema.SchemaInfoImpl
 import org.apache.pulsar.common.schema.{SchemaInfo, SchemaType}
 
 import scala.annotation.implicitNotFound
@@ -59,7 +60,7 @@ package object avro {
     }
 
     override def getSchemaInfo: SchemaInfo = {
-      SchemaInfo.builder()
+      SchemaInfoImpl.builder()
         .name(manifest[T].runtimeClass.getCanonicalName)
         .`type`(SchemaType.AVRO)
         .schema(generatedAvroSchema.toString.getBytes(StandardCharsets.UTF_8))

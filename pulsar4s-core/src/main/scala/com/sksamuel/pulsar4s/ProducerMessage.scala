@@ -4,7 +4,7 @@ import java.time.Instant
 
 import org.apache.pulsar.client.api.Schema
 import org.apache.pulsar.client.impl.MessageImpl
-import org.apache.pulsar.common.api.proto.PulsarApi.MessageMetadata
+import org.apache.pulsar.common.api.proto.MessageMetadata
 import org.apache.pulsar.shade.io.netty.buffer.Unpooled
 
 import scala.concurrent.duration.Duration
@@ -69,9 +69,9 @@ object ProducerMessage {
   }
 
   def toJava[T](msg: ProducerMessage[T], schema: Schema[T]): JMessage[T] = {
-    val builder = MessageMetadata.newBuilder()
-    builder.setNullValue(msg.value == null)
-    val javaMsg = new MessageImpl(null, null, msg.props.asJava, Unpooled.wrappedBuffer(schema.encode(msg.value)), schema, builder)
+    val metadata = new MessageMetadata()
+    metadata.setNullValue(msg.value == null)
+    val javaMsg = new MessageImpl(null, null, msg.props.asJava, Unpooled.wrappedBuffer(schema.encode(msg.value)), schema, metadata)
     msg.deliverAt foreach javaMsg.getMessageBuilder.setDeliverAtTime
     javaMsg
   }
