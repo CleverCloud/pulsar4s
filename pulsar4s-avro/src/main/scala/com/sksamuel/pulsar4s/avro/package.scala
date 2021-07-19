@@ -68,7 +68,7 @@ package object avro {
 
     override def encode(t: T): Array[Byte] = {
       val baos = new ByteArrayOutputStream
-      val aos = AvroOutputStream.binary[T].to(baos).build(generatedAvroSchema)
+      val aos = AvroOutputStream.binary[T].to(baos).build()
       try aos.write(t) finally aos.close()
       baos.toByteArray()
     }
