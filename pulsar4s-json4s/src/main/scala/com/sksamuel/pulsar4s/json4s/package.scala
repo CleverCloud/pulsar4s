@@ -1,6 +1,7 @@
 package com.sksamuel.pulsar4s
 
 import org.apache.pulsar.client.api.Schema
+import org.apache.pulsar.client.impl.schema.SchemaInfoImpl
 import org.apache.pulsar.common.schema.{SchemaInfo, SchemaType}
 
 import scala.reflect.Manifest
@@ -14,7 +15,7 @@ package object json4s {
     override def encode(t: T): Array[Byte] = serialization.write(t).getBytes("UTF-8")
     override def decode(bytes: Array[Byte]): T = serialization.read[T](new String(bytes, "UTF-8"))
     override def getSchemaInfo: SchemaInfo = {
-      SchemaInfo.builder()
+      SchemaInfoImpl.builder()
         .name(manifest[T].runtimeClass.getCanonicalName)
         .`type`(SchemaType.BYTES)
         .schema(Array.empty[Byte])
