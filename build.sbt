@@ -16,17 +16,17 @@ val JacksonVersion = "2.9.9"
 val Log4jVersion = "2.12.0"
 val MonixVersion = "3.1.0"
 val PlayJsonVersion = "2.7.4" // compatible with 2.7.x and 2.8.x
-val PulsarVersion = "2.7.2"
+val PulsarVersion = "2.8.0"
 val ReactiveStreamsVersion = "1.0.2"
 val FunctionalStreamsVersion = "2.5.2"
 val Json4sVersion = "3.6.11"
-val Avro4sVersion = "3.1.0"
+val Avro4sVersion = "4.0.10"
 val ScalaVersion = "2.13.5"
 val ScalatestVersion = "3.2.9"
-val Slf4jVersion = "1.7.30"
+val Slf4jVersion = "1.7.32"
 val SprayJsonVersion = "1.3.6"
 val Java8CompatVersion = "0.9.0"
-val ZIOVersion = "1.0.9"
+val ZIOVersion = "1.0.10"
 val ZIOInteropCatsVersion = "2.5.1.0"
 
 lazy val commonScalaVersionSettings = Seq(
@@ -189,8 +189,8 @@ lazy val scalaz = Project("pulsar4s-scalaz", file("pulsar4s-scalaz"))
   .settings(name := "pulsar4s-scalaz")
   .settings(allSettings)
   .settings(libraryDependencies ++= Seq(
-    "org.scalaz" %% "scalaz-core" % "7.2.32",
-    "org.scalaz" %% "scalaz-concurrent" % "7.2.32"
+    "org.scalaz" %% "scalaz-core" % "7.2.33",
+    "org.scalaz" %% "scalaz-concurrent" % "7.2.33"
   ))
 
 lazy val monix = Project("pulsar4s-monix", file("pulsar4s-monix"))

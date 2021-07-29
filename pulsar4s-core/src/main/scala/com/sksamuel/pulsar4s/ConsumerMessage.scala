@@ -2,7 +2,7 @@ package com.sksamuel.pulsar4s
 
 import org.apache.pulsar.client.api.Schema
 import org.apache.pulsar.client.impl.MessageImpl
-import org.apache.pulsar.common.api.proto.PulsarApi.MessageMetadata
+import org.apache.pulsar.common.api.proto.MessageMetadata
 import org.apache.pulsar.shade.io.netty.buffer.Unpooled
 import org.apache.pulsar.shaded.com.google.protobuf.v241.ByteString
 
