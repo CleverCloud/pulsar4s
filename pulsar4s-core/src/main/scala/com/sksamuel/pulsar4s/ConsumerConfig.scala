@@ -27,5 +27,6 @@ case class ConsumerConfig(subscriptionName: Subscription,
                           ackTimeoutTickTime: Option[FiniteDuration] = None,
                           acknowledgmentGroupTime: Option[FiniteDuration] = None,
                           additionalProperties: Map[String, AnyRef] = Map.empty,
-                          deadLetterPolicy: Option[DeadLetterPolicy] = None)
+                          deadLetterPolicy: Option[DeadLetterPolicy] = None,
+                          replicateSubscriptionState:Boolean=false)
 

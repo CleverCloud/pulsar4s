@@ -170,7 +170,7 @@ class DefaultPulsarClient(client: org.apache.pulsar.client.api.PulsarClient) ext
 
   private def consumerBuilder[T](config: ConsumerConfig, interceptors: List[ConsumerInterceptor[T]] = Nil)(implicit schema: Schema[T]): ConsumerBuilder[T] = {
     logger.info(s"Creating consumer with config $config")
-    val builder = client.newConsumer(schema)
+    val builder = client.newConsumer(schema).replicateSubscriptionState(config.replicateSubscriptionState)
     config.consumerEventListener.foreach(builder.consumerEventListener)
     config.consumerName.foreach(builder.consumerName)
     config.cryptoFailureAction.foreach(builder.cryptoFailureAction)
