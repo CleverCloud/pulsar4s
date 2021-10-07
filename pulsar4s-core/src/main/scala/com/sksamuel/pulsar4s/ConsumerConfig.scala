@@ -26,6 +26,7 @@ case class ConsumerConfig(subscriptionName: Subscription,
                           ackTimeout: Option[FiniteDuration] = None,
                           ackTimeoutTickTime: Option[FiniteDuration] = None,
                           acknowledgmentGroupTime: Option[FiniteDuration] = None,
+                          enableBatchIndexAcknowledgement: Option[Boolean] = None,
                           additionalProperties: Map[String, AnyRef] = Map.empty,
                           deadLetterPolicy: Option[DeadLetterPolicy] = None)
 
