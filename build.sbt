@@ -36,26 +36,26 @@ lazy val commonScalaVersionSettings = Seq(
 
 lazy val warnUnusedImport = Seq(
   scalacOptions ++= Seq("-Ywarn-unused:imports"),
-  scalacOptions in(Compile, console) ~= {
+  Compile / console / scalacOptions ~= {
     _.filterNot(Set("-Ywarn-unused-import", "-Ywarn-unused:imports"))
   },
-  scalacOptions in(Test, console) := (scalacOptions in(Compile, console)).value,
+  Test / console / scalacOptions := (Compile / console / scalacOptions).value,
 )
 
 lazy val commonSettings = Seq(
   organization := "com.sksamuel.pulsar4s",
   version := publishVersion,
   resolvers ++= Seq(Resolver.mavenLocal),
-  parallelExecution in Test := false,
-  parallelExecution in Global := false,
-  concurrentRestrictions in Global += Tags.limit(Tags.Test, 1),
-  scalacOptions in(Compile, doc) := (scalacOptions in(Compile, doc)).value.filter(_ != "-Xfatal-warnings"),
+  Test / parallelExecution := false,
+  Global / parallelExecution := false,
+  Global / concurrentRestrictions += Tags.limit(Tags.Test, 1),
+  Compile / doc / scalacOptions := (Compile / doc / scalacOptions).value.filter(_ != "-Xfatal-warnings"),
   scalacOptions ++= Seq("-unchecked", "-deprecation", "-encoding", "utf8")
 )
 
 lazy val publishSettings = Seq(
   publishMavenStyle := true,
-  publishArtifact in Test := false,
+  Test / publishArtifact := false,
   pomIncludeRepository := Function.const(false),
   credentials += Credentials(
     "Sonatype Nexus Repository Manager",
@@ -73,7 +73,7 @@ lazy val publishSettings = Seq(
 )
 
 lazy val commonJvmSettings = Seq(
-  testOptions in Test += {
+  Test / testOptions += {
     val flag = if (isGithubActions) "-oCI" else "-oDF"
     Tests.Argument(TestFrameworks.ScalaTest, flag)
   },
