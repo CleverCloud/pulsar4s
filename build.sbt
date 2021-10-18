@@ -12,7 +12,7 @@ val CatsEffectVersion = "2.5.2"
 val CirceVersion = "0.14.1"
 val CommonsIoVersion = "2.4"
 val ExtsVersion = "1.61.1"
-val JacksonVersion = "2.9.9"
+val JacksonVersion = "2.13.0"
 val Log4jVersion = "2.14.1"
 val MonixVersion = "3.1.0"
 val PlayJsonVersion = "2.7.4" // compatible with 2.7.x and 2.8.x
@@ -217,7 +217,7 @@ lazy val jackson = Project("pulsar4s-jackson", file("pulsar4s-jackson"))
     // For 2.9 releases see https://github.com/FasterXML/jackson/wiki/Jackson-Release-2.9#micro-patches
     "com.fasterxml.jackson.core" % "jackson-core" % JacksonVersion,
     "com.fasterxml.jackson.core" % "jackson-annotations" % JacksonVersion,
-    "com.fasterxml.jackson.core" % "jackson-databind" % s"$JacksonVersion.3",
+    "com.fasterxml.jackson.core" % "jackson-databind" % JacksonVersion,
     "com.fasterxml.jackson.module" %% "jackson-module-scala" % JacksonVersion
   ))
 
