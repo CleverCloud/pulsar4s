@@ -23,6 +23,7 @@ val Json4sVersion = "3.6.11"
 val Avro4sVersion = "4.0.11"
 val ScalaVersion = "2.13.6"
 val ScalatestVersion = "3.2.10"
+val ScalazVersion = "7.2.33"
 val Slf4jVersion = "1.7.32"
 val SprayJsonVersion = "1.3.6"
 val Java8CompatVersion = "1.0.1"
@@ -189,8 +190,8 @@ lazy val scalaz = Project("pulsar4s-scalaz", file("pulsar4s-scalaz"))
   .settings(name := "pulsar4s-scalaz")
   .settings(allSettings)
   .settings(libraryDependencies ++= Seq(
-    "org.scalaz" %% "scalaz-core" % "7.2.33",
-    "org.scalaz" %% "scalaz-concurrent" % "7.2.33"
+    "org.scalaz" %% "scalaz-core" % ScalazVersion,
+    "org.scalaz" %% "scalaz-concurrent" % ScalazVersion,
   ))
 
 lazy val monix = Project("pulsar4s-monix", file("pulsar4s-monix"))
