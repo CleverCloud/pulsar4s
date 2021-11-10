@@ -26,7 +26,6 @@ val ScalatestVersion = "3.2.10"
 val ScalazVersion = "7.2.33"
 val Slf4jVersion = "1.7.32"
 val SprayJsonVersion = "1.3.6"
-val Java8CompatVersion = "1.0.1"
 val ZIOVersion = "1.0.12"
 val ZIOInteropCatsVersion = "2.5.1.0"
 
@@ -160,7 +159,13 @@ lazy val core = Project("pulsar4s-core", file("pulsar4s-core"))
   .settings(name := "pulsar4s-core")
   .settings(allSettings)
   .settings(libraryDependencies ++= Seq(
-    "org.scala-lang.modules" %% "scala-java8-compat" % Java8CompatVersion,
+    "org.scala-lang.modules" %% "scala-java8-compat" % {
+      CrossVersion.partialVersion(scalaVersion.value) match {
+        case Some((3, _))            => "1.0.2"
+        case Some((2, n)) if n >= 13 => "1.0.2"
+        case _                       => "0.8.0"
+      }
+    },
     "org.apache.pulsar" % "pulsar-client" % PulsarVersion
   ))
 
