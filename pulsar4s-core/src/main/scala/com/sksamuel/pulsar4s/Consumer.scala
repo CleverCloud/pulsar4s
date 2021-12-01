@@ -4,12 +4,28 @@ import java.io.Closeable
 import java.util.concurrent.TimeUnit
 import com.sksamuel.exts.Logging
 import org.apache.pulsar.client.api.ConsumerStats
+import org.apache.pulsar.client.api.transaction.Transaction
 
 import scala.concurrent.duration.FiniteDuration
 import scala.language.higherKinds
 import scala.util.Try
 
-trait Consumer[T] extends Closeable {
+/**
+  * Operations on the consumer that may be used in a transactional context.
+  */
+trait TransactionalConsumerOps[T] {
+  final def acknowledgeAsync[F[_] : AsyncHandler](message: ConsumerMessage[T]): F[Unit] =
+    acknowledgeAsync(message.messageId)
+
+  def acknowledgeAsync[F[_] : AsyncHandler](messageId: MessageId): F[Unit]
+
+  final def acknowledgeCumulativeAsync[F[_] : AsyncHandler](message: ConsumerMessage[T]): F[Unit] =
+    acknowledgeCumulativeAsync(message.messageId)
+
+  def acknowledgeCumulativeAsync[F[_] : AsyncHandler](messageId: MessageId): F[Unit]
+}
+
+trait Consumer[T] extends Closeable with TransactionalConsumerOps[T] {
 
   /**
     * Receives a single message.
@@ -65,23 +81,18 @@ trait Consumer[T] extends Closeable {
   def acknowledgeCumulative(message: ConsumerMessage[T]): Unit
   def acknowledgeCumulative(messageId: MessageId): Unit
 
-  final def acknowledgeAsync[F[_] : AsyncHandler](message: ConsumerMessage[T]): F[Unit] =
-    acknowledgeAsync(message.messageId)
-
-  def acknowledgeAsync[F[_] : AsyncHandler](messageId: MessageId): F[Unit]
-
   final def negativeAcknowledgeAsync[F[_] : AsyncHandler](message: ConsumerMessage[T]): F[Unit] =
     negativeAcknowledgeAsync(message.messageId)
 
   def negativeAcknowledgeAsync[F[_] : AsyncHandler](messageId: MessageId): F[Unit]
 
-  final def acknowledgeCumulativeAsync[F[_] : AsyncHandler](message: ConsumerMessage[T]): F[Unit] =
-    acknowledgeCumulativeAsync(message.messageId)
-
-  def acknowledgeCumulativeAsync[F[_] : AsyncHandler](messageId: MessageId): F[Unit]
-
   def unsubscribe(): Unit
   def unsubscribeAsync[F[_] : AsyncHandler]: F[Unit]
+
+  /**
+    * Get an instance of `TransactionalConsumerOps` that provides transactional operations on the consumer.
+    */
+  def tx(implicit ctx: TransactionContext): TransactionalConsumerOps[T]
 }
 
 class DefaultConsumer[T](consumer: JConsumer[T]) extends Consumer[T] with Logging {
@@ -109,6 +120,7 @@ class DefaultConsumer[T](consumer: JConsumer[T]) extends Consumer[T] with Loggin
 
   override def acknowledgeAsync[F[_] : AsyncHandler](messageId: MessageId): F[Unit] =
     implicitly[AsyncHandler[F]].acknowledgeAsync(consumer, messageId)
+
   override def acknowledgeCumulativeAsync[F[_] : AsyncHandler](messageId: MessageId): F[Unit] =
     implicitly[AsyncHandler[F]].acknowledgeCumulativeAsync(consumer, messageId)
 
@@ -142,4 +154,15 @@ class DefaultConsumer[T](consumer: JConsumer[T]) extends Consumer[T] with Loggin
 
   override def unsubscribe(): Unit = consumer.unsubscribe()
   override def unsubscribeAsync[F[_] : AsyncHandler]: F[Unit] = implicitly[AsyncHandler[F]].unsubscribeAsync(consumer)
+
+  override def tx(implicit ctx: TransactionContext): TransactionalConsumerOps[T] =
+    new DefaultTransactionalConsumer[T](consumer, ctx.transaction)
+}
+
+class DefaultTransactionalConsumer[T](consumer: JConsumer[T], transaction: Transaction) extends TransactionalConsumerOps[T] {
+  override def acknowledgeAsync[F[_] : AsyncHandler](messageId: MessageId): F[Unit] =
+    implicitly[AsyncHandler[F]].acknowledgeAsync(consumer, messageId, transaction)
+
+  override def acknowledgeCumulativeAsync[F[_] : AsyncHandler](messageId: MessageId): F[Unit] =
+    implicitly[AsyncHandler[F]].acknowledgeCumulativeAsync(consumer, messageId, transaction)
 }

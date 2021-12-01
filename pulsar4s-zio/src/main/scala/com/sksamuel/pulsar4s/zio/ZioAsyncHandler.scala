@@ -3,10 +3,11 @@ package com.sksamuel.pulsar4s.zio
 import java.util.concurrent.CompletionStage
 
 import com.sksamuel.pulsar4s
-import com.sksamuel.pulsar4s.{AsyncHandler, ConsumerMessage, DefaultConsumer, DefaultProducer, DefaultReader, MessageId, Producer}
+import com.sksamuel.pulsar4s.{AsyncHandler, ConsumerMessage, DefaultConsumer, DefaultProducer, DefaultReader, MessageId, Producer, TransactionContext}
 import org.apache.pulsar.client.api
 import org.apache.pulsar.client.api.{Consumer, ConsumerBuilder, ProducerBuilder, PulsarClient, Reader, ReaderBuilder, TypedMessageBuilder}
-import zio.{Task, ZIO}
+import org.apache.pulsar.client.api.transaction.Transaction
+import zio.{Exit, Task, ZIO}
 
 import scala.collection.JavaConverters._
 import scala.util.Try
@@ -30,9 +31,6 @@ class ZioAsyncHandler extends AsyncHandler[Task] {
 
   override def createReader[T](builder: ReaderBuilder[T]): Task[pulsar4s.Reader[T]] =
     fromFuture(Task(builder.createAsync())) >>= (p => Task(new DefaultReader(p)))
-
-  override def send[T](t: T, producer: api.Producer[T]): Task[MessageId] =
-    fromFuture(Task(producer.sendAsync(t))).map(MessageId.fromJava)
 
   override def send[T](builder: TypedMessageBuilder[T]): Task[MessageId] =
     fromFuture(Task(builder.sendAsync())).map(MessageId.fromJava)
@@ -82,12 +80,36 @@ class ZioAsyncHandler extends AsyncHandler[Task] {
   override def acknowledgeAsync[T](consumer: api.Consumer[T], messageId: MessageId): Task[Unit] =
     fromFuture(Task(consumer.acknowledgeAsync(messageId))).unit
 
-  override def negativeAcknowledgeAsync[T](consumer: Consumer[T], messageId: MessageId): Task[Unit] =
-    Task(consumer.negativeAcknowledge(messageId))
+  override def acknowledgeAsync[T](consumer: api.Consumer[T], messageId: MessageId, txn: Transaction): Task[Unit] =
+    fromFuture(Task(consumer.acknowledgeAsync(messageId, txn))).unit
 
   override def acknowledgeCumulativeAsync[T](consumer: api.Consumer[T], messageId: MessageId): Task[Unit] =
     fromFuture(Task(consumer.acknowledgeCumulativeAsync(messageId))).unit
+    
+  override def acknowledgeCumulativeAsync[T](consumer: api.Consumer[T], messageId: MessageId, txn: Transaction): Task[Unit] =
+    fromFuture(Task(consumer.acknowledgeCumulativeAsync(messageId, txn))).unit
+    
+  override def negativeAcknowledgeAsync[T](consumer: Consumer[T], messageId: MessageId): Task[Unit] =
+    Task(consumer.negativeAcknowledge(messageId))
 
+  override def withTransaction[E, A](
+    builder: api.transaction.TransactionBuilder,
+    action: TransactionContext => Task[Either[E, A]]
+  ): Task[Either[E, A]] = {
+    Task.bracketExit[TransactionContext, Either[E, A]](
+      acquire = startTransaction(builder),
+      release = {
+        case (txn, Exit.Success(Right(_))) => txn.commit(this).ignore
+        case (txn, _) => txn.abort(this).ignore
+      },
+      use = action
+    )
+  }
+
+  override def startTransaction(builder: api.transaction.TransactionBuilder): Task[TransactionContext] =
+    fromFuture(Task(builder.build())).map(TransactionContext(_))
+  override def commitTransaction(txn: Transaction): Task[Unit] = fromFuture(Task(txn.commit())).unit
+  override def abortTransaction(txn: Transaction): Task[Unit] = fromFuture(Task(txn.abort())).unit
 }
 
 object ZioAsyncHandler {
