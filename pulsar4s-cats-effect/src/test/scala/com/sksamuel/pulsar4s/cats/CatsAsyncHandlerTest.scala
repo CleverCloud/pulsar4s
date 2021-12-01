@@ -12,6 +12,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
 import scala.language.higherKinds
+import scala.concurrent.duration._
 import scala.util.Random
 
 class CatsAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with Eventually {

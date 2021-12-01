@@ -9,6 +9,7 @@ import com.sksamuel.pulsar4s
 import com.sksamuel.pulsar4s._
 import org.apache.pulsar.client.api
 import org.apache.pulsar.client.api.{Consumer => _, MessageId => _, Producer => _, PulsarClient => _, Reader => _, _}
+import org.apache.pulsar.client.api.transaction.Transaction
 
 import scala.collection.JavaConverters.iterableAsScalaIterableConverter
 import scala.concurrent.ExecutionException
@@ -28,7 +29,7 @@ trait CatsAsyncHandlerLowPriority {
     implicit class CompletableOps[F[_]: Async, T](f: => F[CompletableFuture[T]]) {
       def liftF: F[T] = {
         f.flatMap { f =>
-          Async[F].suspend {
+          Async[F].defer {
             if (f.isDone) {
               try {
                 Async[F].pure(f.get())
@@ -131,14 +132,16 @@ trait CatsAsyncHandlerLowPriority {
       }
 
     override def acknowledgeAsync[T](consumer: api.Consumer[T], messageId: MessageId): F[Unit] =
-      Async[F].delay {
-        consumer.acknowledgeAsync(messageId)
-      }.liftF.void
+      Async[F].delay(consumer.acknowledgeAsync(messageId)).liftF.void
+
+    override def acknowledgeAsync[T](consumer: api.Consumer[T], messageId: MessageId, txn: Transaction): F[Unit] =
+      Async[F].delay(consumer.acknowledgeAsync(messageId, txn)).liftF.void
 
     override def acknowledgeCumulativeAsync[T](consumer: api.Consumer[T], messageId: MessageId): F[Unit] =
-      Async[F].delay {
-        consumer.acknowledgeCumulativeAsync(messageId)
-      }.liftF.void
+      Async[F].delay(consumer.acknowledgeCumulativeAsync(messageId)).liftF.void
+
+    override def acknowledgeCumulativeAsync[T](consumer: api.Consumer[T], messageId: MessageId, txn: Transaction): F[Unit] =
+      Async[F].delay(consumer.acknowledgeCumulativeAsync(messageId, txn)).liftF.void
 
     override def negativeAcknowledgeAsync[T](consumer: api.Consumer[T], messageId: MessageId): F[Unit] =
       Async[F].delay {
@@ -169,6 +172,25 @@ trait CatsAsyncHandlerLowPriority {
 
     override def send[T](builder: TypedMessageBuilder[T]): F[MessageId] =
       Async[F].delay(builder.sendAsync()).liftF.map(MessageId.fromJava)
+
+    override def withTransaction[E, A](
+      builder: api.transaction.TransactionBuilder,
+      action: TransactionContext => F[Either[E, A]]
+    ): F[Either[E, A]] = {        
+      Resource.makeCase(startTransaction(builder)) { (txn, exitCase) =>
+        if (exitCase == ExitCase.Completed) Async[F].unit else txn.abort
+      }.use { txn =>
+        action(txn).flatMap { result =>
+          (if (result.isRight) txn.commit else txn.abort).map(_ => result)
+        }
+      }
+    }
+
+    def startTransaction(builder: api.transaction.TransactionBuilder): F[TransactionContext] =
+      Async[F].delay(builder.build()).liftF.map(TransactionContext(_))
+    def commitTransaction(txn: Transaction): F[Unit] = Async[F].delay(txn.commit()).liftF.map(_ => ())
+    def abortTransaction(txn: Transaction): F[Unit] = Async[F].delay(txn.abort()).liftF.map(_ => ())
+
   }
 
 }

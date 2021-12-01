@@ -5,9 +5,13 @@ import java.util.{UUID, Set => JSet}
 import com.sksamuel.exts.Logging
 import org.apache.pulsar.client.api
 import org.apache.pulsar.client.api.{ConsumerBuilder, ProducerBuilder, ReaderBuilder, Schema}
+import org.apache.pulsar.client.api.transaction.Transaction
 
 import scala.collection.JavaConverters._
+import scala.concurrent.duration._
 import scala.language.higherKinds
+import scala.util.Success
+import java.util.concurrent.CompletableFuture
 
 case class Topic(name: String)
 
@@ -20,6 +24,88 @@ object Subscription {
    * Generates a [[Subscription]] with a random UUID as the name.
    */
   def generate: Subscription = Subscription(UUID.randomUUID.toString)
+}
+
+sealed trait TransactionContext {
+  /**
+    * The underlying transaction associated with this context.
+    */
+  def transaction: Transaction
+
+  /**
+    * Explicitly commit the transaction. Note that this action must occur _after_ all other actions on the transaction.
+    */
+  def commit[F[_]: AsyncHandler]: F[Unit]
+
+  /**
+    * Explicitly abort the transaction. Note that this action must occur _after_ all other actions on the transaction.
+    */
+  def abort[F[_]: AsyncHandler]: F[Unit]
+
+
+  /**
+    * Get an instance of `TransactionalConsumerOps` that provides transactional operations on the consumer.
+    */
+  final def apply[T](consumer: Consumer[T]): TransactionalConsumerOps[T] = consumer.tx(this)
+
+  /**
+    * Get an instance of `TransactionalProducerOps` that provides transactional operations on the producer.
+    */
+  final def apply[T](producer: Producer[T]): TransactionalProducerOps[T] = producer.tx(this)
+}
+object TransactionContext {
+  def apply(txn: Transaction): TransactionContext = new TransactionContext {
+    lazy val transaction: Transaction = txn
+    def commit[F[_]: AsyncHandler]: F[Unit] = implicitly[AsyncHandler[F]].commitTransaction(txn)
+    def abort[F[_]: AsyncHandler]: F[Unit] = implicitly[AsyncHandler[F]].abortTransaction(txn)
+  }
+}
+
+sealed trait TransactionBuilder {
+  /**
+    * Start a transaction.
+    */
+  def start[F[_]: AsyncHandler]: F[TransactionContext]
+
+  /**
+    * Return a new builder with the given timeout.
+    */
+  def withTimeout(timeout: FiniteDuration): TransactionBuilder
+
+  /**
+    * Given a `TransactionContext => F[A]`, produce an `F[A]` that runs in a new transaction.
+    *
+    * If `F` fails, abort the transaction. Otherwise commit the transaction.
+    */
+  def runWith[A, F[_]: AsyncHandler](action: TransactionContext => F[A]): F[A]
+
+  /**
+    * Given a `TransactionContext => F[Either[E, A]]`, produce an `F[Either[E, A]]` that runs in a new transaction.
+    *
+    * If `F` fails or the result is a `Left`, abort the transaction. Otherwise commit the transaction.
+    */
+  def runWithEither[E, A, F[_]: AsyncHandler](action: TransactionContext => F[Either[E, A]]): F[Either[E, A]]
+}
+
+private class TransactionBuilderImpl(
+  client: org.apache.pulsar.client.api.PulsarClient,
+  timeout: FiniteDuration = 60.seconds
+) extends TransactionBuilder {
+  private def javaBuilder: api.transaction.TransactionBuilder =
+    client.newTransaction().withTransactionTimeout(timeout.length, timeout.unit)
+
+  override def start[F[_]: AsyncHandler]: F[TransactionContext] =
+    implicitly[AsyncHandler[F]].startTransaction(javaBuilder)
+  override def withTimeout(timeout: FiniteDuration): TransactionBuilder =
+    new TransactionBuilderImpl(client, timeout)
+  override def runWith[T, F[_]: AsyncHandler](action: TransactionContext => F[T]): F[T] = {
+    val async = implicitly[AsyncHandler[F]]
+    async.transform(runWithEither { ctx =>
+      async.transform[T, Either[T, T]](action(ctx))(r => Success(Right(r)))
+    })(r => Success(r.merge))
+  }
+  override def runWithEither[E, A, F[_]: AsyncHandler](action: TransactionContext => F[Either[E,A]]): F[Either[E,A]] =
+    implicitly[AsyncHandler[F]].withTransaction(javaBuilder, action)
 }
 
 trait PulsarClient {
@@ -37,6 +123,8 @@ trait PulsarAsyncClient extends PulsarClient {
   def consumerAsync[T: Schema, F[_] : AsyncHandler](config: ConsumerConfig, interceptors: List[ConsumerInterceptor[T]] = Nil): F[Consumer[T]]
 
   def readerAsync[T: Schema, F[_] : AsyncHandler](config: ReaderConfig): F[Reader[T]]
+
+  def transaction: TransactionBuilder
 }
 
 trait ProducerInterceptor[T] extends AutoCloseable {
@@ -125,6 +213,7 @@ object PulsarClient {
     config.keepAliveInterval.map(_.toSeconds.toInt).foreach(builder.keepAliveInterval(_, TimeUnit.SECONDS))
     config.statsInterval.map(_.toMillis).foreach(builder.statsInterval(_, TimeUnit.MILLISECONDS))
     config.tlsTrustCertsFilePath.foreach(builder.tlsTrustCertsFilePath)
+    config.enableTransaction.foreach(builder.enableTransaction)
     if (config.additionalProperties.nonEmpty)
       builder.loadConf(config.additionalProperties.asJava)
 
@@ -246,4 +335,6 @@ class DefaultPulsarClient(client: org.apache.pulsar.client.api.PulsarClient) ext
   override def readerAsync[T: Schema, F[_] : AsyncHandler](config: ReaderConfig): F[Reader[T]] = {
     implicitly[AsyncHandler[F]].createReader(readerBuilder(config))
   }
+
+  override def transaction: TransactionBuilder = new TransactionBuilderImpl(client)
 }
