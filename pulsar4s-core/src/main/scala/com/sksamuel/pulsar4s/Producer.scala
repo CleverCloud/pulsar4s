@@ -3,11 +3,40 @@ package com.sksamuel.pulsar4s
 import java.io.Closeable
 import com.sksamuel.exts.Logging
 import org.apache.pulsar.client.api.{ProducerStats, TypedMessageBuilder}
+import org.apache.pulsar.client.api.transaction.Transaction
 
 import scala.language.higherKinds
 import scala.util.Try
 
-trait Producer[T] extends Closeable with Logging {
+/**
+  * Operations on the producer that may be used in a transactional context.
+  */
+trait TransactionalProducerOps[T] {
+
+  /**
+    * Asynchronously sends a message of type T, returning an effect
+    * which will be completed with the [[MessageId]] once the message
+    * is acknowledged by the Pulsar broker.
+    *
+    * This method can be used when you have no need to set the
+    * other properties of a message, such as the event time, key,
+    * headers and so on. The producer will generate an appropriate
+    * Pulsar [[ProducerMessage]] with this t set as the value.
+    */
+  def sendAsync[F[_] : AsyncHandler](t: T): F[MessageId]
+
+  /**
+    * Asynchronously sends a [[ProducerMessage]] of type T, returning an effect
+    * which will be completed with the [[MessageId]] once the message
+    * is acknowledged by the Pulsar broker.
+    *
+    * This method can be used when you want to specify properties
+    * on a message such as the event time, key and so on.
+    */
+  def sendAsync[F[_] : AsyncHandler](msg: ProducerMessage[T]): F[MessageId]
+}
+
+trait Producer[T] extends Closeable with Logging with TransactionalProducerOps[T] {
 
   /**
     * Returns the [[ProducerName]] which could have been specified
@@ -38,28 +67,6 @@ trait Producer[T] extends Closeable with Logging {
     * the Pulsar broker.
     */
   def send(msg: ProducerMessage[T]): Try[MessageId]
-
-  /**
-    * Asynchronously sends a message of type T, returning an effect
-    * which will be completed with the [[MessageId]] once the message
-    * is acknowledged by the Pulsar broker.
-    *
-    * This method can be used when you have no need to set the
-    * other properties of a message, such as the event time, key,
-    * headers and so on. The producer will generate an appropriate
-    * Pulsar [[ProducerMessage]] with this t set as the value.
-    */
-  def sendAsync[F[_] : AsyncHandler](t: T): F[MessageId]
-
-  /**
-    * Asynchronously sends a [[ProducerMessage]] of type T, returning an effect
-    * which will be completed with the [[MessageId]] once the message
-    * is acknowledged by the Pulsar broker.
-    *
-    * This method can be used when you want to specify properties
-    * on a message such as the event time, key and so on.
-    */
-  def sendAsync[F[_] : AsyncHandler](msg: ProducerMessage[T]): F[MessageId]
 
   /**
     * Get the last sequence id that was published by this producer.
@@ -106,14 +113,19 @@ trait Producer[T] extends Closeable with Logging {
   def flush(): Unit
 
   def flushAsync[F[_] : AsyncHandler]: F[Unit]
+
+  /**
+    * Get an instance of `TransactionalProducerOps` that provides transactional operations on the producer.
+    */
+  def tx(implicit ctx: TransactionContext): TransactionalProducerOps[T]
 }
 
 class DefaultProducer[T](producer: JProducer[T]) extends Producer[T] {
 
   override def name: ProducerName = ProducerName(producer.getProducerName)
 
-  override def send(t: T): Try[MessageId] = Try(MessageId.fromJava(producer.send(t)))
-  override def sendAsync[F[_] : AsyncHandler](t: T): F[MessageId] = AsyncHandler[F].send(t, producer)
+  override final def send(t: T): Try[MessageId] = send(ProducerMessage(t))
+  override final def sendAsync[F[_] : AsyncHandler](t: T): F[MessageId] = sendAsync(ProducerMessage(t))
 
   override def send(msg: ProducerMessage[T]): Try[MessageId] = Try(buildMessage(msg).send())
   override def sendAsync[F[_] : AsyncHandler](msg: ProducerMessage[T]): F[MessageId] = AsyncHandler[F].send(buildMessage(msg))
@@ -134,13 +146,21 @@ class DefaultProducer[T](producer: JProducer[T]) extends Producer[T] {
 
   override def closeAsync[F[_] : AsyncHandler]: F[Unit] = AsyncHandler[F].close(producer)
 
-  private def buildMessage(msg: ProducerMessage[T]) = new ProducerMessageBuilder(producer).build(msg)
+  override def tx(implicit ctx: TransactionContext): TransactionalProducerOps[T] =
+    new DefaultTransactionalProducer[T](producer, ctx.transaction)
+
+  protected def buildMessage(msg: ProducerMessage[T]) = new ProducerMessageBuilder(producer, None).build(msg)
 }
 
-class ProducerMessageBuilder[T](producer: JProducer[T]) {
+class DefaultTransactionalProducer[T](producer: JProducer[T], transaction: Transaction) extends DefaultProducer[T](producer) {
+  override protected def buildMessage(msg: ProducerMessage[T]) = new ProducerMessageBuilder[T](producer, Some(transaction)).build(msg)
+}
+
+class ProducerMessageBuilder[T](producer: JProducer[T], transaction: Option[Transaction]) {
   def build(msg: ProducerMessage[T]): TypedMessageBuilder[T] = {
     import scala.collection.JavaConverters._
-    val builder = producer.newMessage().value(msg.value)
+    
+    val builder = transaction.fold(producer.newMessage())(producer.newMessage).value(msg.value)
     msg.deliverAt.foreach { da =>
       builder.deliverAt(da)
     }

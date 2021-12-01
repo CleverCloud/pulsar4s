@@ -7,7 +7,7 @@ import org.apache.pulsar.client.api.Schema
 import org.scalatest.BeforeAndAfterAll
 
 import scala.concurrent.Await
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
@@ -18,7 +18,10 @@ class MonixAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAfte
 
   implicit val schema: Schema[String] = Schema.STRING
 
-  val client: PulsarAsyncClient = PulsarClient("pulsar://localhost:6650")
+  private val client: PulsarAsyncClient = PulsarClient(PulsarClientConfig(
+    serviceUrl = "pulsar://localhost:6650",
+    enableTransaction = Some(true)
+  ))
   val topic: Topic = Topic("persistent://sample/standalone/ns1/monix_" + UUID.randomUUID())
 
   override def afterAll(): Unit = {
@@ -53,6 +56,21 @@ class MonixAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAfte
     val r = Await.result(rFuture, Duration.Inf)
     r.entryId shouldBe value.messageId.entryId
     r.partitionIndex shouldBe value.messageId.partitionIndex
+    consumer.close()
+  }
+
+  test("producer and consumer can execute a transaction using cats") {
+    val producer = client.producer(ProducerConfig(topic, sendTimeout = Some(Duration.Zero)))
+    val consumer = client.consumer(ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription("mysub_" + UUID.randomUUID)))
+    consumer.seekEarliest()
+    val msgIdIO = client.transaction.withTimeout(1.second).runWith { implicit txn =>
+      for {
+        msg <- consumer.receiveAsync
+        msgId <- producer.tx.sendAsync(msg.value + "_test")
+        _ <- consumer.tx.acknowledgeAsync(msg.messageId)
+      } yield msgId
+    }
+    Await.result(msgIdIO.runToFuture, Duration.Inf)
     consumer.close()
   }
 }
