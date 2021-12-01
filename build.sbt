@@ -4,9 +4,9 @@ def isRelease = releaseVersion != ""
 def githubRunNumber = sys.env.getOrElse("GITHUB_RUN_NUMBER", "")
 def ossrhUsername = sys.env.getOrElse("OSSRH_USERNAME", "")
 def ossrhPassword = sys.env.getOrElse("OSSRH_PASSWORD", "")
-def publishVersion = if (isRelease) releaseVersion else if (isGithubActions) "2.7.0." + githubRunNumber + "-SNAPSHOT" else "0.0.0-LOCAL"
+def publishVersion = if (isRelease) releaseVersion else if (isGithubActions) "2.8.0." + githubRunNumber + "-SNAPSHOT" else "0.0.0-LOCAL"
 
-val org = "com.sksamuel.pulsar4s"
+val org = "com.clever-cloud.pulsar4s"
 val AkkaStreamVersion = "2.6.17" // compatible with Akka 2.5.x and 2.6.x
 val CatsEffectVersion = "2.5.4"
 val CirceVersion = "0.14.1"
@@ -15,13 +15,13 @@ val ExtsVersion = "1.61.1"
 val JacksonVersion = "2.13.0"
 val Log4jVersion = "2.14.1"
 val MonixVersion = "3.4.0"
-val PlayJsonVersion = "2.8.1" // compatible with 2.7.x and 2.8.x
-val PulsarVersion = "2.8.1"
+val PlayJsonVersion = "2.8.2" // compatible with 2.7.x and 2.8.x
+val PulsarVersion = "2.9.0"
 val ReactiveStreamsVersion = "1.0.2"
 val FunctionalStreamsVersion = "2.5.2"
 val Json4sVersion = "4.0.3"
 val Avro4sVersion = "4.0.11"
-val ScalaVersion = "2.13.6"
+val ScalaVersion = "2.13.7"
 val ScalatestVersion = "3.2.10"
 val ScalazVersion = "7.2.33"
 val Slf4jVersion = "1.7.32"
@@ -31,7 +31,7 @@ val ZIOInteropCatsVersion = "2.5.1.0"
 
 lazy val commonScalaVersionSettings = Seq(
   scalaVersion := ScalaVersion,
-  crossScalaVersions := Seq("2.12.15", "2.13.6")
+  crossScalaVersions := Seq("2.12.15", "2.13.7")
 )
 
 lazy val warnUnusedImport = Seq(
@@ -43,7 +43,7 @@ lazy val warnUnusedImport = Seq(
 )
 
 lazy val commonSettings = Seq(
-  organization := "com.sksamuel.pulsar4s",
+  organization := "com.clever-cloud.pulsar4s",
   version := publishVersion,
   resolvers ++= Seq(Resolver.mavenLocal),
   Test / parallelExecution := false,
@@ -59,7 +59,7 @@ lazy val publishSettings = Seq(
   pomIncludeRepository := Function.const(false),
   credentials += Credentials(
     "Sonatype Nexus Repository Manager",
-    "oss.sonatype.org",
+    "s01.oss.sonatype.org",
     ossrhUsername,
     ossrhPassword
   ),
