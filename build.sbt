@@ -141,18 +141,19 @@ lazy val root = Project("pulsar4s", file("."))
   .settings(allSettings)
   .settings(noPublishSettings)
   .aggregate(
-    core,
-    cats_effect,
-    scalaz,
-    monix,
-    zio,
-    jackson,
-    circe,
+    akka_streams,
     avro,
-    playjson,
-    sprayjson,
+    cats_effect,
+    circe,
+    core,
+    fs2,
+    jackson,
     json4s,
-    akka_streams
+    monix,
+    playjson,
+    scalaz,
+    sprayjson,
+    zio,
   )
 
 lazy val core = Project("pulsar4s-core", file("pulsar4s-core"))
