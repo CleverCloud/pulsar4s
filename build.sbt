@@ -152,6 +152,7 @@ lazy val root = Project("pulsar4s", file("."))
     playjson,
     sprayjson,
     json4s,
+    fs2,
     akka_streams
   )
 
