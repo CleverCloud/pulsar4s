@@ -42,7 +42,7 @@ trait CatsAsyncHandlerLowPriority {
                   Async[F].raiseError(e)
               }
             } else {
-              Async[F].async[T] { cb =>
+              Async[F].async_[T] { cb =>
                 f.handle[Unit] { (res: T, err: Throwable) =>
                   err match {
                     case null =>
