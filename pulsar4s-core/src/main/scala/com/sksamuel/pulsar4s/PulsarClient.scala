@@ -27,90 +27,99 @@ object Subscription {
 
 sealed trait TransactionContext {
   /**
-    * The underlying transaction associated with this context.
-    */
+   * The underlying transaction associated with this context.
+   */
   def transaction: Transaction
 
   /**
-    * Explicitly commit the transaction. Note that this action must occur _after_ all other actions on the transaction.
-    */
-  def commit[F[_]: AsyncHandler]: F[Unit]
+   * Explicitly commit the transaction. Note that this action must occur _after_ all other actions on the transaction.
+   */
+  def commit[F[_] : AsyncHandler]: F[Unit]
 
   /**
-    * Explicitly abort the transaction. Note that this action must occur _after_ all other actions on the transaction.
-    */
-  def abort[F[_]: AsyncHandler]: F[Unit]
+   * Explicitly abort the transaction. Note that this action must occur _after_ all other actions on the transaction.
+   */
+  def abort[F[_] : AsyncHandler]: F[Unit]
 
 
   /**
-    * Get an instance of `TransactionalConsumerOps` that provides transactional operations on the consumer.
-    */
+   * Get an instance of `TransactionalConsumerOps` that provides transactional operations on the consumer.
+   */
   final def apply[T](consumer: Consumer[T]): TransactionalConsumerOps[T] = consumer.tx(this)
 
   /**
-    * Get an instance of `TransactionalProducerOps` that provides transactional operations on the producer.
-    */
+   * Get an instance of `TransactionalProducerOps` that provides transactional operations on the producer.
+   */
   final def apply[T](producer: Producer[T]): TransactionalProducerOps[T] = producer.tx(this)
 }
+
 object TransactionContext {
   def apply(txn: Transaction): TransactionContext = new TransactionContext {
     lazy val transaction: Transaction = txn
-    def commit[F[_]: AsyncHandler]: F[Unit] = implicitly[AsyncHandler[F]].commitTransaction(txn)
-    def abort[F[_]: AsyncHandler]: F[Unit] = implicitly[AsyncHandler[F]].abortTransaction(txn)
+
+    def commit[F[_] : AsyncHandler]: F[Unit] = implicitly[AsyncHandler[F]].commitTransaction(txn)
+
+    def abort[F[_] : AsyncHandler]: F[Unit] = implicitly[AsyncHandler[F]].abortTransaction(txn)
   }
 }
 
 sealed trait TransactionBuilder {
   /**
-    * Start a transaction.
-    */
-  def start[F[_]: AsyncHandler]: F[TransactionContext]
+   * Start a transaction.
+   */
+  def start[F[_] : AsyncHandler]: F[TransactionContext]
 
   /**
-    * Return a new builder with the given timeout.
-    */
+   * Return a new builder with the given timeout.
+   */
   def withTimeout(timeout: FiniteDuration): TransactionBuilder
 
   /**
-    * Given a `TransactionContext => F[A]`, produce an `F[A]` that runs in a new transaction.
-    *
-    * If `F` fails, abort the transaction. Otherwise commit the transaction.
-    */
-  def runWith[A, F[_]: AsyncHandler](action: TransactionContext => F[A]): F[A]
+   * Given a `TransactionContext => F[A]`, produce an `F[A]` that runs in a new transaction.
+   *
+   * If `F` fails, abort the transaction. Otherwise commit the transaction.
+   */
+  def runWith[A, F[_] : AsyncHandler](action: TransactionContext => F[A]): F[A]
 
   /**
-    * Given a `TransactionContext => F[Either[E, A]]`, produce an `F[Either[E, A]]` that runs in a new transaction.
-    *
-    * If `F` fails or the result is a `Left`, abort the transaction. Otherwise commit the transaction.
-    */
-  def runWithEither[E, A, F[_]: AsyncHandler](action: TransactionContext => F[Either[E, A]]): F[Either[E, A]]
+   * Given a `TransactionContext => F[Either[E, A]]`, produce an `F[Either[E, A]]` that runs in a new transaction.
+   *
+   * If `F` fails or the result is a `Left`, abort the transaction. Otherwise commit the transaction.
+   */
+  def runWithEither[E, A, F[_] : AsyncHandler](action: TransactionContext => F[Either[E, A]]): F[Either[E, A]]
 }
 
 private class TransactionBuilderImpl(
-  client: org.apache.pulsar.client.api.PulsarClient,
-  timeout: FiniteDuration = 60.seconds
-) extends TransactionBuilder {
+                                      client: org.apache.pulsar.client.api.PulsarClient,
+                                      timeout: FiniteDuration = 60.seconds
+                                    ) extends TransactionBuilder {
   private def javaBuilder: api.transaction.TransactionBuilder =
     client.newTransaction().withTransactionTimeout(timeout.length, timeout.unit)
 
-  override def start[F[_]: AsyncHandler]: F[TransactionContext] =
+  override def start[F[_] : AsyncHandler]: F[TransactionContext] =
     implicitly[AsyncHandler[F]].startTransaction(javaBuilder)
+
   override def withTimeout(timeout: FiniteDuration): TransactionBuilder =
     new TransactionBuilderImpl(client, timeout)
-  override def runWith[T, F[_]: AsyncHandler](action: TransactionContext => F[T]): F[T] = {
+
+  override def runWith[T, F[_] : AsyncHandler](action: TransactionContext => F[T]): F[T] = {
     val async = implicitly[AsyncHandler[F]]
     async.transform(runWithEither { ctx =>
       async.transform[T, Either[T, T]](action(ctx))(r => Success(Right(r)))
     })(r => Success(r.merge))
   }
-  override def runWithEither[E, A, F[_]: AsyncHandler](action: TransactionContext => F[Either[E,A]]): F[Either[E,A]] =
+
+  override def runWithEither[E, A, F[_] : AsyncHandler](action: TransactionContext => F[Either[E, A]]): F[Either[E, A]] =
     implicitly[AsyncHandler[F]].withTransaction(javaBuilder, action)
 }
 
 trait PulsarClient {
   def close(): Unit
+
   def producer[T: Schema](config: ProducerConfig, interceptors: List[ProducerInterceptor[T]] = Nil): Producer[T]
+
   def consumer[T: Schema](config: ConsumerConfig, interceptors: List[ConsumerInterceptor[T]] = Nil): Consumer[T]
+
   def reader[T: Schema](config: ReaderConfig): Reader[T]
 }
 
