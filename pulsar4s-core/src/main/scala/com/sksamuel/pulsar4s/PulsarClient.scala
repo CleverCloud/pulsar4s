@@ -1,17 +1,16 @@
 package com.sksamuel.pulsar4s
 
-import java.util.concurrent.TimeUnit
-import java.util.{UUID, Set => JSet}
 import com.sksamuel.exts.Logging
 import org.apache.pulsar.client.api
-import org.apache.pulsar.client.api.{ConsumerBuilder, ProducerBuilder, ReaderBuilder, Schema}
 import org.apache.pulsar.client.api.transaction.Transaction
+import org.apache.pulsar.client.api.{ConsumerBuilder, ProducerBuilder, ReaderBuilder, Schema}
 
+import java.util.concurrent.TimeUnit
+import java.util.{UUID, Set => JSet}
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
 import scala.language.higherKinds
 import scala.util.Success
-import java.util.concurrent.CompletableFuture
 
 case class Topic(name: String)
 

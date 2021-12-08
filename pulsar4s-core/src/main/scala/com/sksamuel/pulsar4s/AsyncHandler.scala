@@ -1,7 +1,5 @@
 package com.sksamuel.pulsar4s
 
-import java.util.concurrent.CompletableFuture
-
 import org.apache.pulsar.client.api
 import org.apache.pulsar.client.api.TypedMessageBuilder
 import org.apache.pulsar.client.api.transaction.Transaction

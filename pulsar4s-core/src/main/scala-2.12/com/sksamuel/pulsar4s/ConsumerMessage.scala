@@ -4,7 +4,6 @@ import org.apache.pulsar.client.api.Schema
 import org.apache.pulsar.client.impl.MessageImpl
 import org.apache.pulsar.common.api.proto.MessageMetadata
 import org.apache.pulsar.shade.io.netty.buffer.Unpooled
-import org.apache.pulsar.shaded.com.google.protobuf.v241.ByteString
 
 import scala.collection.JavaConverters._
 import scala.util.Try
@@ -92,12 +91,12 @@ object ConsumerMessage {
   def toJava[T](message: ConsumerMessage[T], schema: Schema[T]): JMessage[T] = {
     require(message != null)
 
-    val meta = MessageMetadata.newBuilder()
+    val meta = new MessageMetadata()
       .setPublishTime(message.publishTime.value)
       .setEventTime(message.eventTime.value)
       .setSequenceId(message.sequenceId.value)
       .setProducerName(message.producerName.name)
-      .setSchemaVersion(ByteString.copyFrom(message.schemaVersion))
+      .setSchemaVersion(message.schemaVersion)
 
     message.replicatedFrom.foreach(meta.setReplicatedFrom)
 
