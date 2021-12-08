@@ -94,22 +94,27 @@ lazy val commonDeps = Seq(
 )
 
 lazy val pomSettings = Seq(
-  homepage := Some(url("https://github.com/sksamuel/pulsar4s")),
+  homepage := Some(url("https://github.com/CleverCloud/pulsar4s")),
   licenses := Seq("Apache 2" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
-  scmInfo := Some(ScmInfo(url("https://github.com/sksamuel/pulsar4s"), "scm:git:git@github.com:sksamuel/pulsar4s.git")),
-  apiURL := Some(url("http://github.com/sksamuel/pulsar4s/")),
+  scmInfo := Some(ScmInfo(url("https://github.com/CleverCloud/pulsar4s"), "scm:git:git@github.com:CleverCloud/pulsar4s.git")),
+  apiURL := Some(url("http://github.com/CleverCloud/pulsar4s/")),
   pomExtra := <developers>
     <developer>
       <id>sksamuel</id>
       <name>Sam Samuel</name>
       <url>https://github.com/sksamuel</url>
     </developer>
+    <developer>
+      <id>judu</id>
+      <name>Julien Durillon</name>
+      <url>https://github.com/judu</url>
+    </developer>
   </developers>
 )
 
 val travisCreds = Credentials(
   "Sonatype Nexus Repository Manager",
-  "oss.sonatype.org",
+  "s01.oss.sonatype.org",
   sys.env.getOrElse("OSSRH_USERNAME", ""),
   sys.env.getOrElse("OSSRH_PASSWORD", "")
 )
