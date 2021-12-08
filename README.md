@@ -1,10 +1,10 @@
 pulsar4s - Apache Pulsar Scala Client
 ==================================================
 
-![build](https://github.com/sksamuel/pulsar4s/workflows/build/badge.svg)
-[<img src="https://img.shields.io/maven-central/v/com.sksamuel.pulsar4s/pulsar4s-core_2.13.svg?label=latest%20release%20for%202.13"/>](http://search.maven.org/#search%7Cga%7C1%7Ca%3A%22pulsar4s-core_2.13%22)
-[<img src="https://img.shields.io/maven-central/v/com.sksamuel.pulsar4s/pulsar4s-core_2.12.svg?label=latest%20release%20for%202.12"/>](http://search.maven.org/#search%7Cga%7C1%7Ca%3A%22pulsar4s-core_2.12%22)
-[<img src="https://img.shields.io/nexus/s/https/oss.sonatype.org/com.sksamuel.pulsar4s/pulsar4s-core_2.13.svg?label=latest%20snapshot&style=plastic"/>](https://oss.sonatype.org/content/repositories/snapshots/com/sksamuel/pulsar4s/)
+![build](https://github.com/CleverCloud/pulsar4s/workflows/build/badge.svg)
+[<img src="https://img.shields.io/maven-central/v/com.clever-cloud.pulsar4s/pulsar4s-core_2.13.svg?label=latest%20release%20for%202.13"/>](http://search.maven.org/#search%7Cga%7C1%7Ca%3A%22pulsar4s-core_2.13%22)
+[<img src="https://img.shields.io/maven-central/v/com.clever-cloud.pulsar4s/pulsar4s-core_2.12.svg?label=latest%20release%20for%202.12"/>](http://search.maven.org/#search%7Cga%7C1%7Ca%3A%22pulsar4s-core_2.12%22)
+[<img src="https://img.shields.io/nexus/s/https/oss.sonatype.org/com.clever-cloud.pulsar4s/pulsar4s-core_2.13.svg?label=latest%20snapshot&style=plastic"/>](https://oss.sonatype.org/content/repositories/snapshots/com/sksamuel/pulsar4s/)
 
 pulsar4s is a concise, idiomatic, reactive, type safe Scala client for [Apache Pulsar](https://pulsar.apache.org/).
 As a simple wrapper over the Java client, we benefit from the reliability and performance of that client while providing better integration with the Scala ecosystem and idioms.
@@ -76,7 +76,7 @@ An example of creating a producer for a complex type using the circe json librar
 
 ```scala
 import io.circe.generic.auto._
-import com.sksamuel.pulsar4s.circe._
+import com.clevercloud.pulsar4s.circe._
 
 val topic = Topic("persistent://sample/standalone/ns1/b")
 val producer = client.producer[Food](ProducerConfig(topic))
@@ -89,11 +89,11 @@ The following extension modules can be used for automatic schemas
 
 | Library | Module | Import |
 |---------|------------------|--------|
-|[Circe](https://github.com/travisbrown/circe)|[pulsar4s-circe](http://search.maven.org/#search%7Cga%7C1%7Cpulsar4s-circe)|import io.circe.generic.auto._ <br/>import com.sksamuel.pulsar4s.circe._|
-|[Jackson](https://github.com/FasterXML/jackson-module-scala)|[pulsar4s-jackson](http://search.maven.org/#search%7Cga%7C1%7Cpulsar4s-jackson)|import com.sksamuel.pulsar4s.jackson._|
-|Json4s|[pulsar4s-json4s](http://search.maven.org/#search%7Cga%7C1%7Cpulsar4s-json4s)|import com.sksamuel.pulsar4s.json4s._|
-|Spray Json|[pulsar4s-spray-json](http://search.maven.org/#search%7Cga%7C1%7Cpulsar4s-spray-json)|import com.sksamuel.pulsar4s.sprayjson._|
-|Play Json|[pulsar4s-play-json](http://search.maven.org/#search%7Cga%7C1%7Cpulsar4s-play-json)|import com.sksamuel.pulsar4s.playjson._|
+|[Circe](https://github.com/travisbrown/circe)|[pulsar4s-circe](http://search.maven.org/#search%7Cga%7C1%7Cpulsar4s-circe)|import io.circe.generic.auto._ <br/>import com.clevercloud.pulsar4s.circe._|
+|[Jackson](https://github.com/FasterXML/jackson-module-scala)|[pulsar4s-jackson](http://search.maven.org/#search%7Cga%7C1%7Cpulsar4s-jackson)|import com.clevercloud.pulsar4s.jackson._|
+|Json4s|[pulsar4s-json4s](http://search.maven.org/#search%7Cga%7C1%7Cpulsar4s-json4s)|import com.clevercloud.pulsar4s.json4s._|
+|Spray Json|[pulsar4s-spray-json](http://search.maven.org/#search%7Cga%7C1%7Cpulsar4s-spray-json)|import com.clevercloud.pulsar4s.sprayjson._|
+|Play Json|[pulsar4s-play-json](http://search.maven.org/#search%7Cga%7C1%7Cpulsar4s-play-json)|import com.clevercloud.pulsar4s.playjson._|
 
 
 ### Producing
@@ -165,7 +165,7 @@ val consumerFn = () => client.consumer(ConsumerConfig(topic, subscription))
 We pass that function into the source method, providing the seek. Note the imports.
 
 ```scala
-import com.sksamuel.pulsar4s.akka.streams._
+import com.clevercloud.pulsar4s.akka.streams._
 val pulsarSource = source(consumerFn, Some(MessageId.earliest))
 ```
 
@@ -186,7 +186,7 @@ val producerFn = () => client.producer(ProducerConfig(topic))
 We pass that function into the sink method. Once again, take note of the imports.
 
 ```scala
-import com.sksamuel.pulsar4s.akka.streams._
+import com.clevercloud.pulsar4s.akka.streams._
 val pulsarSink = sink(producerFn)
 ```
 
@@ -194,7 +194,7 @@ A sink requires messages of type `ProducerMessage[T]` where T is the value type 
 String messages, then we would map our upstream messages into instances of `ProducerMessage[String]` before passing them to the sink.
 
 ```scala
-import com.sksamuel.pulsar4s.akka.streams._
+import com.clevercloud.pulsar4s.akka.streams._
 Source.fromIterator(() => List("a", "b", "c", "d").iterator)
   .map(string => ProducerMessage(string))
   .runWith(sink(producerFn))
@@ -207,7 +207,7 @@ The materialized value of the sink is a `Future[Done]` which will be completed o
 
 There is also an implementation of a 'multi-sink'.
 Multi-sink allows to produce to multiple topics in Pulsar, while using just 1 sink.
-Multi-sink expects, in addition to `ProducerMessage[T]`, a `Topic`, so the input format is `(Topic, ProducerMessage[T])`. 
+Multi-sink expects, in addition to `ProducerMessage[T]`, a `Topic`, so the input format is `(Topic, ProducerMessage[T])`.
 All producers in the sink are lazily-created, once a tuple with a new topic is received.
 There is also a possibility to provide a collection of topics in the constructing function, to create those topics
 ahead of time if the names are known. New topics read from the stream will also be created on-the-fly.
@@ -215,7 +215,7 @@ ahead of time if the names are known. New topics read from the stream will also 
 Example usage of a multi-sink:
 
 ```scala
-import com.sksamuel.pulsar4s.akka.streams._
+import com.clevercloud.pulsar4s.akka.streams._
 
 val topic1 = Topic("persistent://sample/standalone/ns1/b")
 val topic2 = Topic("persistent://sample/standalone/ns1/bb")
@@ -224,14 +224,14 @@ val pulsarMultiSink = multiSink(producerFn)
 # or to create those topics ahead of time:
 val pulsarMultiSink2 = multiSink(producerFn, Set(topic1, topic2))
 ```
- 
+
 ### Full Example
 
 Here is a full example of consuming from a topic for 10 seconds, publising the messages back into another topic.
 Obviously this is a bit of a toy example but shows everything in one place.
 
 ```scala
-import com.sksamuel.pulsar4s.{ConsumerConfig, MessageId, ProducerConfig, PulsarClient, Subscription, Topic}
+import com.clevercloud.pulsar4s.{ConsumerConfig, MessageId, ProducerConfig, PulsarClient, Subscription, Topic}
 import org.apache.pulsar.client.api.Schema
 
 implicit val system: ActorSystem = ActorSystem()
@@ -262,9 +262,9 @@ To use this, you need to add a dependency on the `pulsar4s-{effect}` + `pulsar4s
 ### Example
 
 ```scala
-import com.sksamuel.pulsar4s._
-import com.sksamuel.pulsar4s.cats.CatsAsyncHandler._
-import com.sksamuel.pulsar4s.fs2.Streams
+import com.clevercloud.pulsar4s._
+import com.clevercloud.pulsar4s.cats.CatsAsyncHandler._
+import com.clevercloud.pulsar4s.fs2.Streams
 
 import org.apache.pulsar.client.api.Schema
 
@@ -292,43 +292,43 @@ Streams.batch[IO, Array[Byte]](client.consumerAsync[Array[Byte], IO](ConsumerCon
 ```scala
 val pulsar4sVersion = "x.x.x"
 libraryDependencies ++= Seq(
-  "com.sksamuel.pulsar4s" %% "pulsar4s-core" % pulsar4sVersion,
+  "com.clever-cloud.pulsar4s" %% "pulsar4s-core" % pulsar4sVersion,
 
   // for the akka-streams integration
-  "com.sksamuel.pulsar4s" %% "pulsar4s-akka-streams" % pulsar4sVersion,
-  
+  "com.clever-cloud.pulsar4s" %% "pulsar4s-akka-streams" % pulsar4sVersion,
+
   // if you want to use avro for schemas
-  "com.sksamuel.pulsar4s" %% "pulsar4s-avro" % pulsar4sVersion,
+  "com.clever-cloud.pulsar4s" %% "pulsar4s-avro" % pulsar4sVersion,
 
   // if you want to use circe for schemas
-  "com.sksamuel.pulsar4s" %% "pulsar4s-circe" % pulsar4sVersion,
+  "com.clever-cloud.pulsar4s" %% "pulsar4s-circe" % pulsar4sVersion,
 
   // if you want to use json4s for schemas
-  "com.sksamuel.pulsar4s" %% "pulsar4s-json4s" % pulsar4sVersion,
+  "com.clever-cloud.pulsar4s" %% "pulsar4s-json4s" % pulsar4sVersion,
 
   // if you want to use jackson for schemas
-  "com.sksamuel.pulsar4s" %% "pulsar4s-jackson" % pulsar4sVersion,
+  "com.clever-cloud.pulsar4s" %% "pulsar4s-jackson" % pulsar4sVersion,
 
   // if you want to use spray-json for schemas
-  "com.sksamuel.pulsar4s" %% "pulsar4s-spray-json" % pulsar4sVersion,
+  "com.clever-cloud.pulsar4s" %% "pulsar4s-spray-json" % pulsar4sVersion,
 
   // if you want to use play-json for schemas
-  "com.sksamuel.pulsar4s" %% "pulsar4s-play-json" % pulsar4sVersion,
+  "com.clever-cloud.pulsar4s" %% "pulsar4s-play-json" % pulsar4sVersion,
 
   // if you want to use monix effects
-  "com.sksamuel.pulsar4s" %% "pulsar4s-monix" % pulsar4sVersion,
+  "com.clever-cloud.pulsar4s" %% "pulsar4s-monix" % pulsar4sVersion,
 
   // if you want to use scalaz effects
-  "com.sksamuel.pulsar4s" %% "pulsar4s-scalaz" % pulsar4sVersion,
+  "com.clever-cloud.pulsar4s" %% "pulsar4s-scalaz" % pulsar4sVersion,
 
   // if you want to use cats effects
-  "com.sksamuel.pulsar4s" %% "pulsar4s-cats-effect" % pulsar4sVersion,
+  "com.clever-cloud.pulsar4s" %% "pulsar4s-cats-effect" % pulsar4sVersion,
 
   // if you want to use fs2
-  "com.sksamuel.pulsar4s" %% "pulsar4s-fs2" % pulsar4sVersion,
+  "com.clever-cloud.pulsar4s" %% "pulsar4s-fs2" % pulsar4sVersion,
 
   // if you want to use zio
-  "com.sksamuel.pulsar4s" %% "pulsar4s-zio" % pulsar4sVersion
+  "com.clever-cloud.pulsar4s" %% "pulsar4s-zio" % pulsar4sVersion
 )
 ```
 
