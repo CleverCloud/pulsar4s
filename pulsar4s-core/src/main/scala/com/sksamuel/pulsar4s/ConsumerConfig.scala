@@ -28,5 +28,6 @@ case class ConsumerConfig(subscriptionName: Subscription,
                           acknowledgmentGroupTime: Option[FiniteDuration] = None,
                           enableBatchIndexAcknowledgement: Option[Boolean] = None,
                           additionalProperties: Map[String, AnyRef] = Map.empty,
-                          deadLetterPolicy: Option[DeadLetterPolicy] = None)
+                          deadLetterPolicy: Option[DeadLetterPolicy] = None,
+                          replicateSubscriptionState:Boolean=false)
 
