@@ -4,67 +4,67 @@ def isRelease = releaseVersion != ""
 def githubRunNumber = sys.env.getOrElse("GITHUB_RUN_NUMBER", "")
 def ossrhUsername = sys.env.getOrElse("OSSRH_USERNAME", "")
 def ossrhPassword = sys.env.getOrElse("OSSRH_PASSWORD", "")
-def publishVersion = if (isRelease) releaseVersion else if (isGithubActions) "2.7.0." + githubRunNumber + "-SNAPSHOT" else "0.0.0-LOCAL"
+def publishVersion = if (isRelease) releaseVersion else if (isGithubActions) "2.8.1." + githubRunNumber + "-SNAPSHOT" else "0.0.0-LOCAL"
 
-val org = "com.sksamuel.pulsar4s"
-val AkkaStreamVersion = "2.5.32" // compatible with Akka 2.5.x and 2.6.x
-val CatsEffectVersion = "2.1.4"
+val org = "com.clever-cloud.pulsar4s"
+val AkkaStreamVersion = "2.6.17" // compatible with Akka 2.5.x and 2.6.x
+val CatsEffectVersion = "2.5.4"
 val CirceVersion = "0.14.1"
 val CommonsIoVersion = "2.4"
 val ExtsVersion = "1.61.1"
-val JacksonVersion = "2.9.9"
-val Log4jVersion = "2.12.0"
-val MonixVersion = "3.1.0"
-val PlayJsonVersion = "2.7.4" // compatible with 2.7.x and 2.8.x
-val PulsarVersion = "2.8.1"
+val JacksonVersion = "2.13.0"
+val Log4jVersion = "2.16.0"
+val MonixVersion = "3.4.0"
+val PlayJsonVersion = "2.8.2" // compatible with 2.7.x and 2.8.x
+val PulsarVersion = "2.9.0"
 val ReactiveStreamsVersion = "1.0.2"
 val FunctionalStreamsVersion = "2.5.2"
-val Json4sVersion = "3.6.11"
+val Json4sVersion = "4.0.3"
 val Avro4sVersion = "4.0.11"
-val ScalaVersion = "2.13.5"
+val ScalaVersion = "2.13.7"
 val ScalatestVersion = "3.2.10"
+val ScalazVersion = "7.2.33"
 val Slf4jVersion = "1.7.32"
 val SprayJsonVersion = "1.3.6"
-val Java8CompatVersion = "0.9.0"
-val ZIOVersion = "1.0.12"
-val ZIOInteropCatsVersion = "3.2.9.0"
+val ZIOVersion = "1.0.13"
+val ZIOInteropCatsVersion = "2.5.1.0"
 
 lazy val commonScalaVersionSettings = Seq(
   scalaVersion := ScalaVersion,
-  crossScalaVersions := Seq("2.12.15", "2.13.5")
+  crossScalaVersions := Seq("2.12.15", "2.13.7")
 )
 
 lazy val warnUnusedImport = Seq(
   scalacOptions ++= Seq("-Ywarn-unused:imports"),
-  scalacOptions in(Compile, console) ~= {
+  Compile / console / scalacOptions ~= {
     _.filterNot(Set("-Ywarn-unused-import", "-Ywarn-unused:imports"))
   },
-  scalacOptions in(Test, console) := (scalacOptions in(Compile, console)).value,
+  Test / console / scalacOptions := (Compile / console / scalacOptions).value,
 )
 
 lazy val commonSettings = Seq(
-  organization := "com.sksamuel.pulsar4s",
+  organization := "com.clever-cloud.pulsar4s",
   version := publishVersion,
   resolvers ++= Seq(Resolver.mavenLocal),
-  parallelExecution in Test := false,
-  parallelExecution in Global := false,
-  concurrentRestrictions in Global += Tags.limit(Tags.Test, 1),
-  scalacOptions in(Compile, doc) := (scalacOptions in(Compile, doc)).value.filter(_ != "-Xfatal-warnings"),
+  Test / parallelExecution := false,
+  Global / parallelExecution := false,
+  Global / concurrentRestrictions += Tags.limit(Tags.Test, 1),
+  Compile / doc / scalacOptions := (Compile / doc / scalacOptions).value.filter(_ != "-Xfatal-warnings"),
   scalacOptions ++= Seq("-unchecked", "-deprecation", "-encoding", "utf8")
 )
 
 lazy val publishSettings = Seq(
   publishMavenStyle := true,
-  publishArtifact in Test := false,
+  Test / publishArtifact := false,
   pomIncludeRepository := Function.const(false),
   credentials += Credentials(
     "Sonatype Nexus Repository Manager",
-    "oss.sonatype.org",
+    "s01.oss.sonatype.org",
     ossrhUsername,
     ossrhPassword
   ),
   publishTo := {
-    val nexus = "https://oss.sonatype.org/"
+    val nexus = "https://s01.oss.sonatype.org/"
     if (isRelease)
       Some("releases" at nexus + "service/local/staging/deploy/maven2")
     else
@@ -73,7 +73,7 @@ lazy val publishSettings = Seq(
 )
 
 lazy val commonJvmSettings = Seq(
-  testOptions in Test += {
+  Test / testOptions += {
     val flag = if (isGithubActions) "-oCI" else "-oDF"
     Tests.Argument(TestFrameworks.ScalaTest, flag)
   },
@@ -94,22 +94,27 @@ lazy val commonDeps = Seq(
 )
 
 lazy val pomSettings = Seq(
-  homepage := Some(url("https://github.com/sksamuel/pulsar4s")),
+  homepage := Some(url("https://github.com/CleverCloud/pulsar4s")),
   licenses := Seq("Apache 2" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
-  scmInfo := Some(ScmInfo(url("https://github.com/sksamuel/pulsar4s"), "scm:git:git@github.com:sksamuel/pulsar4s.git")),
-  apiURL := Some(url("http://github.com/sksamuel/pulsar4s/")),
+  scmInfo := Some(ScmInfo(url("https://github.com/CleverCloud/pulsar4s"), "scm:git:git@github.com:CleverCloud/pulsar4s.git")),
+  apiURL := Some(url("http://github.com/CleverCloud/pulsar4s/")),
   pomExtra := <developers>
     <developer>
       <id>sksamuel</id>
       <name>Sam Samuel</name>
       <url>https://github.com/sksamuel</url>
     </developer>
+    <developer>
+      <id>judu</id>
+      <name>Julien Durillon</name>
+      <url>https://github.com/judu</url>
+    </developer>
   </developers>
 )
 
 val travisCreds = Credentials(
   "Sonatype Nexus Repository Manager",
-  "oss.sonatype.org",
+  "s01.oss.sonatype.org",
   sys.env.getOrElse("OSSRH_USERNAME", ""),
   sys.env.getOrElse("OSSRH_PASSWORD", "")
 )
@@ -141,25 +146,32 @@ lazy val root = Project("pulsar4s", file("."))
   .settings(allSettings)
   .settings(noPublishSettings)
   .aggregate(
-    core,
-    cats_effect,
-    scalaz,
-    monix,
-    zio,
-    jackson,
-    circe,
+    akka_streams,
     avro,
-    playjson,
-    sprayjson,
+    cats_effect,
+    circe,
+    core,
+    fs2,
+    jackson,
     json4s,
-    akka_streams
+    monix,
+    playjson,
+    scalaz,
+    sprayjson,
+    zio,
   )
 
 lazy val core = Project("pulsar4s-core", file("pulsar4s-core"))
   .settings(name := "pulsar4s-core")
   .settings(allSettings)
   .settings(libraryDependencies ++= Seq(
-    "org.scala-lang.modules" %% "scala-java8-compat" % Java8CompatVersion,
+    "org.scala-lang.modules" %% "scala-java8-compat" % {
+      CrossVersion.partialVersion(scalaVersion.value) match {
+        case Some((3, _))            => "1.0.2"
+        case Some((2, n)) if n >= 13 => "1.0.2"
+        case _                       => "0.8.0"
+      }
+    },
     "org.apache.pulsar" % "pulsar-client" % PulsarVersion
   ))
 
@@ -189,8 +201,8 @@ lazy val scalaz = Project("pulsar4s-scalaz", file("pulsar4s-scalaz"))
   .settings(name := "pulsar4s-scalaz")
   .settings(allSettings)
   .settings(libraryDependencies ++= Seq(
-    "org.scalaz" %% "scalaz-core" % "7.2.33",
-    "org.scalaz" %% "scalaz-concurrent" % "7.2.33"
+    "org.scalaz" %% "scalaz-core" % ScalazVersion,
+    "org.scalaz" %% "scalaz-concurrent" % ScalazVersion,
   ))
 
 lazy val monix = Project("pulsar4s-monix", file("pulsar4s-monix"))
@@ -217,7 +229,7 @@ lazy val jackson = Project("pulsar4s-jackson", file("pulsar4s-jackson"))
     // For 2.9 releases see https://github.com/FasterXML/jackson/wiki/Jackson-Release-2.9#micro-patches
     "com.fasterxml.jackson.core" % "jackson-core" % JacksonVersion,
     "com.fasterxml.jackson.core" % "jackson-annotations" % JacksonVersion,
-    "com.fasterxml.jackson.core" % "jackson-databind" % s"$JacksonVersion.3",
+    "com.fasterxml.jackson.core" % "jackson-databind" % JacksonVersion,
     "com.fasterxml.jackson.module" %% "jackson-module-scala" % JacksonVersion
   ))
 

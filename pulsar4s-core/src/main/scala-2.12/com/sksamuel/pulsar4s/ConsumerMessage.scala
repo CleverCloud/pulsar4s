@@ -51,6 +51,8 @@ trait ConsumerMessage[T] {
     */
   def publishTime: PublishTime
 
+  def redeliveryCount: Int
+
   /**
     * Returns the application specified event time
     * for this message. If no event time was specified
@@ -59,6 +61,10 @@ trait ConsumerMessage[T] {
   def eventTime: EventTime
 
   def topic: Topic
+
+  def schemaVersion: Array[Byte]
+
+  def replicatedFrom: Option[String]
 }
 
 object ConsumerMessage {
@@ -75,13 +81,33 @@ object ConsumerMessage {
       ProducerName(message.getProducerName),
       PublishTime(message.getPublishTime),
       EventTime(message.getEventTime),
-      Topic(message.getTopicName)
+      Topic(message.getTopicName),
+      message.getSchemaVersion,
+      message.getRedeliveryCount,
+      Option(message.getReplicatedFrom)
     )
   }
 
   def toJava[T](message: ConsumerMessage[T], schema: Schema[T]): JMessage[T] = {
     require(message != null)
-    new MessageImpl(message.topic.name, MessageId.toJava(message.messageId).toString, message.props.asJava, Unpooled.wrappedBuffer(message.data), schema, new MessageMetadata())
+
+    val meta = new MessageMetadata()
+      .setPublishTime(message.publishTime.value)
+      .setEventTime(message.eventTime.value)
+      .setSequenceId(message.sequenceId.value)
+      .setProducerName(message.producerName.name)
+      .setSchemaVersion(message.schemaVersion)
+
+    message.replicatedFrom.foreach(meta.setReplicatedFrom)
+
+    new MessageImpl(
+      message.topic.name,
+      MessageId.toJava(message.messageId).toString,
+      message.props.asJava,
+      Unpooled.wrappedBuffer(message.data),
+      schema,
+      meta
+    )
   }
 }
 
@@ -94,7 +120,10 @@ case class ConsumerMessageWithValueTry[T](key: Option[String],
                                           producerName: ProducerName,
                                           publishTime: PublishTime,
                                           eventTime: EventTime,
-                                          topic: Topic) extends ConsumerMessage[T] {
+                                          topic: Topic,
+                                          schemaVersion: Array[Byte],
+                                          redeliveryCount: Int,
+                                          replicatedFrom: Option[String]) extends ConsumerMessage[T] {
   def value: T = valueTry.get
 }
 
@@ -109,4 +138,7 @@ case class DefaultConsumerMessage[T](key: Option[String],
                                      producerName: ProducerName,
                                      publishTime: PublishTime,
                                      eventTime: EventTime,
-                                     topic: Topic) extends ConsumerMessage[T]
+                                     topic: Topic,
+                                     schemaVersion: Array[Byte],
+                                     redeliveryCount: Int,
+                                     replicatedFrom: Option[String]) extends ConsumerMessage[T]

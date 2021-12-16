@@ -2,6 +2,7 @@ package com.sksamuel.pulsar4s
 
 import org.apache.pulsar.client.api
 import org.apache.pulsar.client.api.TypedMessageBuilder
+import org.apache.pulsar.client.api.transaction.Transaction
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
@@ -15,7 +16,9 @@ trait AsyncHandler[F[_]] {
   def createConsumer[T](builder: api.ConsumerBuilder[T]): F[Consumer[T]]
   def createReader[T](builder: api.ReaderBuilder[T]): F[Reader[T]]
 
-  def send[T](t: T, producer: api.Producer[T]): F[MessageId]
+  @deprecated("Use send(builder) instead", "2.8.0")
+  def send[T](t: T, producer: api.Producer[T]): F[MessageId] = send(producer.newMessage().value(t))
+
   def send[T](builder: TypedMessageBuilder[T]): F[MessageId]
   def receive[T](consumer: api.Consumer[T]): F[ConsumerMessage[T]]
   def receiveBatch[T](consumer: api.Consumer[T]): F[Vector[ConsumerMessage[T]]]
@@ -39,8 +42,18 @@ trait AsyncHandler[F[_]] {
   def getLastMessageId[T](consumer: api.Consumer[T]): F[MessageId]
 
   def acknowledgeAsync[T](consumer: api.Consumer[T], messageId: MessageId): F[Unit]
-  def negativeAcknowledgeAsync[T](consumer: api.Consumer[T], messageId: MessageId): F[Unit]
+  def acknowledgeAsync[T](consumer: api.Consumer[T], messageId: MessageId, txn: Transaction): F[Unit]
   def acknowledgeCumulativeAsync[T](consumer: api.Consumer[T], messageId: MessageId): F[Unit]
+  def acknowledgeCumulativeAsync[T](consumer: api.Consumer[T], messageId: MessageId, txn: Transaction): F[Unit]
+  def negativeAcknowledgeAsync[T](consumer: api.Consumer[T], messageId: MessageId): F[Unit]
+
+  def withTransaction[E, A](
+    builder: api.transaction.TransactionBuilder,
+    action: TransactionContext => F[Either[E, A]]
+  ): F[Either[E, A]]
+  def startTransaction(builder: api.transaction.TransactionBuilder): F[TransactionContext]
+  def commitTransaction(txn: Transaction): F[Unit]
+  def abortTransaction(txn: Transaction): F[Unit]
 }
 
 object AsyncHandler {

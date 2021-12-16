@@ -4,6 +4,7 @@ import java.util.concurrent.CompletableFuture
 
 import org.apache.pulsar.client.api
 import org.apache.pulsar.client.api.{ConsumerBuilder, ReaderBuilder, TypedMessageBuilder}
+import org.apache.pulsar.client.api.transaction.Transaction
 
 import scala.collection.JavaConverters.iterableAsScalaIterableConverter
 import scala.compat.java8.FutureConverters
@@ -31,11 +32,6 @@ class FutureAsyncHandler(implicit ec: ExecutionContext) extends AsyncHandler[Fut
 
   override def createReader[T](builder: ReaderBuilder[T]): Future[Reader[T]] =
     builder.createAsync().thenApply[Reader[T]](new DefaultReader(_)).toScala
-
-  override def send[T](t: T, producer: api.Producer[T]): Future[MessageId] = {
-    val future = producer.sendAsync(t)
-    FutureConverters.toScala(future).map(MessageId.fromJava)
-  }
 
   override def receive[T](consumer: api.Consumer[T]): Future[ConsumerMessage[T]] = {
     val future = consumer.receiveAsync()
@@ -75,11 +71,17 @@ class FutureAsyncHandler(implicit ec: ExecutionContext) extends AsyncHandler[Fut
   override def acknowledgeAsync[T](consumer: api.Consumer[T], messageId: MessageId): Future[Unit] =
     consumer.acknowledgeAsync(messageId).toScala
 
-  override def negativeAcknowledgeAsync[T](consumer: JConsumer[T], messageId: MessageId): Future[Unit] =
-    Future.successful(consumer.negativeAcknowledge(messageId))
+  override def acknowledgeAsync[T](consumer: api.Consumer[T], messageId: MessageId, txn: Transaction): Future[Unit] =
+    consumer.acknowledgeAsync(messageId, txn).toScala
 
   override def acknowledgeCumulativeAsync[T](consumer: api.Consumer[T], messageId: MessageId): Future[Unit] =
     consumer.acknowledgeCumulativeAsync(messageId).toScala
+
+  override def acknowledgeCumulativeAsync[T](consumer: api.Consumer[T], messageId: MessageId, txn: Transaction): Future[Unit] =
+    consumer.acknowledgeCumulativeAsync(messageId, txn).toScala
+
+  override def negativeAcknowledgeAsync[T](consumer: JConsumer[T], messageId: MessageId): Future[Unit] =
+    Future.successful(consumer.negativeAcknowledge(messageId))
 
   override def close(reader: api.Reader[_]): Future[Unit] = reader.closeAsync().toScala
   override def flush(producer: api.Producer[_]): Future[Unit] = producer.flushAsync().toScala
@@ -92,4 +94,24 @@ class FutureAsyncHandler(implicit ec: ExecutionContext) extends AsyncHandler[Fut
 
   override def send[T](builder: TypedMessageBuilder[T]): Future[MessageId] =
     builder.sendAsync().toScala.map(MessageId.fromJava)
+
+  override def withTransaction[E, A](
+    builder: api.transaction.TransactionBuilder,
+    action: TransactionContext => Future[Either[E, A]]
+  ): Future[Either[E, A]] = {
+    startTransaction(builder).flatMap { txn =>
+      Future.unit.flatMap(_ => action(txn)).transformWith {
+        case Success(Right(value)) =>
+          txn.commit.transform(_ => Success(Right(value)))
+        case result =>
+          txn.abort.transform(_ => result)
+      }
+    }
+  }
+
+  override def startTransaction(builder: api.transaction.TransactionBuilder): Future[TransactionContext] =
+    builder.build().toScala.map(TransactionContext(_))
+  override def commitTransaction(txn: Transaction): Future[Unit] = txn.commit().toScala.map(_ => ())
+  override def abortTransaction(txn: Transaction): Future[Unit] = txn.abort().toScala.map(_ => ())
+    
 }
