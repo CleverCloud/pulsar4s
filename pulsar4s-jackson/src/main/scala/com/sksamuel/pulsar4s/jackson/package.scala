@@ -12,8 +12,8 @@ package object jackson {
     override def getSchemaInfo: SchemaInfo =
       SchemaInfoImpl.builder()
         .name(manifest[T].runtimeClass.getCanonicalName)
-        .`type`(SchemaType.JSON)
-        .schema("""{"type":"any"}""".getBytes("UTF-8"))
+        .`type`(SchemaType.BYTES)
+        .schema(Array.empty[Byte])
         .build()
   }
 }
