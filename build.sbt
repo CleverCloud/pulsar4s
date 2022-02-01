@@ -21,7 +21,7 @@ val ReactiveStreamsVersion = "1.0.2"
 val FunctionalStreamsVersion = "2.5.2"
 val Json4sVersion = "4.0.4"
 val Avro4sVersion = "4.0.12"
-val ScalaVersion = "2.13.7"
+val ScalaVersion = "2.13.8"
 val ScalatestVersion = "3.2.11"
 val ScalazVersion = "7.2.33"
 val Slf4jVersion = "1.7.35"
@@ -31,7 +31,7 @@ val ZIOInteropCatsVersion = "2.5.1.0"
 
 lazy val commonScalaVersionSettings = Seq(
   scalaVersion := ScalaVersion,
-  crossScalaVersions := Seq("2.12.15", "2.13.7")
+  crossScalaVersions := Seq("2.12.15", "2.13.8")
 )
 
 lazy val warnUnusedImport = Seq(
