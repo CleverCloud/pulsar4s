@@ -7,7 +7,7 @@ def ossrhPassword = sys.env.getOrElse("OSSRH_PASSWORD", "")
 def publishVersion = if (isRelease) releaseVersion else if (isGithubActions) "2.8.1." + githubRunNumber + "-SNAPSHOT" else "0.0.0-LOCAL"
 
 val org = "com.clever-cloud.pulsar4s"
-val AkkaStreamVersion = "2.6.18" // compatible with Akka 2.5.x and 2.6.x
+val AkkaStreamVersion = "2.6.19" // compatible with Akka 2.5.x and 2.6.x
 val CatsEffectVersion = "2.5.4"
 val CirceVersion = "0.14.1"
 val CommonsIoVersion = "2.4"
