@@ -76,7 +76,7 @@ An example of creating a producer for a complex type using the circe json librar
 
 ```scala
 import io.circe.generic.auto._
-import com.clevercloud.pulsar4s.circe._
+import com.sksamuel.pulsar4s.circe._
 
 val topic = Topic("persistent://sample/standalone/ns1/b")
 val producer = client.producer[Food](ProducerConfig(topic))
@@ -89,11 +89,11 @@ The following extension modules can be used for automatic schemas
 
 | Library | Module | Import |
 |---------|------------------|--------|
-|[Circe](https://github.com/travisbrown/circe)|[pulsar4s-circe](http://search.maven.org/#search%7Cga%7C1%7Cpulsar4s-circe)|import io.circe.generic.auto._ <br/>import com.clevercloud.pulsar4s.circe._|
-|[Jackson](https://github.com/FasterXML/jackson-module-scala)|[pulsar4s-jackson](http://search.maven.org/#search%7Cga%7C1%7Cpulsar4s-jackson)|import com.clevercloud.pulsar4s.jackson._|
-|Json4s|[pulsar4s-json4s](http://search.maven.org/#search%7Cga%7C1%7Cpulsar4s-json4s)|import com.clevercloud.pulsar4s.json4s._|
-|Spray Json|[pulsar4s-spray-json](http://search.maven.org/#search%7Cga%7C1%7Cpulsar4s-spray-json)|import com.clevercloud.pulsar4s.sprayjson._|
-|Play Json|[pulsar4s-play-json](http://search.maven.org/#search%7Cga%7C1%7Cpulsar4s-play-json)|import com.clevercloud.pulsar4s.playjson._|
+|[Circe](https://github.com/travisbrown/circe)|[pulsar4s-circe](http://search.maven.org/#search%7Cga%7C1%7Cpulsar4s-circe)|import io.circe.generic.auto._ <br/>import com.sksamuel.pulsar4s.circe._|
+|[Jackson](https://github.com/FasterXML/jackson-module-scala)|[pulsar4s-jackson](http://search.maven.org/#search%7Cga%7C1%7Cpulsar4s-jackson)|import com.sksamuel.pulsar4s.jackson._|
+|Json4s|[pulsar4s-json4s](http://search.maven.org/#search%7Cga%7C1%7Cpulsar4s-json4s)|import com.sksamuel.pulsar4s.json4s._|
+|Spray Json|[pulsar4s-spray-json](http://search.maven.org/#search%7Cga%7C1%7Cpulsar4s-spray-json)|import com.sksamuel.pulsar4s.sprayjson._|
+|Play Json|[pulsar4s-play-json](http://search.maven.org/#search%7Cga%7C1%7Cpulsar4s-play-json)|import com.sksamuel.pulsar4s.playjson._|
 
 
 ### Producing
@@ -165,7 +165,7 @@ val consumerFn = () => client.consumer(ConsumerConfig(topic, subscription))
 We pass that function into the source method, providing the seek. Note the imports.
 
 ```scala
-import com.clevercloud.pulsar4s.akka.streams._
+import com.sksamuel.pulsar4s.akka.streams._
 val pulsarSource = source(consumerFn, Some(MessageId.earliest))
 ```
 
@@ -186,7 +186,7 @@ val producerFn = () => client.producer(ProducerConfig(topic))
 We pass that function into the sink method. Once again, take note of the imports.
 
 ```scala
-import com.clevercloud.pulsar4s.akka.streams._
+import com.sksamuel.pulsar4s.akka.streams._
 val pulsarSink = sink(producerFn)
 ```
 
@@ -194,7 +194,7 @@ A sink requires messages of type `ProducerMessage[T]` where T is the value type 
 String messages, then we would map our upstream messages into instances of `ProducerMessage[String]` before passing them to the sink.
 
 ```scala
-import com.clevercloud.pulsar4s.akka.streams._
+import com.sksamuel.pulsar4s.akka.streams._
 Source.fromIterator(() => List("a", "b", "c", "d").iterator)
   .map(string => ProducerMessage(string))
   .runWith(sink(producerFn))
@@ -215,7 +215,7 @@ ahead of time if the names are known. New topics read from the stream will also 
 Example usage of a multi-sink:
 
 ```scala
-import com.clevercloud.pulsar4s.akka.streams._
+import com.sksamuel.pulsar4s.akka.streams._
 
 val topic1 = Topic("persistent://sample/standalone/ns1/b")
 val topic2 = Topic("persistent://sample/standalone/ns1/bb")
@@ -231,7 +231,7 @@ Here is a full example of consuming from a topic for 10 seconds, publising the m
 Obviously this is a bit of a toy example but shows everything in one place.
 
 ```scala
-import com.clevercloud.pulsar4s.{ConsumerConfig, MessageId, ProducerConfig, PulsarClient, Subscription, Topic}
+import com.sksamuel.pulsar4s.{ConsumerConfig, MessageId, ProducerConfig, PulsarClient, Subscription, Topic}
 import org.apache.pulsar.client.api.Schema
 
 implicit val system: ActorSystem = ActorSystem()
@@ -262,9 +262,9 @@ To use this, you need to add a dependency on the `pulsar4s-{effect}` + `pulsar4s
 ### Example
 
 ```scala
-import com.clevercloud.pulsar4s._
-import com.clevercloud.pulsar4s.cats.CatsAsyncHandler._
-import com.clevercloud.pulsar4s.fs2.Streams
+import com.sksamuel.pulsar4s._
+import com.sksamuel.pulsar4s.cats.CatsAsyncHandler._
+import com.sksamuel.pulsar4s.fs2.Streams
 
 import org.apache.pulsar.client.api.Schema
 
