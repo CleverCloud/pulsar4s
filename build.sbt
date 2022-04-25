@@ -8,7 +8,7 @@ def publishVersion = if (isRelease) releaseVersion else if (isGithubActions) "2.
 
 val org = "com.clever-cloud.pulsar4s"
 val AkkaStreamVersion = "2.6.18" // compatible with Akka 2.5.x and 2.6.x
-val CatsEffectVersion = "2.5.4"
+val CatsEffectVersion = "3.3.11"
 val CirceVersion = "0.14.1"
 val CommonsIoVersion = "2.4"
 val ExtsVersion = "1.61.1"
@@ -18,7 +18,7 @@ val MonixVersion = "3.4.0"
 val PlayJsonVersion = "2.8.2" // compatible with 2.7.x and 2.8.x
 val PulsarVersion = "2.9.1"
 val ReactiveStreamsVersion = "1.0.2"
-val FunctionalStreamsVersion = "2.5.2"
+val FunctionalStreamsVersion = "3.2.7"
 val Json4sVersion = "4.0.4"
 val Avro4sVersion = "4.0.12"
 val ScalaVersion = "2.13.8"
@@ -27,7 +27,7 @@ val ScalazVersion = "7.2.34"
 val Slf4jVersion = "1.7.35"
 val SprayJsonVersion = "1.3.6"
 val ZIOVersion = "1.0.13"
-val ZIOInteropCatsVersion = "2.5.1.0"
+val ZIOInteropCatsVersion = "3.2.9.1"
 
 lazy val commonScalaVersionSettings = Seq(
   scalaVersion := ScalaVersion,
