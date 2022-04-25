@@ -163,6 +163,7 @@ class CatsAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAfter
     }.map { case (a, msg) => (a, msg.value) }.unsafeRunSync() shouldBe(rnd, msg)
   }
 
+  // Monix doesn't support CE3 yet. Uncomment this test when CE3 supoort in Monix is ready
 //  test("async client methods should work with any monad which implements Async - Monix Task") {
 //    import CatsAsyncHandler._
 //    import monix.eval.Task
@@ -179,7 +180,7 @@ class CatsAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAfter
 //      asyncProgram[Task](producer, consumer, msg)
 //    }.map(_.value).runSyncUnsafe() shouldBe msg
 //  }
-//
+
   test("async client methods should work with any monad which implements Async - ZIO") {
     import zio.interop.catz._
     import CatsAsyncHandler.asyncHandlerForCatsEffectAsync
