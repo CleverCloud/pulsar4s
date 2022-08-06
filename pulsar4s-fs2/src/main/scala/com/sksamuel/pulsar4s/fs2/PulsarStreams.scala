@@ -1,9 +1,10 @@
 package com.sksamuel.pulsar4s.fs2
 
 import cats.Applicative
-import cats.effect.{Bracket, BracketThrow, ExitCase, Resource}
+import cats.effect.{ExitCase, Resource}
 import cats.implicits._
 import com.sksamuel.pulsar4s._
+import cats.effect.{ MonadCancel, MonadCancelThrow }
 
 trait CommittableMessage[F[_], X] {
   def ack: F[Unit]
@@ -76,13 +77,13 @@ object PulsarStreams {
         messages.evalMap(producer.sendAsync(_))
       }
 
-  def committableSink[F[_] : Applicative : BracketThrow : AsyncHandler , T](
+  def committableSink[F[_] : Applicative : MonadCancelThrow : AsyncHandler , T](
     producer: F[Producer[T]]
   ): Pipe[F, CommittableMessage[F, ProducerMessage[T]], MessageId] = messages =>
     Stream.resource(Resource.make(producer)(_.closeAsync))
       .flatMap { producer =>
         messages.evalMap { message =>
-          Bracket[F, Throwable].guaranteeCase(producer.sendAsync(message.data)) {
+          MonadCancel[F, Throwable].guaranteeCase(producer.sendAsync(message.data)) {
             case ExitCase.Completed => message.ack
             case _ => message.nack
           }
