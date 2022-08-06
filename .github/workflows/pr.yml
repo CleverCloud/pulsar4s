@@ -25,7 +25,7 @@ jobs:
         run: docker-compose up -d
 
       - name: run tests
-        run: sbt ++2.12.10 test
+        run: sbt ++2.12.16 test
 
   scala-2_13:
     runs-on: ubuntu-latest
@@ -44,4 +44,4 @@ jobs:
         run: docker-compose up -d
 
       - name: run tests
-        run: sbt ++2.13.3 test
+        run: sbt ++2.13.8 test
