@@ -23,6 +23,7 @@ val Json4sVersion = "4.0.5"
 val Avro4sVersion = "4.0.13"
 val ScalaVersion = "2.13.8"
 val ScalatestVersion = "3.2.13"
+val ScalazVersion = "7.2.34"
 val Slf4jVersion = "1.7.36"
 val SprayJsonVersion = "1.3.6"
 val ZIOVersion = "1.0.16"
@@ -200,10 +201,6 @@ lazy val scalaz = Project("pulsar4s-scalaz", file("pulsar4s-scalaz"))
   .settings(name := "pulsar4s-scalaz")
   .settings(allSettings)
   .settings(libraryDependencies ++= {
-    val ScalazVersion = CrossVersion.partialVersion(scalaVersion.value) match {
-      case Some((2, 12)) => "7.2.34" // Scalaz dropped scala 2.12 support after this version.
-      case _ => "7.2.36"
-    }
     Seq(
       "org.scalaz" %% "scalaz-core" % ScalazVersion,
       "org.scalaz" %% "scalaz-concurrent" % ScalazVersion,
