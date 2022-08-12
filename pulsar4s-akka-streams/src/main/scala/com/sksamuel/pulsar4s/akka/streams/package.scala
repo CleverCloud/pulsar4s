@@ -2,7 +2,7 @@ package com.sksamuel.pulsar4s.akka
 
 import akka.Done
 import akka.stream.scaladsl.{Sink, Source}
-import com.sksamuel.pulsar4s.{Consumer, ConsumerMessage, MessageId, Producer, ProducerMessage, Topic}
+import com.sksamuel.pulsar4s.{Consumer, Reader, ConsumerMessage, MessageId, Producer, ProducerMessage, Topic}
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -22,6 +22,17 @@ package object streams {
    */
   def source[T](create: () => Consumer[T], seek: Option[MessageId] = None): Source[ConsumerMessage[T], Control] =
     Source.fromGraph(new PulsarSourceGraphStage(create, seek))
+
+  /**
+    * Create an Akka Streams source for the given [[Reader]] that produces [[ConsumerMessage]]s.
+    * Readers are used when there is no needs to track message consumption
+    *
+    * @param create a function to create a new [[Reader]].
+    * @param seek an optional [[MessageId]] to seek to.
+    * @return the new [[Source]].
+    */
+  def sourceReader[T](create: () => Reader[T], seek: Option[MessageId] = None): Source[ConsumerMessage[T], Control] =
+    Source.fromGraph(new PulsarReaderSourceGraphStage(create, seek))
 
   /**
    * Create an Akka Streams source for the given [[Consumer]] that produces [[CommittableMessage]]s, which can be
