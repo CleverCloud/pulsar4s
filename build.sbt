@@ -4,7 +4,7 @@ def isRelease = releaseVersion != ""
 def githubRunNumber = sys.env.getOrElse("GITHUB_RUN_NUMBER", "")
 def ossrhUsername = sys.env.getOrElse("OSSRH_USERNAME", "")
 def ossrhPassword = sys.env.getOrElse("OSSRH_PASSWORD", "")
-def publishVersion = if (isRelease) releaseVersion else if (isGithubActions) "2.8.1." + githubRunNumber + "-SNAPSHOT" else "0.0.0-LOCAL"
+def publishVersion = if (isRelease) releaseVersion else if (isGithubActions) "2.8.2." + githubRunNumber + "-SNAPSHOT" else "0.0.0-LOCAL"
 
 val org = "com.clever-cloud.pulsar4s"
 val AkkaStreamVersion = "2.6.19" // compatible with Akka 2.5.x and 2.6.x
