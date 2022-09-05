@@ -1,15 +1,14 @@
 package com.sksamuel.pulsar4s
 
 import com.sksamuel.exts.Logging
+import com.sksamuel.pulsar4s.conversions.collections._
 import org.apache.pulsar.client.api
 import org.apache.pulsar.client.api.transaction.Transaction
 import org.apache.pulsar.client.api.{ConsumerBuilder, ProducerBuilder, ReaderBuilder, Schema}
 
 import java.util.concurrent.TimeUnit
 import java.util.{UUID, Set => JSet}
-import scala.collection.JavaConverters._
 import scala.concurrent.duration._
-import scala.language.higherKinds
 import scala.util.Success
 
 case class Topic(name: String)
@@ -185,6 +184,7 @@ class ConsumerInterceptorAdapter[T](interceptor: ConsumerInterceptor[T], schema:
   }
 }
 
+@deprecated
 class ProducerInterceptorAdapter[T](interceptor: ProducerInterceptor[T], schema: Schema[T]) extends api.ProducerInterceptor[T] {
 
   override def close(): Unit = interceptor.close()

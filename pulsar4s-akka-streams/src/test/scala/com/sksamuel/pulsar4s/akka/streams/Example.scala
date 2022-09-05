@@ -1,12 +1,13 @@
 package com.sksamuel.pulsar4s.akka.streams
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
+import akka.stream.Materializer
 import com.sksamuel.pulsar4s.ProducerMessage
 
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
+import com.sksamuel.pulsar4s.{ Consumer, Producer, PulsarAsyncClient }
 
 object Example {
 
@@ -14,16 +15,16 @@ object Example {
   import org.apache.pulsar.client.api.Schema
 
   implicit val system: ActorSystem = ActorSystem()
-  implicit val materializer: ActorMaterializer = ActorMaterializer()
+  implicit val materializer: Materializer = Materializer.apply(system)
   implicit val schema: Schema[Array[Byte]] = Schema.BYTES
 
-  val client = PulsarClient("pulsar://localhost:6650")
+  val client: PulsarAsyncClient = PulsarClient("pulsar://localhost:6650")
 
-  val intopic = Topic("persistent://sample/standalone/ns1/in")
-  val outtopic = Topic("persistent://sample/standalone/ns1/out")
+  val intopic: Topic = Topic("persistent://sample/standalone/ns1/in")
+  val outtopic: Topic = Topic("persistent://sample/standalone/ns1/out")
 
-  val consumerFn = () => client.consumer(ConsumerConfig(topics = Seq(intopic), subscriptionName = Subscription("mysub")))
-  val producerFn = () => client.producer(ProducerConfig(outtopic))
+  val consumerFn: () => Consumer[Array[Byte]] = () => client.consumer(ConsumerConfig(topics = Seq(intopic), subscriptionName = Subscription("mysub")))
+  val producerFn: () => Producer[Array[Byte]] = () => client.producer(ProducerConfig(outtopic))
 
   val control = source(consumerFn, Some(MessageId.earliest))
     .map { consumerMessage => ProducerMessage(consumerMessage.data) }

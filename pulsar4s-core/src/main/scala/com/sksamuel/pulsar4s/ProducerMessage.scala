@@ -1,12 +1,11 @@
 package com.sksamuel.pulsar4s
 
-import java.time.Instant
-
 import org.apache.pulsar.client.api.Schema
 import org.apache.pulsar.client.impl.MessageImpl
 import org.apache.pulsar.common.api.proto.MessageMetadata
 import org.apache.pulsar.shade.io.netty.buffer.Unpooled
 
+import java.time.Instant
 import scala.concurrent.duration.Duration
 
 trait ProducerMessage[T] {
@@ -40,7 +39,7 @@ trait ProducerMessage[T] {
 
 object ProducerMessage {
 
-  import scala.collection.JavaConverters._
+  import conversions.collections._
 
   def apply[T](t: T): ProducerMessage[T] = DefaultProducerMessage[T](None, t)
 

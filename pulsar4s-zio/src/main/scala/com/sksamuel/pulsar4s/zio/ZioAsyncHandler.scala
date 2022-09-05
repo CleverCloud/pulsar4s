@@ -3,13 +3,13 @@ package com.sksamuel.pulsar4s.zio
 import java.util.concurrent.CompletionStage
 
 import com.sksamuel.pulsar4s
+import com.sksamuel.pulsar4s.conversions.collections._
 import com.sksamuel.pulsar4s.{AsyncHandler, ConsumerMessage, DefaultConsumer, DefaultProducer, DefaultReader, MessageId, Producer, TransactionContext}
 import org.apache.pulsar.client.api
 import org.apache.pulsar.client.api.{Consumer, ConsumerBuilder, ProducerBuilder, PulsarClient, Reader, ReaderBuilder, TypedMessageBuilder}
 import org.apache.pulsar.client.api.transaction.Transaction
 import zio.{Exit, Task, ZIO}
 
-import scala.collection.JavaConverters._
 import scala.util.Try
 
 class ZioAsyncHandler extends AsyncHandler[Task] {

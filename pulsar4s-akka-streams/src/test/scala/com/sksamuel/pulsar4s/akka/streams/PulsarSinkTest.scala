@@ -4,7 +4,7 @@ import java.util.UUID
 
 import akka.Done
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
+import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import com.sksamuel.pulsar4s.{ConsumerConfig, ProducerConfig, ProducerMessage, PulsarClient, Subscription, Topic}
 import org.apache.pulsar.client.api.Schema
@@ -13,14 +13,15 @@ import scala.concurrent.Await
 import scala.concurrent.duration._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import com.sksamuel.pulsar4s.PulsarAsyncClient
 
 class PulsarSinkTest extends AnyFunSuite with Matchers {
 
   implicit val system: ActorSystem = ActorSystem()
-  implicit val materializer: ActorMaterializer = ActorMaterializer()
+  implicit val materializer: Materializer = Materializer.apply(system)
   implicit val schema: Schema[String] = Schema.STRING
 
-  val client = PulsarClient("pulsar://localhost:6650")
+  val client: PulsarAsyncClient = PulsarClient("pulsar://localhost:6650")
 
   test("pulsar sink should write messages to pulsar cluster") {
     val topic = Topic("persistent://sample/standalone/ns1/sinktest_" + UUID.randomUUID)

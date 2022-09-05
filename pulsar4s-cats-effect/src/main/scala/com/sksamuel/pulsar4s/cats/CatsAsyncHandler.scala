@@ -1,22 +1,18 @@
 package com.sksamuel.pulsar4s.cats
 
-import java.util.concurrent._
-//import cats.effect._
-import cats.effect.Async
-import cats.effect.Resource
 import cats.effect.Resource.ExitCase
-import cats.effect.IO
+import cats.effect.{Async, IO, Resource}
 import cats.implicits._
 import com.sksamuel.exts.Logging
 import com.sksamuel.pulsar4s
 import com.sksamuel.pulsar4s._
+import com.sksamuel.pulsar4s.conversions.collections._
 import org.apache.pulsar.client.api
-import org.apache.pulsar.client.api.{Consumer => _, MessageId => _, Producer => _, PulsarClient => _, Reader => _, _}
 import org.apache.pulsar.client.api.transaction.Transaction
+import org.apache.pulsar.client.api.{Consumer => _, MessageId => _, Producer => _, PulsarClient => _, Reader => _, _}
 
-import scala.collection.JavaConverters.iterableAsScalaIterableConverter
+import java.util.concurrent._
 import scala.concurrent.ExecutionException
-import scala.language.higherKinds
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
 

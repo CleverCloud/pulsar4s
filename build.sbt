@@ -15,13 +15,13 @@ val ExtsVersion = "1.61.1"
 val JacksonVersion = "2.13.3"
 val Log4jVersion = "2.17.2"
 val MonixVersion = "3.4.1"
-val PlayJsonVersion = "2.8.2" // compatible with 2.7.x and 2.8.x
+val PlayJsonVersion = "2.10.0-RC6"
 val PulsarVersion = "2.10.1"
 val ReactiveStreamsVersion = "1.0.2"
 val FunctionalStreamsVersion = "3.2.14"
 val Json4sVersion = "4.0.5"
 val Avro4sVersion = "4.0.13"
-val ScalaVersion = "2.13.8"
+val ScalaVersion = "3.2.0"
 val ScalatestVersion = "3.2.13"
 val ScalazVersion = "7.2.34"
 val Slf4jVersion = "1.7.36"
@@ -31,11 +31,14 @@ val ZIOInteropCatsVersion = "3.2.9.1"
 
 lazy val commonScalaVersionSettings = Seq(
   scalaVersion := ScalaVersion,
-  crossScalaVersions := Seq("2.12.16", "2.13.8")
+  crossScalaVersions := Seq("2.12.16", "2.13.8", "3.2.0")
 )
 
 lazy val warnUnusedImport = Seq(
-  scalacOptions ++= Seq("-Ywarn-unused:imports"),
+  scalacOptions ++= (CrossVersion.partialVersion(scalaVersion.value) match {
+    case Some((3, _)) => Seq()
+    case _ => Seq("-Ywarn-unused:imports")
+  }),
   Compile / console / scalacOptions ~= {
     _.filterNot(Set("-Ywarn-unused-import", "-Ywarn-unused:imports"))
   },
@@ -50,7 +53,16 @@ lazy val commonSettings = Seq(
   Global / parallelExecution := false,
   Global / concurrentRestrictions += Tags.limit(Tags.Test, 1),
   Compile / doc / scalacOptions := (Compile / doc / scalacOptions).value.filter(_ != "-Xfatal-warnings"),
-  scalacOptions ++= Seq("-unchecked", "-deprecation", "-encoding", "utf8")
+  scalacOptions ++= Seq("-unchecked", "-encoding", "utf8")
+    ++ (CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((3, _)) => Seq(
+        "-source:3.0-migration",
+        "-rewrite",
+      )
+      case _ => Seq(
+        "-deprecation",
+      )
+    })
 )
 
 lazy val publishSettings = Seq(

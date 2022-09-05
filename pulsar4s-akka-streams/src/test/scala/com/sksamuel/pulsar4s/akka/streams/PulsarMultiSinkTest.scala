@@ -20,7 +20,7 @@ class PulsarMultiSinkTest extends AnyFunSuite with Matchers {
   implicit val materializer: ActorMaterializer = ActorMaterializer()
   implicit val schema: Schema[String] = Schema.STRING
 
-  val client = PulsarClient("pulsar://localhost:6650")
+  val client: PulsarAsyncClient = PulsarClient("pulsar://localhost:6650")
 
   test("pulsar multi sink should write single-topic messages to pulsar cluster") {
     val topic = Topic("persistent://sample/standalone/ns1/sinktest_" + UUID.randomUUID)

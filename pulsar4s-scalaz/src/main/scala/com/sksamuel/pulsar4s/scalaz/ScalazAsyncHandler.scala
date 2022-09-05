@@ -3,13 +3,13 @@ package com.sksamuel.pulsar4s.scalaz
 import java.util.concurrent.CompletableFuture
 
 import com.sksamuel.pulsar4s
+import com.sksamuel.pulsar4s.conversions.collections._
 import com.sksamuel.pulsar4s.{AsyncHandler, ConsumerMessage, DefaultConsumer, DefaultProducer, DefaultReader, MessageId, Producer, TransactionContext}
 import org.apache.pulsar.client.api
 import org.apache.pulsar.client.api.{Consumer, ConsumerBuilder, ProducerBuilder, PulsarClient, Reader, ReaderBuilder, TypedMessageBuilder}
 import org.apache.pulsar.client.api.transaction.Transaction
 import scalaz.concurrent.Task
 
-import scala.collection.JavaConverters.iterableAsScalaIterableConverter
 import scala.language.implicitConversions
 import scala.util.{Failure, Success, Try}
 
