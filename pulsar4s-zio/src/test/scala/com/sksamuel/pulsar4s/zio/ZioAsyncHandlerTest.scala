@@ -7,7 +7,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.Eventually
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import zio.Task
+import zio.{Exit, Task, Trace, Unsafe}
 
 import scala.concurrent.duration._
 
@@ -30,8 +30,8 @@ class ZioAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAfterA
   test("async producer should use zio") {
     val producer = client.producer(ProducerConfig(topic))
     val t = producer.sendAsync("wibble")
-    val r = zio.Runtime.default.unsafeRun(t.either)
-    r.right.get should not be null
+    val r = Unsafe.unsafe(implicit unsafe => zio.Runtime.default.unsafe.run(t.either.map(_.toOption.get)).getOrThrowFiberFailure())
+    r should not be null
     producer.close()
   }
 
@@ -39,9 +39,8 @@ class ZioAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAfterA
     val consumer = client.consumer(ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription("mysub_" + UUID.randomUUID())))
     consumer.seekEarliest()
     val t = consumer.receiveAsync
-    val r = zio.Runtime.default.unsafeRun(t.either)
-    r shouldBe Symbol("right")
-    new String(r.right.get.data) shouldBe "wibble"
+    val r = Unsafe.unsafe(implicit unsafe => zio.Runtime.default.unsafe.run(t.either.map(_.toOption.get)).getOrThrowFiberFailure())
+    new String(r.data) shouldBe "wibble"
     consumer.close()
   }
 
@@ -49,9 +48,9 @@ class ZioAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAfterA
     val consumer = client.consumer(ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription("mysub_" + UUID.randomUUID())))
     consumer.seekEarliest()
     val receive = consumer.receiveAsync
-    val value = zio.Runtime.default.unsafeRun(receive.either).right.get
+    val value = Unsafe.unsafe(implicit unsafe => zio.Runtime.default.unsafe.run(receive.either.map(_.toOption.get)).getOrThrowFiberFailure())
     val t = consumer.getLastMessageIdAsync
-    val r = zio.Runtime.default.unsafeRun(t.either).right.get
+    val r = Unsafe.unsafe(implicit unsafe => zio.Runtime.default.unsafe.run(t.either.map(_.toOption.get)).getOrThrowFiberFailure())
     r.entryId shouldBe value.messageId.entryId
     r.partitionIndex shouldBe value.messageId.partitionIndex
     consumer.close()
@@ -68,7 +67,7 @@ class ZioAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAfterA
         _ <- consumer.tx.acknowledgeAsync(msg.messageId)
       } yield msgId
     }
-    zio.Runtime.default.unsafeRun(msgIdIO)
+    Unsafe.unsafe(implicit unsafe => zio.Runtime.default.unsafe.run(msgIdIO).getOrThrowFiberFailure())
     consumer.close()
     producer.close()
   }
