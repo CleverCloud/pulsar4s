@@ -1,11 +1,11 @@
 package com.sksamuel.pulsar4s.circe
 
 import java.util.UUID
-
 import com.sksamuel.pulsar4s._
 import io.circe.generic.auto._
 import io.circe.CursorOp.DownField
 import io.circe.DecodingFailure
+import io.circe.DecodingFailure.Reason.MissingField
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
@@ -44,7 +44,7 @@ class CirceProducerConsumerTest extends AnyFunSuite with Matchers {
     val consumer = client.consumer[Cafe](ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription.generate))
     consumer.seek(MessageId.earliest)
     val msg = consumer.receive
-    msg.get.valueTry shouldBe Failure(DecodingFailure("Attempt to decode value on failed cursor", List(DownField("name"))))
+    msg.get.valueTry shouldBe Failure(DecodingFailure(MissingField, List(DownField("name"))))
     consumer.close()
 
     client.close()

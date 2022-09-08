@@ -4,34 +4,34 @@ def isRelease = releaseVersion != ""
 def githubRunNumber = sys.env.getOrElse("GITHUB_RUN_NUMBER", "")
 def ossrhUsername = sys.env.getOrElse("OSSRH_USERNAME", "")
 def ossrhPassword = sys.env.getOrElse("OSSRH_PASSWORD", "")
-def publishVersion = if (isRelease) releaseVersion else if (isGithubActions) "2.8.1." + githubRunNumber + "-SNAPSHOT" else "0.0.0-LOCAL"
+def publishVersion = if (isRelease) releaseVersion else if (isGithubActions) "2.8.2." + githubRunNumber + "-SNAPSHOT" else "0.0.0-LOCAL"
 
 val org = "com.clever-cloud.pulsar4s"
-val AkkaStreamVersion = "2.6.18" // compatible with Akka 2.5.x and 2.6.x
-val CatsEffectVersion = "3.3.11"
+val AkkaStreamVersion = "2.6.19" // compatible with Akka 2.5.x and 2.6.x
+val CatsEffectVersion = "3.3.14"
 val CirceVersion = "0.14.1"
 val CommonsIoVersion = "2.4"
 val ExtsVersion = "1.61.1"
-val JacksonVersion = "2.13.1"
-val Log4jVersion = "2.17.1"
-val MonixVersion = "3.4.0"
+val JacksonVersion = "2.13.3"
+val Log4jVersion = "2.17.2"
+val MonixVersion = "3.4.1"
 val PlayJsonVersion = "2.8.2" // compatible with 2.7.x and 2.8.x
-val PulsarVersion = "2.9.1"
+val PulsarVersion = "2.10.1"
 val ReactiveStreamsVersion = "1.0.2"
-val FunctionalStreamsVersion = "3.2.7"
-val Json4sVersion = "4.0.4"
-val Avro4sVersion = "4.0.12"
+val FunctionalStreamsVersion = "3.2.14"
+val Json4sVersion = "4.0.5"
+val Avro4sVersion = "4.0.13"
 val ScalaVersion = "2.13.8"
-val ScalatestVersion = "3.2.11"
+val ScalatestVersion = "3.2.13"
 val ScalazVersion = "7.2.34"
-val Slf4jVersion = "1.7.35"
+val Slf4jVersion = "1.7.36"
 val SprayJsonVersion = "1.3.6"
-val ZIOVersion = "1.0.13"
+val ZIOVersion = "1.0.16"
 val ZIOInteropCatsVersion = "3.2.9.1"
 
 lazy val commonScalaVersionSettings = Seq(
   scalaVersion := ScalaVersion,
-  crossScalaVersions := Seq("2.12.15", "2.13.8")
+  crossScalaVersions := Seq("2.12.16", "2.13.8")
 )
 
 lazy val warnUnusedImport = Seq(
@@ -167,9 +167,9 @@ lazy val core = Project("pulsar4s-core", file("pulsar4s-core"))
   .settings(libraryDependencies ++= Seq(
     "org.scala-lang.modules" %% "scala-java8-compat" % {
       CrossVersion.partialVersion(scalaVersion.value) match {
-        case Some((3, _))            => "1.0.2"
+        case Some((3, _)) => "1.0.2"
         case Some((2, n)) if n >= 13 => "1.0.2"
-        case _                       => "0.8.0"
+        case _ => "0.8.0"
       }
     },
     "org.apache.pulsar" % "pulsar-client" % PulsarVersion
@@ -200,10 +200,12 @@ lazy val scalaz = Project("pulsar4s-scalaz", file("pulsar4s-scalaz"))
   .dependsOn(core)
   .settings(name := "pulsar4s-scalaz")
   .settings(allSettings)
-  .settings(libraryDependencies ++= Seq(
-    "org.scalaz" %% "scalaz-core" % ScalazVersion,
-    "org.scalaz" %% "scalaz-concurrent" % ScalazVersion,
-  ))
+  .settings(libraryDependencies ++= {
+    Seq(
+      "org.scalaz" %% "scalaz-core" % ScalazVersion,
+      "org.scalaz" %% "scalaz-concurrent" % ScalazVersion,
+    )
+  })
 
 lazy val monix = Project("pulsar4s-monix", file("pulsar4s-monix"))
   .dependsOn(core)
