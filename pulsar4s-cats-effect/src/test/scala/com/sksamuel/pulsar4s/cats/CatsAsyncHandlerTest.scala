@@ -1,9 +1,10 @@
 package com.sksamuel.pulsar4s.cats
 
 import java.util.UUID
-import _root_.cats.data._
-import _root_.cats.effect._
-import _root_.cats.implicits._
+import cats.data.WriterT
+import cats.implicits._
+import cats.effect.{Async, IO, Resource, Sync}
+import cats.effect.unsafe.implicits.global
 import com.sksamuel.pulsar4s._
 import org.apache.pulsar.client.api.Schema
 import org.scalatest.BeforeAndAfterAll
@@ -12,7 +13,6 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
 import scala.language.higherKinds
-import scala.concurrent.duration._
 import scala.util.Random
 
 class CatsAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with Eventually {
@@ -146,57 +146,61 @@ class CatsAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAfter
   }
 
   test("async client methods should work with any monad which implements Async - StateT[IO, Int, ?]") {
-    import CatsAsyncHandler._
-    type F[T] = StateT[IO, Int, T] // this would be `StateT[IO, Int, ?]` with kind projector
+    import CatsAsyncHandler.asyncHandlerForCatsEffectAsync
+
+    type F[T] = WriterT[IO, Int, T] // this would be `StateT[IO, Int, ?]` with kind projector
     val msg = "hello cats-effect monad transformers"
     val topic = Topic("persistent://sample/standalone/ns1/cats_async_statet_io")
     val subscription = Subscription("cats_effect_test_StateT_IO")
     val rnd = Random.nextInt()
 
     processResource[IO, (Int, ConsumerMessage[String])](syncResources[IO](client, topic, subscription)) { (producer, consumer) =>
-      asyncProgram[F](producer, consumer, msg).run(rnd)
+      asyncProgram[F](producer, consumer, msg).tell(rnd).run
     }.map { case (a, msg) => (a, msg.value) }.unsafeRunSync() shouldBe(rnd, msg)
 
     processResource[IO, (Int, ConsumerMessage[String])](asyncResources[IO](client, topic, subscription)) { (producer, consumer) =>
-      asyncProgram[F](producer, consumer, msg).run(rnd)
+      asyncProgram[F](producer, consumer, msg).tell(rnd).run
     }.map { case (a, msg) => (a, msg.value) }.unsafeRunSync() shouldBe(rnd, msg)
   }
 
-  test("async client methods should work with any monad which implements Async - Monix Task") {
-    import CatsAsyncHandler._
-    import monix.eval.Task
-    import monix.execution.Scheduler.Implicits.global
-    val msg = "hello monix via cats-effect"
-    val topic = Topic("persistent://sample/standalone/ns1/cats_async_monix_task")
-    val subscription = Subscription("cats_effect_test_monix_task")
-
-    processResource[Task, ConsumerMessage[String]](syncResources[Task](client, topic, subscription)) { (producer, consumer) =>
-      asyncProgram[Task](producer, consumer, msg)
-    }.map(_.value).runSyncUnsafe() shouldBe msg
-
-    processResource[Task, ConsumerMessage[String]](asyncResources[Task](client, topic, subscription)) { (producer, consumer) =>
-      asyncProgram[Task](producer, consumer, msg)
-    }.map(_.value).runSyncUnsafe() shouldBe msg
-  }
+  // Monix doesn't support CE3 yet. Uncomment this test when CE3 supoort in Monix is ready
+//  test("async client methods should work with any monad which implements Async - Monix Task") {
+//    import CatsAsyncHandler._
+//    import monix.eval.Task
+//    import monix.execution.Scheduler.Implicits.global
+//    val msg = "hello monix via cats-effect"
+//    val topic = Topic("persistent://sample/standalone/ns1/cats_async_monix_task")
+//    val subscription = Subscription("cats_effect_test_monix_task")
+//
+//    processResource[Task, ConsumerMessage[String]](syncResources[Task](client, topic, subscription)) { (producer, consumer) =>
+//      asyncProgram[Task](producer, consumer, msg)
+//    }.map(_.value).runSyncUnsafe() shouldBe msg
+//
+//    processResource[Task, ConsumerMessage[String]](asyncResources[Task](client, topic, subscription)) { (producer, consumer) =>
+//      asyncProgram[Task](producer, consumer, msg)
+//    }.map(_.value).runSyncUnsafe() shouldBe msg
+//  }
 
   test("async client methods should work with any monad which implements Async - ZIO") {
-    import CatsAsyncHandler._
     import zio.interop.catz._
-    import zio.{Runtime, Task}
+    import CatsAsyncHandler.asyncHandlerForCatsEffectAsync
 
     val msg = "hello ZIO via cats-effect"
     val topic = Topic("persistent://sample/standalone/ns1/cats_async_zio_task")
     val subscription = Subscription("cats_effect_test_zio_task")
 
-    val sync = processResource[Task, ConsumerMessage[String]](syncResources[Task](client, topic, subscription)) { (producer, consumer) =>
-      asyncProgram[Task](producer, consumer, msg)
-    }.map(_.value)
+    val sync = zio.ZIO.runtime.flatMap { implicit r: zio.Runtime[zio.clock.Clock with zio.blocking.Blocking] =>
+      processResource[zio.Task, ConsumerMessage[String]](syncResources[zio.Task](client, topic, subscription)) { (producer, consumer) =>
+        asyncProgram[zio.Task](producer, consumer, msg)
+      }.map(_.value)
+    }
+    val async = zio.ZIO.runtime.flatMap { implicit r: zio.Runtime[zio.clock.Clock with zio.blocking.Blocking] =>
+      processResource[zio.Task, ConsumerMessage[String]](asyncResources[zio.Task](client, topic, subscription)) { (producer, consumer) =>
+        asyncProgram[zio.Task](producer, consumer, msg)
+      }.map(_.value)
+    }
 
-    val async = processResource[Task, ConsumerMessage[String]](asyncResources[Task](client, topic, subscription)) { (producer, consumer) =>
-      asyncProgram[Task](producer, consumer, msg)
-    }.map(_.value)
-
-    Runtime.default.unsafeRun(sync) shouldBe msg
-    Runtime.default.unsafeRun(async) shouldBe msg
+    zio.Runtime.default.unsafeRun(sync) shouldBe msg
+    zio.Runtime.default.unsafeRun(async) shouldBe msg
   }
 }
