@@ -1,8 +1,11 @@
 package com.sksamuel.pulsar4s.cats
 
 import java.util.concurrent._
-
-import cats.effect._
+//import cats.effect._
+import cats.effect.Async
+import cats.effect.Resource
+import cats.effect.Resource.ExitCase
+import cats.effect.IO
 import cats.implicits._
 import com.sksamuel.exts.Logging
 import com.sksamuel.pulsar4s
@@ -42,7 +45,7 @@ trait CatsAsyncHandlerLowPriority {
                   Async[F].raiseError(e)
               }
             } else {
-              Async[F].async[T] { cb =>
+              Async[F].async_[T] { cb =>
                 f.handle[Unit] { (res: T, err: Throwable) =>
                   err match {
                     case null =>
@@ -178,7 +181,7 @@ trait CatsAsyncHandlerLowPriority {
       action: TransactionContext => F[Either[E, A]]
     ): F[Either[E, A]] = {        
       Resource.makeCase(startTransaction(builder)) { (txn, exitCase) =>
-        if (exitCase == ExitCase.Completed) Async[F].unit else txn.abort
+        if (exitCase == ExitCase.Succeeded) Async[F].unit else txn.abort
       }.use { txn =>
         action(txn).flatMap { result =>
           (if (result.isRight) txn.commit else txn.abort).map(_ => result)

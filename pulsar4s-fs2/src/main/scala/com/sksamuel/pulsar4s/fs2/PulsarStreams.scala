@@ -1,8 +1,6 @@
 package com.sksamuel.pulsar4s.fs2
 
-import cats.Applicative
-import cats.effect.{Bracket, BracketThrow, ExitCase, Resource}
-import cats.implicits._
+import cats.effect.{MonadCancel, MonadCancelThrow, Resource}
 import com.sksamuel.pulsar4s._
 
 trait CommittableMessage[F[_], X] {
@@ -38,7 +36,7 @@ object PulsarStreams {
       new DelegateCommittableMessage(this, f(message))
   }
 
-  def batch[F[_] : Applicative : AsyncHandler, T](
+  def batch[F[_] : MonadCancelThrow : AsyncHandler, T](
     consumer: F[Consumer[T]]
   ): Stream[F, CommittableMessage[F, ConsumerMessage[T]]] =
     Stream.resource(Resource.make(consumer)(_.closeAsync))
@@ -49,7 +47,7 @@ object PulsarStreams {
           .mapChunks(_.map(message => ConsumerCommittableMessage(message, consumer)))
       }
 
-  def single[F[_] : Applicative : AsyncHandler, T](
+  def single[F[_] : MonadCancelThrow : AsyncHandler, T](
     consumer: F[Consumer[T]]
   ): Stream[F, CommittableMessage[F, ConsumerMessage[T]]] =
     Stream.resource(Resource.make(consumer)(_.closeAsync))
@@ -59,7 +57,7 @@ object PulsarStreams {
           .mapChunks(_.map(message => ConsumerCommittableMessage(message, consumer)))
       }
 
-  def reader[F[_] : Applicative : AsyncHandler, T](
+  def reader[F[_] : MonadCancelThrow : AsyncHandler, T](
     reader: F[Reader[T]]
   ): Stream[F, ConsumerMessage[T]] =
     Stream.resource(Resource.make(reader)(_.closeAsync))
@@ -68,7 +66,7 @@ object PulsarStreams {
           .repeatEval(reader.nextAsync[F])
       }
 
-  def sink[F[_] : Applicative : AsyncHandler, T](
+  def sink[F[_] : MonadCancelThrow : AsyncHandler, T](
     producer: F[Producer[T]]
   ): Pipe[F, ProducerMessage[T], MessageId] = messages =>
     Stream.resource(Resource.make(producer)(_.closeAsync))
@@ -76,15 +74,14 @@ object PulsarStreams {
         messages.evalMap(producer.sendAsync(_))
       }
 
-  def committableSink[F[_] : Applicative : BracketThrow : AsyncHandler , T](
+  def committableSink[F[_] : MonadCancelThrow : AsyncHandler , T](
     producer: F[Producer[T]]
   ): Pipe[F, CommittableMessage[F, ProducerMessage[T]], MessageId] = messages =>
     Stream.resource(Resource.make(producer)(_.closeAsync))
       .flatMap { producer =>
         messages.evalMap { message =>
-          Bracket[F, Throwable].guaranteeCase(producer.sendAsync(message.data)) {
-            case ExitCase.Completed => message.ack
-            case _ => message.nack
+          MonadCancel[F, Throwable].guaranteeCase(producer.sendAsync(message.data)) { out =>
+            if(out.isSuccess) message.ack else message.nack
           }
         }
       }
