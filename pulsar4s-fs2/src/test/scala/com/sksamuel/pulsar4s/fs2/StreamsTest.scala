@@ -2,6 +2,7 @@ package com.sksamuel.pulsar4s.fs2
 
 import cats.effect.{IO, Sync}
 import cats.implicits._
+import cats.effect.unsafe.implicits.global
 import com.sksamuel.pulsar4s.{AsyncHandler, ConsumerConfig, Message, MessageId, ProducerConfig, ProducerMessage, PulsarAsyncClient, PulsarClient, ReaderConfig, Subscription, Topic}
 import org.apache.pulsar.client.api.{Schema, SubscriptionInitialPosition}
 import org.scalatest.BeforeAndAfterAll
