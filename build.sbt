@@ -58,10 +58,7 @@ lazy val commonSettings = Seq(
   Compile / doc / scalacOptions := (Compile / doc / scalacOptions).value.filter(_ != "-Xfatal-warnings"),
   scalacOptions ++= Seq("-unchecked", "-encoding", "utf8")
     ++ (CrossVersion.partialVersion(scalaVersion.value) match {
-      case Some((3, _)) => Seq(
-        "-source:3.0-migration",
-        "-rewrite",
-      )
+      case Some((3, _)) => Seq()
       case _ => Seq(
         "-deprecation",
       )
