@@ -85,10 +85,10 @@ class ZioAsyncHandler extends AsyncHandler[Task] {
 
   override def acknowledgeCumulativeAsync[T](consumer: api.Consumer[T], messageId: MessageId): Task[Unit] =
     fromFuture(ZIO.attempt(consumer.acknowledgeCumulativeAsync(messageId))).unit
-    
+
   override def acknowledgeCumulativeAsync[T](consumer: api.Consumer[T], messageId: MessageId, txn: Transaction): Task[Unit] =
     fromFuture(ZIO.attempt(consumer.acknowledgeCumulativeAsync(messageId, txn))).unit
-    
+
   override def negativeAcknowledgeAsync[T](consumer: Consumer[T], messageId: MessageId): Task[Unit] =
     ZIO.attempt(consumer.negativeAcknowledge(messageId))
 
@@ -96,10 +96,12 @@ class ZioAsyncHandler extends AsyncHandler[Task] {
     builder: api.transaction.TransactionBuilder,
     action: TransactionContext => Task[Either[E, A]]
   ): Task[Either[E, A]] = {
-    ZIO.acquireReleaseExitWith(startTransaction(builder))({
-      case (txn, Exit.Success(Right(_))) => txn.commit(this).ignore
-      case (txn, _) => txn.abort(this).ignore
-    })(action)
+    ZIO.acquireReleaseExitWith[Any, Throwable, TransactionContext](startTransaction(builder))(
+      (txn: TransactionContext, e: Exit[Throwable, Either[E, A]]) => (txn, e) match {
+        case (txn, Exit.Success(Right(_))) => txn.commit(this).ignore
+        case (txn, _) => txn.abort(this).ignore
+      }
+    )(action)
   }
 
   override def startTransaction(builder: api.transaction.TransactionBuilder): Task[TransactionContext] =
