@@ -1,9 +1,10 @@
-pulsar4s - Apache Pulsar Scala Client
-==================================================
+# pulsar4s - Apache Pulsar Scala Client
 
 ![build](https://github.com/CleverCloud/pulsar4s/workflows/build/badge.svg)
+[<img src="https://img.shields.io/maven-central/v/com.clever-cloud.pulsar4s/pulsar4s-core_3.svg?label=latest%20release%20for%203"/>](http://search.maven.org/#search%7Cga%7C1%7Ca%3A%22pulsar4s-core_3%22)
 [<img src="https://img.shields.io/maven-central/v/com.clever-cloud.pulsar4s/pulsar4s-core_2.13.svg?label=latest%20release%20for%202.13"/>](http://search.maven.org/#search%7Cga%7C1%7Ca%3A%22pulsar4s-core_2.13%22)
 [<img src="https://img.shields.io/maven-central/v/com.clever-cloud.pulsar4s/pulsar4s-core_2.12.svg?label=latest%20release%20for%202.12"/>](http://search.maven.org/#search%7Cga%7C1%7Ca%3A%22pulsar4s-core_2.12%22)
+[<img src="https://img.shields.io/nexus/s/https/oss.sonatype.org/com.clever-cloud.pulsar4s/pulsar4s-core_3.svg?label=latest%20snapshot&style=plastic"/>](https://oss.sonatype.org/content/repositories/snapshots/com/sksamuel/pulsar4s/)
 [<img src="https://img.shields.io/nexus/s/https/oss.sonatype.org/com.clever-cloud.pulsar4s/pulsar4s-core_2.13.svg?label=latest%20snapshot&style=plastic"/>](https://oss.sonatype.org/content/repositories/snapshots/com/sksamuel/pulsar4s/)
 
 pulsar4s is a concise, idiomatic, reactive, type safe Scala client for [Apache Pulsar](https://pulsar.apache.org/).
@@ -18,6 +19,28 @@ As a simple wrapper over the Java client, we benefit from the reliability and pe
 * [Akka Streams](https://github.com/sksamuel/pulsar4s#akka-streams) source and sink
 * [FS2](https://github.com/typelevel/fs2) Reader and Writer
 * Circe, SprayJson, PlayJson and Jackson implementations of Schema typeclass
+
+## Warning!!
+
+(This disclaimer was written on 2023-01-05.)
+
+Starting in version 2.9.0, we support scala 3. This means we had to perform some
+"aggressive" bumps on libs:
+
+Libs that were bumped for everyone:
+- play-json 2.10 (Currently in RC7)
+- cats-effect 3.3 (was 2.x)
+- ZIO 2.0 (was 1.x) & zio-cats-interop 23.0.0
+
+Libs that come in different versions across scala versions:
+- avro4s
+  - for Scala 3: 5.0+
+  - for Scala 2: 4.1+
+- scala-java8-compat
+  - for Scala ≥2.13: 1.0.2
+  - for Scala 2.12: 0.8.0 (Was already the case before scala 3)
+
+Check carefully that bumping pulsar4s will not break, especially with **cats-effect**! 
 
 ## Using the client
 

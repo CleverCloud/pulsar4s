@@ -5,9 +5,8 @@ import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Keep
 import akka.stream.scaladsl.Sink
-import com.sksamuel.pulsar4s.{ConsumerConfig, ConsumerMessage, Message, MessageId, ProducerConfig, PulsarClient, ReaderConfig, Subscription, Topic}
+import com.sksamuel.pulsar4s.{ConsumerMessage, Message, MessageId, ProducerConfig, PulsarClient, ReaderConfig, Topic}
 import org.apache.pulsar.client.api.Schema
-import org.apache.pulsar.client.api.SubscriptionInitialPosition
 
 import scala.concurrent.duration._
 import scala.concurrent.Await
@@ -15,6 +14,7 @@ import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.Future
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import com.sksamuel.pulsar4s.PulsarAsyncClient
 
 class PulsarReaderSourceTest extends AnyFunSuite with Matchers {
   implicit val system: ActorSystem = ActorSystem()
@@ -22,7 +22,7 @@ class PulsarReaderSourceTest extends AnyFunSuite with Matchers {
   implicit val schema: Schema[String] = Schema.STRING
   implicit val executor: ExecutionContextExecutor = system.dispatcher
 
-  val client = PulsarClient("pulsar://localhost:6650")
+  val client: PulsarAsyncClient = PulsarClient("pulsar://localhost:6650")
 
   test("pulsar reader source should read messages from a cluster") {
 
@@ -43,7 +43,7 @@ class PulsarReaderSourceTest extends AnyFunSuite with Matchers {
       .take(4)
       .runWith(Sink.seq[ConsumerMessage[String]])
     val msgs = Await.result(f, 15.seconds)
-    msgs.map(_.value) shouldBe Seq("a", "b", "c", "d")
+    msgs.map(_.value) shouldBe Vector("a", "b", "c", "d")
   }
 
   test("materialized control value can shut down the reader source") {

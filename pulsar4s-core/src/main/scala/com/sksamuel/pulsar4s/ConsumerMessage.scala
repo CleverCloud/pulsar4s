@@ -1,11 +1,11 @@
 package com.sksamuel.pulsar4s
 
+import com.sksamuel.pulsar4s.conversions.collections._
 import org.apache.pulsar.client.api.Schema
 import org.apache.pulsar.client.impl.MessageImpl
 import org.apache.pulsar.common.api.proto.MessageMetadata
 import org.apache.pulsar.shade.io.netty.buffer.Unpooled
 
-import scala.collection.JavaConverters._
 import scala.util.Try
 
 case class PublishTime(value: Long)

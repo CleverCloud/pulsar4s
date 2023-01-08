@@ -1,11 +1,10 @@
 package com.sksamuel.pulsar4s
 
-import java.io.Closeable
 import com.sksamuel.exts.Logging
-import org.apache.pulsar.client.api.{ProducerStats, TypedMessageBuilder}
 import org.apache.pulsar.client.api.transaction.Transaction
+import org.apache.pulsar.client.api.{ProducerStats, TypedMessageBuilder}
 
-import scala.language.higherKinds
+import java.io.Closeable
 import scala.util.Try
 
 /**
@@ -149,16 +148,18 @@ class DefaultProducer[T](producer: JProducer[T]) extends Producer[T] {
   override def tx(implicit ctx: TransactionContext): TransactionalProducerOps[T] =
     new DefaultTransactionalProducer[T](producer, ctx.transaction)
 
-  protected def buildMessage(msg: ProducerMessage[T]) = new ProducerMessageBuilder(producer, None).build(msg)
+  protected def buildMessage(msg: ProducerMessage[T]): TypedMessageBuilder[T] =
+    new ProducerMessageBuilder(producer, None).build(msg)
 }
 
 class DefaultTransactionalProducer[T](producer: JProducer[T], transaction: Transaction) extends DefaultProducer[T](producer) {
-  override protected def buildMessage(msg: ProducerMessage[T]) = new ProducerMessageBuilder[T](producer, Some(transaction)).build(msg)
+  override protected def buildMessage(msg: ProducerMessage[T]): TypedMessageBuilder[T] =
+    new ProducerMessageBuilder[T](producer, Some(transaction)).build(msg)
 }
 
 class ProducerMessageBuilder[T](producer: JProducer[T], transaction: Option[Transaction]) {
   def build(msg: ProducerMessage[T]): TypedMessageBuilder[T] = {
-    import scala.collection.JavaConverters._
+    import conversions.collections._
     
     val builder = transaction.fold(producer.newMessage())(producer.newMessage).value(msg.value)
     msg.deliverAt.foreach { da =>

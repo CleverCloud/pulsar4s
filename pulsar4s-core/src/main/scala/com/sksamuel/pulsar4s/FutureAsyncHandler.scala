@@ -1,19 +1,15 @@
 package com.sksamuel.pulsar4s
 
-import java.util.concurrent.CompletableFuture
-
+import com.sksamuel.pulsar4s.conversions.collections._
 import org.apache.pulsar.client.api
-import org.apache.pulsar.client.api.{ConsumerBuilder, ReaderBuilder, TypedMessageBuilder}
 import org.apache.pulsar.client.api.transaction.Transaction
+import org.apache.pulsar.client.api.{ConsumerBuilder, ReaderBuilder, TypedMessageBuilder}
 
-import scala.collection.JavaConverters.iterableAsScalaIterableConverter
+import java.util.concurrent.CompletableFuture
 import scala.compat.java8.FutureConverters
 import scala.compat.java8.FutureConverters.CompletionStageOps
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.util.Failure
-import scala.util.Success
-import scala.util.Try
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
 
 class FutureAsyncHandler(implicit ec: ExecutionContext) extends AsyncHandler[Future] {
 

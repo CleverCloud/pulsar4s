@@ -3,13 +3,13 @@ package com.sksamuel.pulsar4s.monixs
 import java.util.concurrent.CompletableFuture
 
 import com.sksamuel.pulsar4s
+import com.sksamuel.pulsar4s.conversions.collections._
 import com.sksamuel.pulsar4s.{AsyncHandler, ConsumerMessage, DefaultConsumer, DefaultProducer, DefaultReader, MessageId, Producer, TransactionContext}
 import monix.eval.Task
 import org.apache.pulsar.client.api
 import org.apache.pulsar.client.api.{Consumer, ConsumerBuilder, ProducerBuilder, PulsarClient, Reader, ReaderBuilder, TypedMessageBuilder}
 import org.apache.pulsar.client.api.transaction.Transaction
 
-import scala.collection.JavaConverters.iterableAsScalaIterableConverter
 import scala.compat.java8.FutureConverters
 import scala.concurrent.Future
 import scala.language.implicitConversions

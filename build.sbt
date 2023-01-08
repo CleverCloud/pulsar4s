@@ -4,38 +4,44 @@ def isRelease = releaseVersion != ""
 def githubRunNumber = sys.env.getOrElse("GITHUB_RUN_NUMBER", "")
 def ossrhUsername = sys.env.getOrElse("OSSRH_USERNAME", "")
 def ossrhPassword = sys.env.getOrElse("OSSRH_PASSWORD", "")
-def publishVersion = if (isRelease) releaseVersion else if (isGithubActions) "2.8.2." + githubRunNumber + "-SNAPSHOT" else "0.0.0-LOCAL"
+def publishVersion = if (isRelease) releaseVersion else if (isGithubActions) "2.9.0." + githubRunNumber + "-SNAPSHOT" else "0.0.0-LOCAL"
 
 val org = "com.clever-cloud.pulsar4s"
-val AkkaStreamVersion = "2.6.19" // compatible with Akka 2.5.x and 2.6.x
-val CatsEffectVersion = "3.3.14"
-val CirceVersion = "0.14.2"
+val AkkaStreamVersion = "2.6.20" // compatible with Akka 2.5.x and 2.6.x
+val CatsEffectVersion = "3.4.4"
+val CirceVersion = "0.14.3"
 val CommonsIoVersion = "2.4"
 val ExtsVersion = "1.61.1"
-val JacksonVersion = "2.13.3"
-val Log4jVersion = "2.17.2"
+val JacksonVersion = "2.14.1"
+val Log4jVersion = "2.19.0"
 val MonixVersion = "3.4.1"
-val PlayJsonVersion = "2.8.2" // compatible with 2.7.x and 2.8.x
-val PulsarVersion = "2.10.1"
+val PlayJsonVersion = "2.10.0-RC7"
+val PulsarVersion = "2.10.3"
 val ReactiveStreamsVersion = "1.0.2"
-val FunctionalStreamsVersion = "3.2.14"
-val Json4sVersion = "4.0.5"
-val Avro4sVersion = "4.0.13"
-val ScalaVersion = "2.13.8"
-val ScalatestVersion = "3.2.13"
-val ScalazVersion = "7.2.34"
-val Slf4jVersion = "1.7.36"
+val FunctionalStreamsVersion = "3.4.0"
+val Json4sVersion = "4.0.6"
+// Version of Avro4s for Scala 2.X
+val Avro4sVersionFor2 = "4.1.0"
+// Version of Avro4s for Scala 3.X
+val Avro4sVersionFor3 = "5.0.3"
+val ScalaVersion = "3.2.1"
+val ScalatestVersion = "3.2.15"
+val ScalazVersion = "7.2.35"
+val Slf4jVersion = "2.0.6"
 val SprayJsonVersion = "1.3.6"
-val ZIOVersion = "1.0.16"
-val ZIOInteropCatsVersion = "3.2.9.1"
+val ZIOVersion = "2.0.5"
+val ZIOInteropCatsVersion = "23.0.0.0"
 
 lazy val commonScalaVersionSettings = Seq(
   scalaVersion := ScalaVersion,
-  crossScalaVersions := Seq("2.12.16", "2.13.8")
+  crossScalaVersions := Seq("2.12.17", "2.13.10", ScalaVersion)
 )
 
 lazy val warnUnusedImport = Seq(
-  scalacOptions ++= Seq("-Ywarn-unused:imports"),
+  scalacOptions ++= (CrossVersion.partialVersion(scalaVersion.value) match {
+    case Some((3, _)) => Seq()
+    case _ => Seq("-Ywarn-unused:imports")
+  }),
   Compile / console / scalacOptions ~= {
     _.filterNot(Set("-Ywarn-unused-import", "-Ywarn-unused:imports"))
   },
@@ -50,7 +56,13 @@ lazy val commonSettings = Seq(
   Global / parallelExecution := false,
   Global / concurrentRestrictions += Tags.limit(Tags.Test, 1),
   Compile / doc / scalacOptions := (Compile / doc / scalacOptions).value.filter(_ != "-Xfatal-warnings"),
-  scalacOptions ++= Seq("-unchecked", "-deprecation", "-encoding", "utf8")
+  scalacOptions ++= Seq("-unchecked", "-encoding", "utf8")
+    ++ (CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, _)) => Seq(
+        "-deprecation",
+      )
+      case _ => Seq()
+    })
 )
 
 lazy val publishSettings = Seq(
@@ -85,7 +97,7 @@ lazy val commonJvmSettings = Seq(
 
 lazy val commonDeps = Seq(
   libraryDependencies ++= Seq(
-    "com.sksamuel.exts" %% "exts" % ExtsVersion,
+    "com.sksamuel.exts" %% "exts" % ExtsVersion cross CrossVersion.for3Use2_13,
     "org.slf4j" % "slf4j-api" % Slf4jVersion,
     "org.scalatest" %% "scalatest" % ScalatestVersion % "test",
     "org.apache.logging.log4j" % "log4j-api" % Log4jVersion % "test",
@@ -275,7 +287,10 @@ lazy val avro = Project("pulsar4s-avro", file("pulsar4s-avro"))
   .settings(name := "pulsar4s-avro")
   .settings(allSettings)
   .settings(libraryDependencies ++= Seq(
-    "com.sksamuel.avro4s" %% "avro4s-core" % Avro4sVersion
+    "com.sksamuel.avro4s" %% "avro4s-core" % (CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((3, _)) => Avro4sVersionFor3
+      case _ => Avro4sVersionFor2
+    })
   ))
 
 lazy val akka_streams = Project("pulsar4s-akka-streams", file("pulsar4s-akka-streams"))

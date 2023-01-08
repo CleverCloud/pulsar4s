@@ -1,17 +1,18 @@
 package com.sksamuel.pulsar4s.cats
 
-import java.util.UUID
 import cats.data.WriterT
-import cats.implicits._
-import cats.effect.{Async, IO, Resource, Sync}
 import cats.effect.unsafe.implicits.global
+import cats.effect.{Async, IO, Resource, Sync}
+import cats.implicits._
 import com.sksamuel.pulsar4s._
 import org.apache.pulsar.client.api.Schema
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.Eventually
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import zio.Unsafe
 
+import java.util.UUID
 import scala.language.higherKinds
 import scala.util.Random
 
@@ -182,25 +183,25 @@ class CatsAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAfter
 //  }
 
   test("async client methods should work with any monad which implements Async - ZIO") {
-    import zio.interop.catz._
     import CatsAsyncHandler.asyncHandlerForCatsEffectAsync
+    import zio.interop.catz._
 
     val msg = "hello ZIO via cats-effect"
     val topic = Topic("persistent://sample/standalone/ns1/cats_async_zio_task")
     val subscription = Subscription("cats_effect_test_zio_task")
 
-    val sync = zio.ZIO.runtime.flatMap { implicit r: zio.Runtime[zio.clock.Clock with zio.blocking.Blocking] =>
+    val sync = zio.Runtime.default.run {
       processResource[zio.Task, ConsumerMessage[String]](syncResources[zio.Task](client, topic, subscription)) { (producer, consumer) =>
         asyncProgram[zio.Task](producer, consumer, msg)
       }.map(_.value)
     }
-    val async = zio.ZIO.runtime.flatMap { implicit r: zio.Runtime[zio.clock.Clock with zio.blocking.Blocking] =>
+    val async = zio.Runtime.default.run {
       processResource[zio.Task, ConsumerMessage[String]](asyncResources[zio.Task](client, topic, subscription)) { (producer, consumer) =>
         asyncProgram[zio.Task](producer, consumer, msg)
       }.map(_.value)
     }
 
-    zio.Runtime.default.unsafeRun(sync) shouldBe msg
-    zio.Runtime.default.unsafeRun(async) shouldBe msg
+    Unsafe.unsafe(implicit unsafe => zio.Runtime.default.unsafe.run(sync).getOrThrowFiberFailure()) should be (msg)
+    Unsafe.unsafe(implicit unsafe => zio.Runtime.default.unsafe.run(async).getOrThrowFiberFailure()) should be (msg)
   }
 }

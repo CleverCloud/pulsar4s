@@ -22,6 +22,7 @@ import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.Future
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import com.sksamuel.pulsar4s.PulsarAsyncClient
 
 class PulsarSourceTest extends AnyFunSuite with Matchers {
 
@@ -30,7 +31,7 @@ class PulsarSourceTest extends AnyFunSuite with Matchers {
   implicit val schema: Schema[String] = Schema.STRING
   implicit val executor: ExecutionContextExecutor = system.dispatcher
 
-  val client = PulsarClient("pulsar://localhost:6650")
+  val client: PulsarAsyncClient = PulsarClient("pulsar://localhost:6650")
 
   test("pulsar source should read messages from a cluster") {
 
