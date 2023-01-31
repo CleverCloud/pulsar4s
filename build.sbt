@@ -24,7 +24,7 @@ val Json4sVersion = "4.0.6"
 val Avro4sVersionFor2 = "4.1.0"
 // Version of Avro4s for Scala 3.X
 val Avro4sVersionFor3 = "5.0.3"
-val ScalaVersion = "3.2.1"
+val ScalaVersion = "3.2.2"
 val ScalatestVersion = "3.2.15"
 val ScalazVersion = "7.2.35"
 val Slf4jVersion = "2.0.6"
