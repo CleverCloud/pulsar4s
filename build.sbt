@@ -21,7 +21,7 @@ val ReactiveStreamsVersion = "1.0.2"
 val FunctionalStreamsVersion = "3.4.0"
 val Json4sVersion = "4.0.6"
 // Version of Avro4s for Scala 2.X
-val Avro4sVersionFor2 = "4.1.0"
+val Avro4sVersionFor2 = "4.1.1"
 // Version of Avro4s for Scala 3.X
 val Avro4sVersionFor3 = "5.0.3"
 val ScalaVersion = "3.2.1"
