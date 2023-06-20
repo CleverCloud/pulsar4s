@@ -287,6 +287,7 @@ class DefaultPulsarClient(client: org.apache.pulsar.client.api.PulsarClient) ext
     config.ackTimeoutTickTime.foreach { tt => builder.ackTimeoutTickTime(tt._1, tt._2) }
     config.enableBatchIndexAcknowledgement.foreach { enabled => builder.enableBatchIndexAcknowledgment(enabled) }
     config.deadLetterPolicy.foreach(builder.deadLetterPolicy)
+    config.batchReceivePolicy.foreach(builder.batchReceivePolicy)
     config.acknowledgmentGroupTime.foreach { gt => builder.acknowledgmentGroupTime(gt._1, gt._2) }
     if (config.topics.nonEmpty)
       builder.topics(config.topics.map(_.name).asJava)
