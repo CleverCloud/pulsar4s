@@ -122,10 +122,10 @@ jobs:
           echo "email:       ${{ steps.import_gpg.outputs.email }}"
 
       - name: run tests
-        run: sbt ++3.2.1 test
+        run: sbt ++3.3.0 test
 
       - name: publish release
-        run: sbt ++3.2.1 publishSigned
+        run: sbt ++3.3.0 publishSigned
         env:
           RELEASE_VERSION: ${{ github.event.inputs.version }}
           OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
