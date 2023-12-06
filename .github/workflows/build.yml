@@ -42,10 +42,10 @@ jobs:
           echo "name:        ${{ steps.import_gpg.outputs.name }}"
           echo "email:       ${{ steps.import_gpg.outputs.email }}"
       - name: run tests
-        run: sbt ++2.12.17 test
+        run: sbt ++2.12 test
 
       - name: publish snapshot
-        run: sbt ++2.12.17 publish
+        run: sbt ++2.12 publish
         env:
           OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
@@ -81,10 +81,10 @@ jobs:
           echo "email:       ${{ steps.import_gpg.outputs.email }}"
 
       - name: run tests
-        run: sbt ++2.13.10 test
+        run: sbt ++2.13 test
 
       - name: publish snapshot
-        run: sbt ++2.13.10 publish
+        run: sbt ++2.13 publish
         env:
           OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
@@ -120,10 +120,10 @@ jobs:
           echo "email:       ${{ steps.import_gpg.outputs.email }}"
 
       - name: run tests
-        run: sbt ++3.2.1 test
+        run: sbt ++3.3 test
 
       - name: publish snapshot
-        run: sbt ++3.2.1 publish
+        run: sbt ++3.3 publish
         env:
           OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
