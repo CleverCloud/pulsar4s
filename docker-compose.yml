@@ -2,7 +2,7 @@ version: "3"
 
 services:
   standalone:
-    image: apachepulsar/pulsar:2.8.1
+    image: apachepulsar/pulsar:3.1.1
     ports:
       - "6650:6650"
       - "8080:8080"
@@ -12,7 +12,7 @@ services:
     command: >
       /bin/bash -c
       "bin/apply-config-from-env.py conf/standalone.conf
-      && bin/pulsar standalone --advertised-address standalone"
+      && bin/pulsar standalone"
 
   dashboard:
     profiles: ["dashboard"]
