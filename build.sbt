@@ -19,7 +19,7 @@ val PlayJsonVersion = "2.10.0-RC7"
 val PulsarVersion = "3.1.1"
 val ReactiveStreamsVersion = "1.0.2"
 val FunctionalStreamsVersion = "3.4.0"
-val Json4sVersion = "4.0.6"
+val Json4sVersion = "4.0.7"
 // Version of Avro4s for Scala 2.X
 val Avro4sVersionFor2 = "4.1.0"
 // Version of Avro4s for Scala 3.X
