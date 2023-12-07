@@ -15,6 +15,7 @@ val ExtsVersion = "1.61.1"
 val JacksonVersion = "2.14.1"
 val Log4jVersion = "2.22.0"
 val MonixVersion = "3.4.1"
+val PekkoStreamVersion = "1.0.0"
 val PlayJsonVersion = "2.10.0-RC7"
 val PulsarVersion = "3.1.1"
 val ReactiveStreamsVersion = "1.0.2"
@@ -167,6 +168,7 @@ lazy val root = Project("pulsar4s", file("."))
     jackson,
     json4s,
     monix,
+    pekko_streams,
     playjson,
     scalaz,
     sprayjson,
@@ -300,3 +302,17 @@ lazy val akka_streams = Project("pulsar4s-akka-streams", file("pulsar4s-akka-str
   .settings(libraryDependencies ++= Seq(
     "com.typesafe.akka" %% "akka-stream" % AkkaStreamVersion
   ))
+
+lazy val pekko_streams = Project("pulsar4s-pekko-streams", file("pulsar4s-pekko-streams"))
+  .dependsOn(core)
+  .settings(name := "pulsar4s-pekko-streams")
+  .settings(allSettings)
+  .settings(
+    libraryDependencies ++= Seq(
+      "org.apache.pekko" %% "pekko-stream" % PekkoStreamVersion
+    ),
+    // ignore scala-java8-compat issues with scala 2.12
+    libraryDependencySchemes ++= (CrossVersion.partialVersion(scalaVersion.value).collect {
+      case (2, 12) => "org.scala-lang.modules" %% "scala-java8-compat" % VersionScheme.Always
+    })
+  )
