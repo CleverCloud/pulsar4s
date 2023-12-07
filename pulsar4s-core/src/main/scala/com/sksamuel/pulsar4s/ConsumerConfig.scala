@@ -29,5 +29,6 @@ case class ConsumerConfig(subscriptionName: Subscription,
                           enableBatchIndexAcknowledgement: Option[Boolean] = None,
                           additionalProperties: Map[String, AnyRef] = Map.empty,
                           deadLetterPolicy: Option[DeadLetterPolicy] = None,
-                          replicateSubscriptionState: Boolean = false)
+                          replicateSubscriptionState: Boolean = false,
+                          batchReceivePolicy: Option[BatchReceivePolicy] = None)
 

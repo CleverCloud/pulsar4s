@@ -8,26 +8,27 @@ def publishVersion = if (isRelease) releaseVersion else if (isGithubActions) "2.
 
 val org = "com.clever-cloud.pulsar4s"
 val AkkaStreamVersion = "2.6.20" // compatible with Akka 2.5.x and 2.6.x
-val CatsEffectVersion = "3.4.4"
+val CatsEffectVersion = "3.4.11"
 val CirceVersion = "0.14.3"
 val CommonsIoVersion = "2.4"
 val ExtsVersion = "1.61.1"
 val JacksonVersion = "2.14.1"
 val Log4jVersion = "2.22.0"
 val MonixVersion = "3.4.1"
+val PekkoStreamVersion = "1.0.0"
 val PlayJsonVersion = "2.10.0-RC7"
 val PulsarVersion = "3.1.1"
 val ReactiveStreamsVersion = "1.0.2"
 val FunctionalStreamsVersion = "3.4.0"
-val Json4sVersion = "4.0.6"
+val Json4sVersion = "4.0.7"
 // Version of Avro4s for Scala 2.X
-val Avro4sVersionFor2 = "4.1.0"
+val Avro4sVersionFor2 = "4.1.1"
 // Version of Avro4s for Scala 3.X
 val Avro4sVersionFor3 = "5.0.3"
 val ScalaVersion = "3.3.1"
-val ScalatestVersion = "3.2.15"
+val ScalatestVersion = "3.2.17"
 val ScalazVersion = "7.2.35"
-val Slf4jVersion = "2.0.6"
+val Slf4jVersion = "2.0.9"
 val SprayJsonVersion = "1.3.6"
 val ZIOVersion = "2.0.19"
 val ZIOInteropCatsVersion = "23.0.0.8"
@@ -167,6 +168,7 @@ lazy val root = Project("pulsar4s", file("."))
     jackson,
     json4s,
     monix,
+    pekko_streams,
     playjson,
     scalaz,
     sprayjson,
@@ -300,3 +302,17 @@ lazy val akka_streams = Project("pulsar4s-akka-streams", file("pulsar4s-akka-str
   .settings(libraryDependencies ++= Seq(
     "com.typesafe.akka" %% "akka-stream" % AkkaStreamVersion
   ))
+
+lazy val pekko_streams = Project("pulsar4s-pekko-streams", file("pulsar4s-pekko-streams"))
+  .dependsOn(core)
+  .settings(name := "pulsar4s-pekko-streams")
+  .settings(allSettings)
+  .settings(
+    libraryDependencies ++= Seq(
+      "org.apache.pekko" %% "pekko-stream" % PekkoStreamVersion
+    ),
+    // ignore scala-java8-compat issues with scala 2.12
+    libraryDependencySchemes ++= (CrossVersion.partialVersion(scalaVersion.value).collect {
+      case (2, 12) => "org.scala-lang.modules" %% "scala-java8-compat" % VersionScheme.Always
+    })
+  )
