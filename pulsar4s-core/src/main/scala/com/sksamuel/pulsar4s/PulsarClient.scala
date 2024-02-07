@@ -282,6 +282,7 @@ class DefaultPulsarClient(client: org.apache.pulsar.client.api.PulsarClient) ext
     config.subscriptionInitialPosition.foreach(builder.subscriptionInitialPosition)
     config.subscriptionTopicsMode.foreach(builder.subscriptionTopicsMode)
     config.subscriptionType.foreach(builder.subscriptionType)
+    config.subscriptionMode.foreach(builder.subscriptionMode)
     config.topicPattern.map(_.pattern).foreach(builder.topicsPattern)
     config.ackTimeout.foreach { t => builder.ackTimeout(t._1, t._2) }
     config.ackTimeoutTickTime.foreach { tt => builder.ackTimeoutTickTime(tt._1, tt._2) }
