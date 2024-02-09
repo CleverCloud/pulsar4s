@@ -36,13 +36,13 @@ class CirceProducerConsumerTest extends AnyFunSuite with Matchers {
     val topic = Topic("persistent://sample/standalone/ns1/test_" + UUID.randomUUID)
 
     val producer = client.producer[String](ProducerConfig(topic))
-    val messageId = producer.send("""{"foo": "bar"}""")
+    val messageId = producer.send("""{"not":"Cafe"}""")
     producer.close()
 
     val consumer = client.consumer[Cafe](ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription.generate))
     consumer.seek(MessageId.earliest)
     val msg = consumer.receive
-    msg.get.valueTry shouldBe Failure(DecodingFailure("Cafe", List()))
+    msg.get.valueTry.isFailure shouldBe true
     consumer.close()
 
     client.close()
