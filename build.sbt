@@ -30,7 +30,7 @@ val ScalatestVersion = "3.2.17"
 val ScalazVersion = "7.2.35"
 val Slf4jVersion = "2.0.11"
 val SprayJsonVersion = "1.3.6"
-val ZIOVersion = "2.0.21"
+val ZIOVersion = "2.0.22"
 val ZIOInteropCatsVersion = "23.0.03"
 
 lazy val commonScalaVersionSettings = Seq(
