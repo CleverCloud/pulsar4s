@@ -16,7 +16,7 @@ val JacksonVersion = "2.17.2"
 val Log4jVersion = "2.23.1"
 val MonixVersion = "3.4.1"
 val PekkoStreamVersion = "1.0.2"
-val PlayJsonVersion = "2.10.6"
+val PlayJsonVersion = "3.0.4"
 val PulsarVersion = "3.3.1"
 val ReactiveStreamsVersion = "1.0.2"
 val FunctionalStreamsVersion = "3.10.2"
@@ -264,7 +264,7 @@ lazy val playjson = Project("pulsar4s-play-json", file("pulsar4s-play-json"))
   .settings(name := "pulsar4s-play-json")
   .settings(allSettings)
   .settings(libraryDependencies ++= Seq(
-    "com.typesafe.play" %% "play-json" % PlayJsonVersion
+    "org.playframework" %% "play-json" % PlayJsonVersion
   ))
 
 lazy val json4s = Project("pulsar4s-json4s", file("pulsar4s-json4s"))
