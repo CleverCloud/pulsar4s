@@ -56,6 +56,7 @@ class MonixAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAfte
     val r = Await.result(rFuture, Duration.Inf)
     r.entryId shouldBe value.messageId.entryId
     r.partitionIndex shouldBe value.messageId.partitionIndex
+    r.batchIndex shouldBe value.messageId.batchIndex
     consumer.close()
   }
 
