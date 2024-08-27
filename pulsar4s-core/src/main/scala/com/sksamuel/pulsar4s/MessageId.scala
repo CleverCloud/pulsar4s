@@ -35,14 +35,17 @@ private case class Pulsar4sMessageIdImpl(underlying: JMessageId) extends Message
   }
   override def ledgerId: Option[Long] = underlying match {
     case m: MessageIdImpl => Option(m.getLedgerId)
+    case m: TopicMessageIdImpl => Option(m.getLedgerId)
     case _ => None
   }
   override def entryId: Option[Long] = underlying match {
     case m: MessageIdImpl => Option(m.getEntryId)
+    case m: TopicMessageIdImpl => Option(m.getEntryId)
     case _ => None
   }
   override def partitionIndex: Option[Int] = underlying match {
     case m: MessageIdImpl => Some(m.getPartitionIndex)
+    case m: TopicMessageIdImpl => Option(m.getPartitionIndex)
     case _ => None
   }
 }
