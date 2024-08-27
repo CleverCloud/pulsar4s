@@ -8,34 +8,34 @@ def publishVersion = if (isRelease) releaseVersion else if (isGithubActions) "2.
 
 val org = "com.clever-cloud.pulsar4s"
 val AkkaStreamVersion = "2.6.20" // compatible with Akka 2.5.x and 2.6.x
-val CatsEffectVersion = "3.5.3"
+val CatsEffectVersion = "3.5.4"
 val CirceVersion = "0.14.6"
 val CommonsIoVersion = "2.4"
 val ExtsVersion = "1.61.1"
 val JacksonVersion = "2.17.2"
-val Log4jVersion = "2.22.1"
+val Log4jVersion = "2.23.1"
 val MonixVersion = "3.4.1"
 val PekkoStreamVersion = "1.0.2"
-val PlayJsonVersion = "2.10.4"
-val PulsarVersion = "3.2.0"
+val PlayJsonVersion = "2.10.6"
+val PulsarVersion = "3.3.1"
 val ReactiveStreamsVersion = "1.0.2"
-val FunctionalStreamsVersion = "3.9.4"
+val FunctionalStreamsVersion = "3.10.2"
 val Json4sVersion = "4.0.7"
 // Version of Avro4s for Scala 2.X
-val Avro4sVersionFor2 = "4.1.1"
+val Avro4sVersionFor2 = "4.1.2"
 // Version of Avro4s for Scala 3.X
-val Avro4sVersionFor3 = "5.0.9"
-val ScalaVersion = "3.3.1"
-val ScalatestVersion = "3.2.17"
-val ScalazVersion = "7.2.35"
-val Slf4jVersion = "2.0.11"
+val Avro4sVersionFor3 = "5.0.13"
+val ScalaVersion = "3.3.3"
+val ScalatestVersion = "3.2.19"
+val ScalazVersion = "7.2.36"
+val Slf4jVersion = "2.0.16"
 val SprayJsonVersion = "1.3.6"
-val ZIOVersion = "2.0.21"
-val ZIOInteropCatsVersion = "23.0.03"
+val ZIOVersion = "2.0.22"
+val ZIOInteropCatsVersion = "23.1.0.3"
 
 lazy val commonScalaVersionSettings = Seq(
   scalaVersion := ScalaVersion,
-  crossScalaVersions := Seq("2.12.18", "2.13.12", ScalaVersion)
+  crossScalaVersions := Seq("2.12.19", "2.13.14", ScalaVersion)
 )
 
 lazy val warnUnusedImport = Seq(
