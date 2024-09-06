@@ -35,7 +35,7 @@ val ZIOInteropCatsVersion = "23.1.0.3"
 
 lazy val commonScalaVersionSettings = Seq(
   scalaVersion := ScalaVersion,
-  crossScalaVersions := Seq("2.12.19", "2.13.14", ScalaVersion)
+  crossScalaVersions := Seq("2.12.20", "2.13.14", ScalaVersion)
 )
 
 lazy val warnUnusedImport = Seq(
