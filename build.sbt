@@ -19,7 +19,7 @@ val PekkoStreamVersion = "1.0.2"
 val PlayJsonVersion = "2.10.6"
 val PulsarVersion = "3.3.1"
 val ReactiveStreamsVersion = "1.0.2"
-val FunctionalStreamsVersion = "3.10.2"
+val FunctionalStreamsVersion = "3.12.0"
 val Json4sVersion = "4.0.7"
 // Version of Avro4s for Scala 2.X
 val Avro4sVersionFor2 = "4.1.2"
