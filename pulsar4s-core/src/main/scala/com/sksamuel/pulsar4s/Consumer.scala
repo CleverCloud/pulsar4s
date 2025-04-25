@@ -5,6 +5,7 @@ import org.apache.pulsar.client.api.ConsumerStats
 import org.apache.pulsar.client.api.transaction.Transaction
 
 import java.io.Closeable
+import java.time.Instant
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
 import scala.util.Try
@@ -61,11 +62,16 @@ trait Consumer[T] extends Closeable with TransactionalConsumerOps[T] {
 
   def seek(messageId: MessageId): Unit
   def seek(timestamp: Long): Unit
+  def seek(timestamp: Instant): Unit =
+    seek(timestamp.toEpochMilli)
 
   def seekEarliest(): Unit = seek(MessageId.earliest)
   def seekLatest(): Unit = seek(MessageId.latest)
+
   def seekAsync[F[_] : AsyncHandler](messageId: MessageId): F[Unit]
   def seekAsync[F[_] : AsyncHandler](timestamp: Long): F[Unit]
+  def seekAsync[F[_] : AsyncHandler](timestamp: Instant): F[Unit] =
+    seekAsync[F](timestamp.toEpochMilli)
 
   def getLastMessageId(): MessageId
 
