@@ -39,7 +39,8 @@ class ZioAsyncHandler extends AsyncHandler[Task] {
     fromFuture(ZIO.attempt(consumer.receiveAsync())) flatMap (v => ZIO.attempt(ConsumerMessage.fromJava(v)))
 
   override def receiveBatch[T](consumer: Consumer[T]): Task[Vector[ConsumerMessage[T]]] =
-    fromFuture(ZIO.attempt(consumer.batchReceiveAsync())) flatMap (v => ZIO.attempt(v.asScala.map(ConsumerMessage.fromJava).toVector))
+    fromFuture(ZIO.attempt(consumer.batchReceiveAsync())) flatMap (v => ZIO
+      .attempt(v.asScala.map(ConsumerMessage.fromJava).toVector))
 
   override def getLastMessageId[T](consumer: api.Consumer[T]): Task[MessageId] =
     fromFuture(ZIO.attempt(consumer.getLastMessageIdAsync)) flatMap (v => ZIO.attempt(MessageId.fromJava(v)))
@@ -61,6 +62,9 @@ class ZioAsyncHandler extends AsyncHandler[Task] {
 
   override def seekAsync(consumer: api.Consumer[_], messageId: MessageId): Task[Unit] =
     fromFuture(ZIO.attempt(consumer.seekAsync(messageId))).unit
+
+  override def seekAsync(consumer: api.Consumer[_], timestamp: Long): Task[Unit] =
+    fromFuture(ZIO.attempt(consumer.seekAsync(timestamp))).unit
 
   override def seekAsync(reader: api.Reader[_], messageId: MessageId): Task[Unit] =
     fromFuture(ZIO.attempt(reader.seekAsync(messageId))).unit
@@ -86,16 +90,17 @@ class ZioAsyncHandler extends AsyncHandler[Task] {
   override def acknowledgeCumulativeAsync[T](consumer: api.Consumer[T], messageId: MessageId): Task[Unit] =
     fromFuture(ZIO.attempt(consumer.acknowledgeCumulativeAsync(messageId))).unit
 
-  override def acknowledgeCumulativeAsync[T](consumer: api.Consumer[T], messageId: MessageId, txn: Transaction): Task[Unit] =
+  override def acknowledgeCumulativeAsync[T](consumer: api.Consumer[T], messageId: MessageId,
+                                             txn: Transaction): Task[Unit] =
     fromFuture(ZIO.attempt(consumer.acknowledgeCumulativeAsync(messageId, txn))).unit
 
   override def negativeAcknowledgeAsync[T](consumer: Consumer[T], messageId: MessageId): Task[Unit] =
     ZIO.attempt(consumer.negativeAcknowledge(messageId))
 
   override def withTransaction[E, A](
-    builder: api.transaction.TransactionBuilder,
-    action: TransactionContext => Task[Either[E, A]]
-  ): Task[Either[E, A]] = {
+                                      builder: api.transaction.TransactionBuilder,
+                                      action: TransactionContext => Task[Either[E, A]]
+                                    ): Task[Either[E, A]] = {
     ZIO.acquireReleaseExitWith[Any, Throwable, TransactionContext](startTransaction(builder))(
       (txn: TransactionContext, e: Exit[Throwable, Either[E, A]]) => (txn, e) match {
         case (txn, Exit.Success(Right(_))) => txn.commit(this).ignore
@@ -106,7 +111,9 @@ class ZioAsyncHandler extends AsyncHandler[Task] {
 
   override def startTransaction(builder: api.transaction.TransactionBuilder): Task[TransactionContext] =
     fromFuture(ZIO.attempt(builder.build())).map(TransactionContext(_))
+
   override def commitTransaction(txn: Transaction): Task[Unit] = fromFuture(ZIO.attempt(txn.commit())).unit
+
   override def abortTransaction(txn: Transaction): Task[Unit] = fromFuture(ZIO.attempt(txn.abort())).unit
 }
 

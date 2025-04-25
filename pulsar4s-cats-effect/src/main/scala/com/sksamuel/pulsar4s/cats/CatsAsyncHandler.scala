@@ -25,7 +25,7 @@ trait CatsAsyncHandlerLowPriority {
 
   object CompletableFutureConverters extends Logging {
 
-    implicit class CompletableOps[F[_]: Async, T](f: => F[CompletableFuture[T]]) {
+    implicit class CompletableOps[F[_] : Async, T](f: => F[CompletableFuture[T]]) {
       def liftF: F[T] = {
         f.flatMap { f =>
           Async[F].defer {
@@ -62,7 +62,7 @@ trait CatsAsyncHandlerLowPriority {
     }
   }
 
-  implicit def asyncHandlerForCatsEffectAsync[F[_]: Async]: AsyncHandler[F] = new AsyncHandler[F] with Logging {
+  implicit def asyncHandlerForCatsEffectAsync[F[_] : Async]: AsyncHandler[F] = new AsyncHandler[F] with Logging {
 
     import CompletableFutureConverters._
 
@@ -114,6 +114,10 @@ trait CatsAsyncHandlerLowPriority {
       consumer.seekAsync(messageId)
     }.liftF.void
 
+    override def seekAsync(consumer: JConsumer[_], timestamp: Long): F[Unit] = Async[F].delay {
+      consumer.seekAsync(timestamp)
+    }.liftF.void
+
     override def seekAsync(reader: api.Reader[_], messageId: MessageId): F[Unit] = Async[F].delay {
       reader.seekAsync(messageId)
     }.liftF.void
@@ -139,7 +143,8 @@ trait CatsAsyncHandlerLowPriority {
     override def acknowledgeCumulativeAsync[T](consumer: api.Consumer[T], messageId: MessageId): F[Unit] =
       Async[F].delay(consumer.acknowledgeCumulativeAsync(messageId)).liftF.void
 
-    override def acknowledgeCumulativeAsync[T](consumer: api.Consumer[T], messageId: MessageId, txn: Transaction): F[Unit] =
+    override def acknowledgeCumulativeAsync[T](consumer: api.Consumer[T], messageId: MessageId,
+                                               txn: Transaction): F[Unit] =
       Async[F].delay(consumer.acknowledgeCumulativeAsync(messageId, txn)).liftF.void
 
     override def negativeAcknowledgeAsync[T](consumer: api.Consumer[T], messageId: MessageId): F[Unit] =
@@ -173,9 +178,9 @@ trait CatsAsyncHandlerLowPriority {
       Async[F].delay(builder.sendAsync()).liftF.map(MessageId.fromJava)
 
     override def withTransaction[E, A](
-      builder: api.transaction.TransactionBuilder,
-      action: TransactionContext => F[Either[E, A]]
-    ): F[Either[E, A]] = {        
+                                        builder: api.transaction.TransactionBuilder,
+                                        action: TransactionContext => F[Either[E, A]]
+                                      ): F[Either[E, A]] = {
       Resource.makeCase(startTransaction(builder)) { (txn, exitCase) =>
         if (exitCase == ExitCase.Succeeded) Async[F].unit else txn.abort
       }.use { txn =>
@@ -187,7 +192,9 @@ trait CatsAsyncHandlerLowPriority {
 
     def startTransaction(builder: api.transaction.TransactionBuilder): F[TransactionContext] =
       Async[F].delay(builder.build()).liftF.map(TransactionContext(_))
+
     def commitTransaction(txn: Transaction): F[Unit] = Async[F].delay(txn.commit()).liftF.map(_ => ())
+
     def abortTransaction(txn: Transaction): F[Unit] = Async[F].delay(txn.abort()).liftF.map(_ => ())
 
   }
