@@ -16,16 +16,19 @@ jobs:
         with:
           fetch-depth: 0
 
+      - uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: docker-compose
+          version: 1.0
+
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
 
-      - uses: awalsh128/cache-apt-pkgs-action@latest
-        with:
-          packages: docker-compose sbt
-          version: 1.0
+      - name: Setup sbt launcher
+        uses: sbt/setup-sbt@v1
 
       - name: Launch pulsar docker
         run: docker-compose up -d
@@ -41,16 +44,19 @@ jobs:
         with:
           fetch-depth: 0
 
+      - uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: docker-compose
+          version: 1.0
+
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
 
-      - uses: awalsh128/cache-apt-pkgs-action@latest
-        with:
-          packages: docker-compose sbt
-          version: 1.0
+      - name: Setup sbt launcher
+        uses: sbt/setup-sbt@v1
 
       - name: Launch pulsar docker
         run: docker-compose up -d
@@ -66,16 +72,19 @@ jobs:
         with:
           fetch-depth: 0
 
+      - uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: docker-compose
+          version: 1.0
+
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
 
-      - uses: awalsh128/cache-apt-pkgs-action@latest
-        with:
-          packages: docker-compose sbt
-          version: 1.0
+      - name: Setup sbt launcher
+        uses: sbt/setup-sbt@v1
 
       - name: Launch pulsar docker
         run: docker-compose up -d
