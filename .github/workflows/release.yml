@@ -20,17 +20,26 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up JDK
-        uses: actions/setup-java@v1
+      - uses: awalsh128/cache-apt-pkgs-action@latest
         with:
-          java-version: 11
+          packages: docker-compose
+          version: 1.0
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Setup sbt launcher
+        uses: sbt/setup-sbt@v1
 
       - name: Launch pulsar docker
         run: docker-compose up -d
 
       - name: Import GPG key
         id: import_gpg
-        uses: crazy-max/ghaction-import-gpg@v3
+        uses: crazy-max/ghaction-import-gpg@v6
         with:
           gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.PGP_PASSPHRASE }}
@@ -60,17 +69,26 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up JDK
-        uses: actions/setup-java@v1
+      - uses: awalsh128/cache-apt-pkgs-action@latest
         with:
-          java-version: 11
+          packages: docker-compose
+          version: 1.0
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Setup sbt launcher
+        uses: sbt/setup-sbt@v1
 
       - name: Launch pulsar docker
         run: docker-compose up -d
 
       - name: Import GPG key
         id: import_gpg
-        uses: crazy-max/ghaction-import-gpg@v3
+        uses: crazy-max/ghaction-import-gpg@v6
         with:
           gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.PGP_PASSPHRASE }}
@@ -99,17 +117,26 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up JDK
-        uses: actions/setup-java@v1
+      - uses: awalsh128/cache-apt-pkgs-action@latest
         with:
-          java-version: 11
+          packages: docker-compose
+          version: 1.0
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Setup sbt launcher
+        uses: sbt/setup-sbt@v1
 
       - name: Launch pulsar docker
         run: docker-compose up -d
 
       - name: Import GPG key
         id: import_gpg
-        uses: crazy-max/ghaction-import-gpg@v3
+        uses: crazy-max/ghaction-import-gpg@v6
         with:
           gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.PGP_PASSPHRASE }}
