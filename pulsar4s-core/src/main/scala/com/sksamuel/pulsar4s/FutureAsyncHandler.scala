@@ -45,15 +45,20 @@ class FutureAsyncHandler(implicit ec: ExecutionContext) extends AsyncHandler[Fut
   }
 
   override def close(producer: api.Producer[_]): Future[Unit] = producer.closeAsync().toScala
+
   override def close(consumer: api.Consumer[_]): Future[Unit] = consumer.closeAsync().toScala
+
   override def close(client: api.PulsarClient): Future[Unit] = client.closeAsync().toScala
 
   override def seekAsync(consumer: api.Consumer[_], messageId: MessageId): Future[Unit] =
     consumer.seekAsync(messageId).toScala
-  
+
+  override def seekAsync(consumer: api.Consumer[_], timestamp: Long): Future[Unit] =
+    consumer.seekAsync(timestamp).toScala
+
   override def seekAsync(reader: api.Reader[_], messageId: MessageId): Future[Unit] =
     reader.seekAsync(messageId).toScala
-  
+
   override def seekAsync(reader: api.Reader[_], timestamp: Long): Future[Unit] =
     reader.seekAsync(timestamp).toScala
 
@@ -73,13 +78,15 @@ class FutureAsyncHandler(implicit ec: ExecutionContext) extends AsyncHandler[Fut
   override def acknowledgeCumulativeAsync[T](consumer: api.Consumer[T], messageId: MessageId): Future[Unit] =
     consumer.acknowledgeCumulativeAsync(messageId).toScala
 
-  override def acknowledgeCumulativeAsync[T](consumer: api.Consumer[T], messageId: MessageId, txn: Transaction): Future[Unit] =
+  override def acknowledgeCumulativeAsync[T](consumer: api.Consumer[T], messageId: MessageId,
+                                             txn: Transaction): Future[Unit] =
     consumer.acknowledgeCumulativeAsync(messageId, txn).toScala
 
   override def negativeAcknowledgeAsync[T](consumer: JConsumer[T], messageId: MessageId): Future[Unit] =
     Future.successful(consumer.negativeAcknowledge(messageId))
 
   override def close(reader: api.Reader[_]): Future[Unit] = reader.closeAsync().toScala
+
   override def flush(producer: api.Producer[_]): Future[Unit] = producer.flushAsync().toScala
 
   override def nextAsync[T](reader: api.Reader[T]): Future[ConsumerMessage[T]] =
@@ -92,9 +99,9 @@ class FutureAsyncHandler(implicit ec: ExecutionContext) extends AsyncHandler[Fut
     builder.sendAsync().toScala.map(MessageId.fromJava)
 
   override def withTransaction[E, A](
-    builder: api.transaction.TransactionBuilder,
-    action: TransactionContext => Future[Either[E, A]]
-  ): Future[Either[E, A]] = {
+                                      builder: api.transaction.TransactionBuilder,
+                                      action: TransactionContext => Future[Either[E, A]]
+                                    ): Future[Either[E, A]] = {
     startTransaction(builder).flatMap { txn =>
       Future.unit.flatMap(_ => action(txn)).transformWith {
         case Success(Right(value)) =>
@@ -107,7 +114,9 @@ class FutureAsyncHandler(implicit ec: ExecutionContext) extends AsyncHandler[Fut
 
   override def startTransaction(builder: api.transaction.TransactionBuilder): Future[TransactionContext] =
     builder.build().toScala.map(TransactionContext(_))
+
   override def commitTransaction(txn: Transaction): Future[Unit] = txn.commit().toScala.map(_ => ())
+
   override def abortTransaction(txn: Transaction): Future[Unit] = txn.abort().toScala.map(_ => ())
-    
+
 }

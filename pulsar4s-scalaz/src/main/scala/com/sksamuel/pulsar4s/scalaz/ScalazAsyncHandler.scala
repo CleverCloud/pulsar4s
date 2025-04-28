@@ -54,10 +54,13 @@ class ScalazAsyncHandler extends AsyncHandler[Task] {
 
   override def seekAsync(consumer: api.Consumer[_], messageId: MessageId): Task[Unit] =
     consumer.seekAsync(messageId)
-  
+
+  override def seekAsync(consumer: api.Consumer[_], timestamp: Long): Task[Unit] =
+    consumer.seekAsync(timestamp)
+
   override def seekAsync(reader: api.Reader[_], messageId: MessageId): Task[Unit] =
     reader.seekAsync(messageId)
-  
+
   override def seekAsync(reader: api.Reader[_], timestamp: Long): Task[Unit] =
     reader.seekAsync(timestamp)
 
@@ -77,15 +80,21 @@ class ScalazAsyncHandler extends AsyncHandler[Task] {
   override def acknowledgeCumulativeAsync[T](consumer: api.Consumer[T], messageId: MessageId): Task[Unit] =
     consumer.acknowledgeCumulativeAsync(messageId)
 
-  override def acknowledgeCumulativeAsync[T](consumer: api.Consumer[T], messageId: MessageId, txn: Transaction): Task[Unit] =
+  override def acknowledgeCumulativeAsync[T](consumer: api.Consumer[T], messageId: MessageId,
+                                             txn: Transaction): Task[Unit] =
     consumer.acknowledgeCumulativeAsync(messageId, txn)
 
   override def negativeAcknowledgeAsync[T](consumer: Consumer[T], messageId: MessageId): Task[Unit] =
-    Task { consumer.negativeAcknowledge(messageId) }
+    Task {
+      consumer.negativeAcknowledge(messageId)
+    }
 
   override def close(reader: Reader[_]): Task[Unit] = reader.closeAsync()
+
   override def close(producer: api.Producer[_]): Task[Unit] = producer.closeAsync()
+
   override def close(consumer: api.Consumer[_]): Task[Unit] = consumer.closeAsync()
+
   override def close(client: PulsarClient): Task[Unit] = client.closeAsync()
 
   override def flush(producer: api.Producer[_]): Task[Unit] = producer.flushAsync()
@@ -100,11 +109,12 @@ class ScalazAsyncHandler extends AsyncHandler[Task] {
     builder.sendAsync().map(MessageId.fromJava)
 
   override def withTransaction[E, A](
-    builder: api.transaction.TransactionBuilder,
-    action: TransactionContext => Task[Either[E, A]]
-  ): Task[Either[E, A]] = {
+                                      builder: api.transaction.TransactionBuilder,
+                                      action: TransactionContext => Task[Either[E, A]]
+                                    ): Task[Either[E, A]] = {
     def close[T](txn: TransactionContext, commit: Boolean, result: T): Task[T] =
       (if (commit) txn.commit(this) else txn.abort(this)).map(_ => result)
+
     startTransaction(builder).flatMap { txn =>
       action(txn)
         .flatMap(result => (if (result.isRight) txn.commit(this) else txn.abort(this)).map(_ => result))
@@ -114,7 +124,9 @@ class ScalazAsyncHandler extends AsyncHandler[Task] {
 
   override def startTransaction(builder: api.transaction.TransactionBuilder): Task[TransactionContext] =
     builder.build().map(TransactionContext(_))
+
   override def commitTransaction(txn: Transaction): Task[Unit] = txn.commit()
+
   override def abortTransaction(txn: Transaction): Task[Unit] = txn.abort()
 }
 

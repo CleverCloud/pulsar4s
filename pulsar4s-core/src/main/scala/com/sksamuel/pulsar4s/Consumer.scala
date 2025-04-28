@@ -5,6 +5,7 @@ import org.apache.pulsar.client.api.ConsumerStats
 import org.apache.pulsar.client.api.transaction.Transaction
 
 import java.io.Closeable
+import java.time.Instant
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
 import scala.util.Try
@@ -60,9 +61,17 @@ trait Consumer[T] extends Closeable with TransactionalConsumerOps[T] {
   def redeliverUnacknowledgedMessages(): Unit
 
   def seek(messageId: MessageId): Unit
+  def seek(timestamp: Long): Unit
+  def seek(timestamp: Instant): Unit =
+    seek(timestamp.toEpochMilli)
+
   def seekEarliest(): Unit = seek(MessageId.earliest)
   def seekLatest(): Unit = seek(MessageId.latest)
+
   def seekAsync[F[_] : AsyncHandler](messageId: MessageId): F[Unit]
+  def seekAsync[F[_] : AsyncHandler](timestamp: Long): F[Unit]
+  def seekAsync[F[_] : AsyncHandler](timestamp: Instant): F[Unit] =
+    seekAsync[F](timestamp.toEpochMilli)
 
   def getLastMessageId(): MessageId
 
@@ -137,9 +146,14 @@ class DefaultConsumer[T](consumer: JConsumer[T]) extends Consumer[T] with Loggin
 
   override def seek(messageId: MessageId): Unit = consumer.seek(messageId)
 
+  override def seek(timestamp: Long): Unit = consumer.seek(timestamp)
+
   override def seekAsync[F[_] : AsyncHandler](messageId: MessageId): F[Unit] =
     implicitly[AsyncHandler[F]].seekAsync(consumer, messageId)
-  
+
+  override def seekAsync[F[_] : AsyncHandler](timestamp: Long): F[Unit] =
+    implicitly[AsyncHandler[F]].seekAsync(consumer, timestamp)
+
   override def getLastMessageId(): MessageId = consumer.getLastMessageId()
 
   override def getLastMessageIdAsync[F[_] : AsyncHandler]: F[MessageId] = implicitly[AsyncHandler[F]].getLastMessageId(consumer)
