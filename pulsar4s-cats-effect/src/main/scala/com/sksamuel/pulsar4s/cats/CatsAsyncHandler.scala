@@ -197,6 +197,11 @@ trait CatsAsyncHandlerLowPriority {
 
     def abortTransaction(txn: Transaction): F[Unit] = Async[F].delay(txn.abort()).liftF.map(_ => ())
 
+    override def reconsumeLaterAsync[T](consumer: JConsumer[T], message: ConsumerMessage[T], delayTime: Long, unit: TimeUnit)
+                                       (implicit schema: Schema[T]): F[Unit] =
+      Async[F].delay {
+        consumer.reconsumeLater(ConsumerMessage.toJava(message, schema), delayTime, unit)
+      }
   }
 
 }

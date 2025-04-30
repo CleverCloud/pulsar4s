@@ -1,13 +1,12 @@
 package com.sksamuel.pulsar4s.monixs
 
-import java.util.concurrent.CompletableFuture
-
+import java.util.concurrent.{CompletableFuture, TimeUnit}
 import com.sksamuel.pulsar4s
 import com.sksamuel.pulsar4s.conversions.collections._
 import com.sksamuel.pulsar4s.{AsyncHandler, ConsumerMessage, DefaultConsumer, DefaultProducer, DefaultReader, MessageId, Producer, TransactionContext}
 import monix.eval.Task
 import org.apache.pulsar.client.api
-import org.apache.pulsar.client.api.{Consumer, ConsumerBuilder, ProducerBuilder, PulsarClient, Reader, ReaderBuilder, TypedMessageBuilder}
+import org.apache.pulsar.client.api.{Consumer, ConsumerBuilder, ProducerBuilder, PulsarClient, Reader, ReaderBuilder, Schema, TypedMessageBuilder}
 import org.apache.pulsar.client.api.transaction.Transaction
 
 import scala.compat.java8.FutureConverters
@@ -133,6 +132,12 @@ class MonixAsyncHandler extends AsyncHandler[Task] {
 
   override def abortTransaction(txn: Transaction): Task[Unit] =
     Task.deferFuture(txn.abort()).map(_ => ())
+
+  override def reconsumeLaterAsync[T](consumer: Consumer[T], message: ConsumerMessage[T], delayTime: Long, unit: TimeUnit)
+                                     (implicit schema: Schema[T]): Task[Unit] =
+    Task {
+      consumer.reconsumeLater(ConsumerMessage.toJava(message, schema), delayTime, unit)
+    }
 }
 
 object MonixAsyncHandler {
