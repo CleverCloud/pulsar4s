@@ -197,6 +197,27 @@ trait CatsAsyncHandlerLowPriority {
 
     def abortTransaction(txn: Transaction): F[Unit] = Async[F].delay(txn.abort()).liftF.map(_ => ())
 
+    override def reconsumeLaterAsync[T](
+                                         consumer: JConsumer[T],
+                                         message: ConsumerMessage[T],
+                                         delayTime: Long,
+                                         unit: TimeUnit
+                                       ): F[Unit] = {
+      Async[F]
+        .fromEither {
+          message match {
+            case consumerMessage: ConsumerMessageWithValueTry[T] =>
+              Right(consumerMessage.getBaseMessage())
+            case _ =>
+              Left(
+                new UnsupportedOperationException(
+                  "Only ConsumerMessageWithValueTry is supported for reconsumeLater operation"
+                )
+              )
+          }
+        }
+        .flatMap(pulsarMessage => Async[F].delay(consumer.reconsumeLater(pulsarMessage, delayTime, unit)))
+    }
   }
 
 }

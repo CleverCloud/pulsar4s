@@ -1,10 +1,9 @@
 package com.sksamuel.pulsar4s.zio
 
-import java.util.concurrent.CompletionStage
-
+import java.util.concurrent.{CompletionStage, TimeUnit}
 import com.sksamuel.pulsar4s
 import com.sksamuel.pulsar4s.conversions.collections._
-import com.sksamuel.pulsar4s.{AsyncHandler, ConsumerMessage, DefaultConsumer, DefaultProducer, DefaultReader, MessageId, Producer, TransactionContext}
+import com.sksamuel.pulsar4s.{AsyncHandler, ConsumerMessage, ConsumerMessageWithValueTry, DefaultConsumer, DefaultProducer, DefaultReader, MessageId, Producer, TransactionContext}
 import org.apache.pulsar.client.api
 import org.apache.pulsar.client.api.{Consumer, ConsumerBuilder, ProducerBuilder, PulsarClient, Reader, ReaderBuilder, TypedMessageBuilder}
 import org.apache.pulsar.client.api.transaction.Transaction
@@ -115,6 +114,27 @@ class ZioAsyncHandler extends AsyncHandler[Task] {
   override def commitTransaction(txn: Transaction): Task[Unit] = fromFuture(ZIO.attempt(txn.commit())).unit
 
   override def abortTransaction(txn: Transaction): Task[Unit] = fromFuture(ZIO.attempt(txn.abort())).unit
+
+  override def reconsumeLaterAsync[T](
+                                       consumer: Consumer[T],
+                                       message: ConsumerMessage[T],
+                                       delayTime: Long,
+                                       unit: TimeUnit
+                                     ): Task[Unit] =
+    ZIO
+      .fromEither {
+        message match {
+          case consumerMessage: ConsumerMessageWithValueTry[T] =>
+            Right(consumerMessage.getBaseMessage())
+          case _ =>
+            Left(
+              new UnsupportedOperationException(
+                "Only ConsumerMessageWithValueTry is supported for reconsumeLater operation"
+              )
+            )
+        }
+      }
+      .map(pulsarMessage => consumer.reconsumeLater(pulsarMessage, delayTime, unit))
 }
 
 object ZioAsyncHandler {
