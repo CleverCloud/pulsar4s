@@ -1,12 +1,11 @@
 package com.sksamuel.pulsar4s.scalaz
 
-import java.util.concurrent.CompletableFuture
-
+import java.util.concurrent.{CompletableFuture, TimeUnit}
 import com.sksamuel.pulsar4s
 import com.sksamuel.pulsar4s.conversions.collections._
 import com.sksamuel.pulsar4s.{AsyncHandler, ConsumerMessage, DefaultConsumer, DefaultProducer, DefaultReader, MessageId, Producer, TransactionContext}
 import org.apache.pulsar.client.api
-import org.apache.pulsar.client.api.{Consumer, ConsumerBuilder, ProducerBuilder, PulsarClient, Reader, ReaderBuilder, TypedMessageBuilder}
+import org.apache.pulsar.client.api.{Consumer, ConsumerBuilder, ProducerBuilder, PulsarClient, Reader, ReaderBuilder, Schema, TypedMessageBuilder}
 import org.apache.pulsar.client.api.transaction.Transaction
 import scalaz.concurrent.Task
 
@@ -128,6 +127,13 @@ class ScalazAsyncHandler extends AsyncHandler[Task] {
   override def commitTransaction(txn: Transaction): Task[Unit] = txn.commit()
 
   override def abortTransaction(txn: Transaction): Task[Unit] = txn.abort()
+
+  override def reconsumeLaterAsync[T](consumer: api.Consumer[T], message: ConsumerMessage[T], delayTime: Long, unit: TimeUnit)
+                                     (implicit schema: Schema[T]): Task[Unit] =
+    Task {
+      consumer.reconsumeLater(ConsumerMessage.toJava(message, schema), delayTime, unit)
+    }
+
 }
 
 object ScalazAsyncHandler {

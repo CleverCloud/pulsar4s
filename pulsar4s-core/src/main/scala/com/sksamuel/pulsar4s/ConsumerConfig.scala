@@ -31,5 +31,6 @@ case class ConsumerConfig(subscriptionName: Subscription,
                           additionalProperties: Map[String, AnyRef] = Map.empty,
                           deadLetterPolicy: Option[DeadLetterPolicy] = None,
                           replicateSubscriptionState: Boolean = false,
-                          batchReceivePolicy: Option[BatchReceivePolicy] = None)
+                          batchReceivePolicy: Option[BatchReceivePolicy] = None,
+                          enableRetry: Option[Boolean] = None)
 

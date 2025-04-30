@@ -3,9 +3,9 @@ package com.sksamuel.pulsar4s
 import com.sksamuel.pulsar4s.conversions.collections._
 import org.apache.pulsar.client.api
 import org.apache.pulsar.client.api.transaction.Transaction
-import org.apache.pulsar.client.api.{ConsumerBuilder, ReaderBuilder, TypedMessageBuilder}
+import org.apache.pulsar.client.api.{ConsumerBuilder, ReaderBuilder, Schema, TypedMessageBuilder}
 
-import java.util.concurrent.CompletableFuture
+import java.util.concurrent.{CompletableFuture, TimeUnit}
 import scala.compat.java8.FutureConverters
 import scala.compat.java8.FutureConverters.CompletionStageOps
 import scala.concurrent.{ExecutionContext, Future}
@@ -84,6 +84,11 @@ class FutureAsyncHandler(implicit ec: ExecutionContext) extends AsyncHandler[Fut
 
   override def negativeAcknowledgeAsync[T](consumer: JConsumer[T], messageId: MessageId): Future[Unit] =
     Future.successful(consumer.negativeAcknowledge(messageId))
+
+  override def reconsumeLaterAsync[T](consumer: api.Consumer[T], message: ConsumerMessage[T], delayTime: Long, unit: TimeUnit)
+                                     (implicit schema: Schema[T]): Future[Unit] =
+    Future.successful(consumer.reconsumeLater(ConsumerMessage.toJava(message, schema), delayTime, unit))
+
 
   override def close(reader: api.Reader[_]): Future[Unit] = reader.closeAsync().toScala
 

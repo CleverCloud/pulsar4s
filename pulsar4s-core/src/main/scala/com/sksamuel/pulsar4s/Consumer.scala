@@ -1,7 +1,7 @@
 package com.sksamuel.pulsar4s
 
 import com.sksamuel.exts.Logging
-import org.apache.pulsar.client.api.ConsumerStats
+import org.apache.pulsar.client.api.{ConsumerStats, Schema}
 import org.apache.pulsar.client.api.transaction.Transaction
 
 import java.io.Closeable
@@ -94,6 +94,12 @@ trait Consumer[T] extends Closeable with TransactionalConsumerOps[T] {
 
   def negativeAcknowledgeAsync[F[_] : AsyncHandler](messageId: MessageId): F[Unit]
 
+  def reconsumeLater(message: ConsumerMessage[T], delayTime: Long, unit: TimeUnit)
+                    (implicit schema: Schema[T]): Unit
+
+  def reconsumeLaterAsync[F[_] : AsyncHandler](message: ConsumerMessage[T], delayTime: Long, unit: TimeUnit)
+                                              (implicit schema: Schema[T]): F[Unit]
+
   def unsubscribe(): Unit
   def unsubscribeAsync[F[_] : AsyncHandler]: F[Unit]
 
@@ -135,6 +141,14 @@ class DefaultConsumer[T](consumer: JConsumer[T]) extends Consumer[T] with Loggin
   override def negativeAcknowledge(messageId: MessageId): Unit = consumer.negativeAcknowledge(messageId)
   override def negativeAcknowledgeAsync[F[_]: AsyncHandler](messageId: MessageId): F[Unit] =
     implicitly[AsyncHandler[F]].negativeAcknowledgeAsync(consumer, messageId)
+
+  override def reconsumeLater(message: ConsumerMessage[T], delayTime: Long, unit: TimeUnit)
+                             (implicit schema: Schema[T]): Unit =
+    consumer.reconsumeLater(ConsumerMessage.toJava(message, schema), delayTime, unit)
+
+  override def reconsumeLaterAsync[F[_] : AsyncHandler](message: ConsumerMessage[T], delayTime: Long, unit: TimeUnit)
+                                                       (implicit schema: Schema[T]): F[Unit] =
+    implicitly[AsyncHandler[F]].reconsumeLaterAsync(consumer, message, delayTime, unit)
 
   override def stats: ConsumerStats = consumer.getStats
   override def subscription: Subscription = Subscription(consumer.getSubscription)
