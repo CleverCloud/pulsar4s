@@ -1,8 +1,6 @@
-version: "3"
-
 services:
   standalone:
-    image: apachepulsar/pulsar:3.1.1
+    image: apachepulsar/pulsar:3.3.7
     ports:
       - "6650:6650"
       - "8080:8080"
@@ -14,12 +12,12 @@ services:
       "bin/apply-config-from-env.py conf/standalone.conf
       && bin/pulsar standalone"
 
-  dashboard:
-    profiles: ["dashboard"]
-    image: apachepulsar/pulsar-dashboard
-    depends_on:
-      - standalone
-    ports:
-      - "80:80"
-    environment:
-      - SERVICE_URL=http://standalone:8080
+#  dashboard:
+#    profiles: ["dashboard"]
+#    image: apachepulsar/pulsar-dashboard
+#    depends_on:
+#      - standalone
+#    ports:
+#      - "80:80"
+#    environment:
+#      - SERVICE_URL=http://standalone:8080
