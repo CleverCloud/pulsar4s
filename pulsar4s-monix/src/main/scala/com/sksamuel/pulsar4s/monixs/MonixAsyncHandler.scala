@@ -14,6 +14,7 @@ import scala.concurrent.Future
 import scala.language.implicitConversions
 import scala.util.{Failure, Success, Try}
 import cats.effect.ExitCase
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class MonixAsyncHandler extends AsyncHandler[Task] {
 
@@ -119,9 +120,9 @@ class MonixAsyncHandler extends AsyncHandler[Task] {
                                     ): Task[Either[E, A]] = {
     startTransaction(builder).bracketCase { txn =>
       action(txn).flatMap { result =>
-        (if (result.isRight) txn.commit(this) else txn.abort(this)).map(_ => result)
+        (if (result.isRight) txn.commit(using this) else txn.abort(using this)).map(_ => result)
       }
-    }((txn, exitCase) => if (exitCase == ExitCase.Completed) Task.unit else txn.abort(this))
+    }((txn, exitCase) => if (exitCase == ExitCase.Completed) Task.unit else txn.abort(using this))
   }
 
   override def startTransaction(builder: api.transaction.TransactionBuilder): Task[TransactionContext] =

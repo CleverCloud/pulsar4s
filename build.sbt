@@ -25,7 +25,7 @@ val Json4sVersion = "4.0.7"
 val Avro4sVersionFor2 = "4.1.2"
 // Version of Avro4s for Scala 3.X
 val Avro4sVersionFor3 = "5.0.14"
-val ScalaVersion = "3.3.5"
+val ScalaVersion = "3.6.4"
 val ScalatestVersion = "3.2.19"
 val ScalazVersion = "7.2.36"
 val Slf4jVersion = "2.0.17"
@@ -310,9 +310,5 @@ lazy val pekko_streams = Project("pulsar4s-pekko-streams", file("pulsar4s-pekko-
   .settings(
     libraryDependencies ++= Seq(
       "org.apache.pekko" %% "pekko-stream" % PekkoStreamVersion
-    ),
-    // ignore scala-java8-compat issues with scala 2.12
-    libraryDependencySchemes ++= (CrossVersion.partialVersion(scalaVersion.value).collect {
-      case (2, 12) => "org.scala-lang.modules" %% "scala-java8-compat" % VersionScheme.Always
-    })
+    )
   )

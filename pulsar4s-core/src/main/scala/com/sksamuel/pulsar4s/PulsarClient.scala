@@ -44,12 +44,12 @@ sealed trait TransactionContext {
   /**
    * Get an instance of `TransactionalConsumerOps` that provides transactional operations on the consumer.
    */
-  final def apply[T](consumer: Consumer[T]): TransactionalConsumerOps[T] = consumer.tx(this)
+  final def apply[T](consumer: Consumer[T]): TransactionalConsumerOps[T] = consumer.tx(using this)
 
   /**
    * Get an instance of `TransactionalProducerOps` that provides transactional operations on the producer.
    */
-  final def apply[T](producer: Producer[T]): TransactionalProducerOps[T] = producer.tx(this)
+  final def apply[T](producer: Producer[T]): TransactionalProducerOps[T] = producer.tx(using this)
 }
 
 object TransactionContext {

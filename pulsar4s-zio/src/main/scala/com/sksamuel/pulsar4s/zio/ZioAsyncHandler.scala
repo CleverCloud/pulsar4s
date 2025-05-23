@@ -102,8 +102,8 @@ class ZioAsyncHandler extends AsyncHandler[Task] {
                                     ): Task[Either[E, A]] = {
     ZIO.acquireReleaseExitWith[Any, Throwable, TransactionContext](startTransaction(builder))(
       (txn: TransactionContext, e: Exit[Throwable, Either[E, A]]) => (txn, e) match {
-        case (txn, Exit.Success(Right(_))) => txn.commit(this).ignore
-        case (txn, _) => txn.abort(this).ignore
+        case (txn, Exit.Success(Right(_))) => txn.commit(using this).ignore
+        case (txn, _) => txn.abort(using this).ignore
       }
     )(action)
   }

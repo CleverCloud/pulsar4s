@@ -112,12 +112,12 @@ class ScalazAsyncHandler extends AsyncHandler[Task] {
                                       action: TransactionContext => Task[Either[E, A]]
                                     ): Task[Either[E, A]] = {
     def close[T](txn: TransactionContext, commit: Boolean, result: T): Task[T] =
-      (if (commit) txn.commit(this) else txn.abort(this)).map(_ => result)
+      (if (commit) txn.commit(using this) else txn.abort(using this)).map(_ => result)
 
     startTransaction(builder).flatMap { txn =>
       action(txn)
-        .flatMap(result => (if (result.isRight) txn.commit(this) else txn.abort(this)).map(_ => result))
-        .onFinish(errorOpt => if (errorOpt.isDefined) txn.abort(this) else Task.now(()))
+        .flatMap(result => (if (result.isRight) txn.commit(using this) else txn.abort(using this)).map(_ => result))
+        .onFinish(errorOpt => if (errorOpt.isDefined) txn.abort(using this) else Task.now(()))
     }
   }
 
