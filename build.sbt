@@ -310,5 +310,9 @@ lazy val pekko_streams = Project("pulsar4s-pekko-streams", file("pulsar4s-pekko-
   .settings(
     libraryDependencies ++= Seq(
       "org.apache.pekko" %% "pekko-stream" % PekkoStreamVersion
-    )
+    ),
+    // ignore scala-java8-compat issues with scala 2.12
+    libraryDependencySchemes ++= (CrossVersion.partialVersion(scalaVersion.value).collect {
+      case (2, 12) => "org.scala-lang.modules" %% "scala-java8-compat" % VersionScheme.Always
+    })
   )
