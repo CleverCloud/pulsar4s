@@ -12,7 +12,7 @@ on:
         default: "master"
 
 jobs:
-  release-scala-2-12:
+  release:
     runs-on: ubuntu-latest
     steps:
       - name: checkout the repo
@@ -37,122 +37,14 @@ jobs:
       - name: Launch pulsar docker
         run: docker-compose up -d
 
-      - name: Import GPG key
-        id: import_gpg
-        uses: crazy-max/ghaction-import-gpg@v6
-        with:
-          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
-          passphrase: ${{ secrets.PGP_PASSPHRASE }}
-
-      - name: GPG user IDs
-        run: |
-          echo "fingerprint: ${{ steps.import_gpg.outputs.fingerprint }}"
-          echo "keyid:       ${{ steps.import_gpg.outputs.keyid }}"
-          echo "name:        ${{ steps.import_gpg.outputs.name }}"
-          echo "email:       ${{ steps.import_gpg.outputs.email }}"
-
       - name: run tests
-        run: sbt ++2.12 test
+        run: sbt + test
 
       - name: publish release
-        run: sbt ++2.12 publishSigned
         env:
-          RELEASE_VERSION: ${{ github.event.inputs.version }}
-          OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
-          OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
-
-  release-scala-2-13:
-    runs-on: ubuntu-latest
-    steps:
-      - name: checkout the repo
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-
-      - uses: awalsh128/cache-apt-pkgs-action@latest
-        with:
-          packages: docker-compose
-          version: 1.0
-
-      - name: Set up JDK
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 17
-
-      - name: Setup sbt launcher
-        uses: sbt/setup-sbt@v1
-
-      - name: Launch pulsar docker
-        run: docker-compose up -d
-
-      - name: Import GPG key
-        id: import_gpg
-        uses: crazy-max/ghaction-import-gpg@v6
-        with:
-          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
-          passphrase: ${{ secrets.PGP_PASSPHRASE }}
-
-      - name: GPG user IDs
-        run: |
-          echo "fingerprint: ${{ steps.import_gpg.outputs.fingerprint }}"
-          echo "keyid:       ${{ steps.import_gpg.outputs.keyid }}"
-          echo "name:        ${{ steps.import_gpg.outputs.name }}"
-          echo "email:       ${{ steps.import_gpg.outputs.email }}"
-
-      - name: run tests
-        run: sbt ++2.13 test
-
-      - name: publish release
-        run: sbt ++2.13 publishSigned
-        env:
-          RELEASE_VERSION: ${{ github.event.inputs.version }}
-          OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
-
-  release-scala-3:
-    runs-on: ubuntu-latest
-    steps:
-      - name: checkout the repo
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-
-      - uses: awalsh128/cache-apt-pkgs-action@latest
-        with:
-          packages: docker-compose
-          version: 1.0
-
-      - name: Set up JDK
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 17
-
-      - name: Setup sbt launcher
-        uses: sbt/setup-sbt@v1
-
-      - name: Launch pulsar docker
-        run: docker-compose up -d
-
-      - name: Import GPG key
-        id: import_gpg
-        uses: crazy-max/ghaction-import-gpg@v6
-        with:
-          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
-          passphrase: ${{ secrets.PGP_PASSPHRASE }}
-
-      - name: GPG user IDs
-        run: |
-          echo "fingerprint: ${{ steps.import_gpg.outputs.fingerprint }}"
-          echo "keyid:       ${{ steps.import_gpg.outputs.keyid }}"
-          echo "name:        ${{ steps.import_gpg.outputs.name }}"
-          echo "email:       ${{ steps.import_gpg.outputs.email }}"
-
-      - name: run tests
-        run: sbt ++3.6 test
-
-      - name: publish release
-        run: sbt ++3.6 publishSigned
-        env:
-          RELEASE_VERSION: ${{ github.event.inputs.version }}
-          OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
+          PGP_SECRET: ${{ secrets.PGP_SECRET }}
+          SONATYPE_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
+          SONATYPE_PASSWORD: ${{ secrets.CENTRAL_TOKEN }}
+          CI_SONATYPE_RELEASE: sonatypeBundleRelease
+        run: sbt ci-release

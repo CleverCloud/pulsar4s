@@ -1,9 +1,11 @@
+import xerial.sbt.Sonatype.sonatypeCentralHost
+
+ThisBuild / sonatypeCredentialHost := sonatypeCentralHost
+
 def isGithubActions = sys.env.getOrElse("CI", "false") == "true"
 def releaseVersion = sys.env.getOrElse("RELEASE_VERSION", "")
 def isRelease = releaseVersion != ""
 def githubRunNumber = sys.env.getOrElse("GITHUB_RUN_NUMBER", "")
-def ossrhUsername = sys.env.getOrElse("OSSRH_USERNAME", "")
-def ossrhPassword = sys.env.getOrElse("OSSRH_PASSWORD", "")
 def publishVersion = if (isRelease) releaseVersion else if (isGithubActions) "2.9.0." + githubRunNumber + "-SNAPSHOT" else "0.0.0-LOCAL"
 
 val org = "com.clever-cloud.pulsar4s"
@@ -50,7 +52,7 @@ lazy val warnUnusedImport = Seq(
 )
 
 lazy val commonSettings = Seq(
-  organization := "com.clever-cloud.pulsar4s",
+  organization := org,
   version := publishVersion,
   resolvers ++= Seq(Resolver.mavenLocal),
   Test / parallelExecution := false,
@@ -67,22 +69,9 @@ lazy val commonSettings = Seq(
 )
 
 lazy val publishSettings = Seq(
-  publishMavenStyle := true,
   Test / publishArtifact := false,
   pomIncludeRepository := Function.const(false),
-  credentials += Credentials(
-    "Sonatype Nexus Repository Manager",
-    "s01.oss.sonatype.org",
-    ossrhUsername,
-    ossrhPassword
-  ),
-  publishTo := {
-    val nexus = "https://s01.oss.sonatype.org/"
-    if (isRelease)
-      Some("releases" at nexus + "service/local/staging/deploy/maven2")
-    else
-      Some("snapshots" at nexus + "content/repositories/snapshots")
-  }
+  usePgpKeyHex("A7B8F38C536F1DF2"),
 )
 
 lazy val commonJvmSettings = Seq(
@@ -125,34 +114,19 @@ lazy val pomSettings = Seq(
   </developers>
 )
 
-val travisCreds = Credentials(
-  "Sonatype Nexus Repository Manager",
-  "s01.oss.sonatype.org",
-  sys.env.getOrElse("OSSRH_USERNAME", ""),
-  sys.env.getOrElse("OSSRH_PASSWORD", "")
-)
-
-val localCreds = Credentials(Path.userHome / ".sbt" / "credentials.sbt")
-
-lazy val credentialSettings = Seq(
-  credentials := (if (isGithubActions) Seq(travisCreds) else Seq(localCreds))
-)
+lazy val allSettings = commonScalaVersionSettings ++
+  commonJvmSettings ++
+  commonSettings ++
+  commonDeps ++
+  pomSettings ++
+  warnUnusedImport ++
+  publishSettings
 
 lazy val noPublishSettings = Seq(
   publish := {},
   publishLocal := {},
   publishArtifact := false
 )
-
-lazy val allSettings = commonScalaVersionSettings ++
-  commonJvmSettings ++
-  commonSettings ++
-  commonDeps ++
-  credentialSettings ++
-  pomSettings ++
-  warnUnusedImport ++
-  publishSettings
-
 
 lazy val root = Project("pulsar4s", file("."))
   .settings(name := "pulsar4s")

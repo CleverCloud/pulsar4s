@@ -3,6 +3,7 @@
 .idea
 *.iml
 pom.xml.versionsBackup
+.env*
 
 # sbt specific
 dist/*
