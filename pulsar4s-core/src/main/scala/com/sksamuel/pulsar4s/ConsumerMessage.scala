@@ -84,7 +84,8 @@ object ConsumerMessage {
       Topic(message.getTopicName),
       message.getSchemaVersion,
       message.getRedeliveryCount,
-      Option(message.getReplicatedFrom)
+      Option(message.getReplicatedFrom),
+      () => message
     )
   }
 
@@ -123,7 +124,8 @@ case class ConsumerMessageWithValueTry[T](key: Option[String],
                                           topic: Topic,
                                           schemaVersion: Array[Byte],
                                           redeliveryCount: Int,
-                                          replicatedFrom: Option[String]) extends ConsumerMessage[T] {
+                                          replicatedFrom: Option[String],
+                                          getBaseMessage: () => JMessage[T]) extends ConsumerMessage[T] {
   def value: T = valueTry.get
 }
 

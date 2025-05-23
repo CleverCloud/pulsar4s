@@ -5,7 +5,7 @@ import org.apache.pulsar.client.api
 import org.apache.pulsar.client.api.transaction.Transaction
 import org.apache.pulsar.client.api.{ConsumerBuilder, ReaderBuilder, TypedMessageBuilder}
 
-import java.util.concurrent.CompletableFuture
+import java.util.concurrent.{CompletableFuture, TimeUnit}
 import scala.compat.java8.FutureConverters
 import scala.compat.java8.FutureConverters.CompletionStageOps
 import scala.concurrent.{ExecutionContext, Future}
@@ -84,6 +84,24 @@ class FutureAsyncHandler(implicit ec: ExecutionContext) extends AsyncHandler[Fut
 
   override def negativeAcknowledgeAsync[T](consumer: JConsumer[T], messageId: MessageId): Future[Unit] =
     Future.successful(consumer.negativeAcknowledge(messageId))
+
+  override def reconsumeLaterAsync[T](
+                                       consumer: api.Consumer[T],
+                                       message: ConsumerMessage[T],
+                                       delayTime: Long,
+                                       unit: TimeUnit
+                                     ): Future[Unit] =
+    message match {
+      case consumerMessage: ConsumerMessageWithValueTry[T] =>
+        Future.successful(consumer.reconsumeLater(consumerMessage.getBaseMessage(), delayTime, unit))
+      case _ =>
+        Future.failed(
+          new UnsupportedOperationException(
+            "Only ConsumerMessageWithValueTry is supported for reconsumeLater operation"
+          )
+        )
+    }
+
 
   override def close(reader: api.Reader[_]): Future[Unit] = reader.closeAsync().toScala
 

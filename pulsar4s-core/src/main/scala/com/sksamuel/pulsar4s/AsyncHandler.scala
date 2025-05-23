@@ -4,6 +4,7 @@ import org.apache.pulsar.client.api
 import org.apache.pulsar.client.api.TypedMessageBuilder
 import org.apache.pulsar.client.api.transaction.Transaction
 
+import java.util.concurrent.TimeUnit
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
@@ -47,6 +48,7 @@ trait AsyncHandler[F[_]] {
   def acknowledgeCumulativeAsync[T](consumer: api.Consumer[T], messageId: MessageId): F[Unit]
   def acknowledgeCumulativeAsync[T](consumer: api.Consumer[T], messageId: MessageId, txn: Transaction): F[Unit]
   def negativeAcknowledgeAsync[T](consumer: api.Consumer[T], messageId: MessageId): F[Unit]
+  def reconsumeLaterAsync[T](consumer: api.Consumer[T], message: ConsumerMessage[T], delayTime: Long, unit: TimeUnit): F[Unit]
 
   def withTransaction[E, A](
     builder: api.transaction.TransactionBuilder,

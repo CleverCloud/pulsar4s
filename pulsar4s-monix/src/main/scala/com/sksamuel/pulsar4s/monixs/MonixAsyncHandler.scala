@@ -1,10 +1,9 @@
 package com.sksamuel.pulsar4s.monixs
 
-import java.util.concurrent.CompletableFuture
-
+import java.util.concurrent.{CompletableFuture, TimeUnit}
 import com.sksamuel.pulsar4s
 import com.sksamuel.pulsar4s.conversions.collections._
-import com.sksamuel.pulsar4s.{AsyncHandler, ConsumerMessage, DefaultConsumer, DefaultProducer, DefaultReader, MessageId, Producer, TransactionContext}
+import com.sksamuel.pulsar4s.{AsyncHandler, ConsumerMessage, ConsumerMessageWithValueTry, DefaultConsumer, DefaultProducer, DefaultReader, MessageId, Producer, TransactionContext}
 import monix.eval.Task
 import org.apache.pulsar.client.api
 import org.apache.pulsar.client.api.{Consumer, ConsumerBuilder, ProducerBuilder, PulsarClient, Reader, ReaderBuilder, TypedMessageBuilder}
@@ -133,6 +132,27 @@ class MonixAsyncHandler extends AsyncHandler[Task] {
 
   override def abortTransaction(txn: Transaction): Task[Unit] =
     Task.deferFuture(txn.abort()).map(_ => ())
+
+  override def reconsumeLaterAsync[T](
+                                       consumer: Consumer[T],
+                                       message: ConsumerMessage[T],
+                                       delayTime: Long,
+                                       unit: TimeUnit
+                                     ): Task[Unit] =
+    Task
+      .fromEither {
+        message match {
+          case consumerMessage: ConsumerMessageWithValueTry[T] =>
+            Right(consumerMessage.getBaseMessage())
+          case _ =>
+            Left(
+              new UnsupportedOperationException(
+                "Only ConsumerMessageWithValueTry is supported for reconsumeLater operation"
+              )
+            )
+        }
+      }
+      .flatMap(pulsarMessage => Task(consumer.reconsumeLater(pulsarMessage, delayTime, unit)))
 }
 
 object MonixAsyncHandler {
