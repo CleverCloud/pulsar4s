@@ -47,4 +47,5 @@ jobs:
           SONATYPE_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
           SONATYPE_PASSWORD: ${{ secrets.CENTRAL_TOKEN }}
           CI_SONATYPE_RELEASE: sonatypeBundleRelease
+          RELEASE_VERSION: ${{ github.event.inputs.version }}
         run: sbt ci-release
