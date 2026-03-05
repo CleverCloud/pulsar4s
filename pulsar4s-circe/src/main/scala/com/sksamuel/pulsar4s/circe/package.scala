@@ -7,7 +7,9 @@ import org.apache.pulsar.client.api.Schema
 import org.apache.pulsar.client.impl.schema.SchemaInfoImpl
 import org.apache.pulsar.common.schema.{SchemaInfo, SchemaType}
 
+import java.nio.charset.StandardCharsets
 import scala.annotation.implicitNotFound
+import scala.reflect.{ClassTag, classTag}
 
 /**
   * Automatic MessageWriter and MessageReader derivation
@@ -30,7 +32,7 @@ package object circe {
 
   @implicitNotFound(
     "No Encoder for type ${T} found. Use 'import io.circe.generic.auto._' or provide an implicit Encoder instance ")
-  implicit def circeSchema[T: Manifest](implicit
+  implicit def circeSchema[T: ClassTag](implicit
                                         encoder: Encoder[T],
                                         decoder: Decoder[T],
                                         printer: Json => String = Printer.noSpaces.print): Schema[T] = new Schema[T] {
@@ -40,7 +42,7 @@ package object circe {
       io.circe.jawn.decode[T](new String(bytes, StandardCharsets.UTF_8)).fold(throw _, identity)
     override def getSchemaInfo: SchemaInfo = {
       SchemaInfoImpl.builder()
-        .name(manifest[T].runtimeClass.getCanonicalName)
+        .name(classTag[T].runtimeClass.getCanonicalName)
         .`type`(SchemaType.BYTES)
         .schema(Array.empty[Byte])
         .build()
