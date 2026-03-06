@@ -24,7 +24,7 @@ val PlayJsonVersion = "2.10.8"
 val PulsarVersion = "4.0.9"
 val ReactiveStreamsVersion = "1.0.2"
 val FunctionalStreamsVersion = "3.12.2"
-val Json4sVersion = "4.0.7"
+val Json4sVersion = "4.1.0"
 // Version of Avro4s for Scala 2.X
 val Avro4sVersionFor2 = "4.1.2"
 // Version of Avro4s for Scala 3.X
@@ -280,8 +280,8 @@ lazy val json4s = Project("pulsar4s-json4s", file("pulsar4s-json4s"))
   .settings(allSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "org.json4s" %% "json4s-core" % Json4sVersion,
-      "org.json4s" %% "json4s-jackson" % Json4sVersion
+      "io.github.json4s" %% "json4s-core" % Json4sVersion,
+      "io.github.json4s" %% "json4s-jackson" % Json4sVersion
     )
   )
 
