@@ -35,23 +35,27 @@ trait TransactionalCommittableMessageOps {
 }
 
 class PulsarCommittableSourceGraphStage[T](
-  create: () => Consumer[T],
-  seek: Option[MessageId],
-  closeDelay: FiniteDuration,
-) extends GraphStageWithMaterializedValue[SourceShape[CommittableMessage[T]], Control]
-  with Logging {
+    create: () => Consumer[T],
+    seek: Option[MessageId],
+    closeDelay: FiniteDuration
+) extends GraphStageWithMaterializedValue[SourceShape[
+      CommittableMessage[T]
+    ], Control]
+    with Logging {
 
   @deprecated("Use main constructor", "2.7.1")
-  def this(create: () => Consumer[T], seek: Option[MessageId]) = this(create, seek, closeDelay = DefaultCloseDelay)
+  def this(create: () => Consumer[T], seek: Option[MessageId]) =
+    this(create, seek, closeDelay = DefaultCloseDelay)
 
   private val out = Outlet[CommittableMessage[T]]("pulsar.out")
   override def shape: SourceShape[CommittableMessage[T]] = SourceShape(out)
 
   private class CommittableMessageImpl[T](
-    val consumer: Consumer[T],
-    val message: ConsumerMessage[T],
-    val ctx: Option[TransactionContext] = None
-  )(implicit ec: ExecutionContext) extends CommittableMessage[T] {
+      val consumer: Consumer[T],
+      val message: ConsumerMessage[T],
+      val ctx: Option[TransactionContext] = None
+  )(implicit ec: ExecutionContext)
+      extends CommittableMessage[T] {
     def messageId: MessageId = message.messageId
     override def ack(cumulative: Boolean): Future[Done] = {
       logger.debug(s"Acknowledging message: $message")
@@ -63,7 +67,9 @@ class PulsarCommittableSourceGraphStage[T](
       }
       ackFuture.map(_ => Done)
     }
-    override def tx(implicit ctx: TransactionContext): TransactionalCommittableMessageOps = {
+    override def tx(implicit
+        ctx: TransactionContext
+    ): TransactionalCommittableMessageOps = {
       new CommittableMessageImpl(consumer, message, Some(ctx))
     }
     override def nack(): Future[Done] = {
@@ -72,24 +78,31 @@ class PulsarCommittableSourceGraphStage[T](
     }
   }
 
-  private class PulsarCommittableSourceLogic(shape: Shape) extends GraphStageLogic(shape) with OutHandler with Control {
+  private class PulsarCommittableSourceLogic(shape: Shape)
+      extends GraphStageLogic(shape)
+      with OutHandler
+      with Control {
     setHandler(out, this)
 
     implicit def ec: ExecutionContext = materializer.executionContext
 
     @inline private def consumer: Consumer[T] =
-      consumerOpt.getOrElse(throw new IllegalStateException("Consumer not initialized!"))
+      consumerOpt.getOrElse(
+        throw new IllegalStateException("Consumer not initialized!")
+      )
     private var consumerOpt: Option[Consumer[T]] = None
-    private var receiveCallback: AsyncCallback[Try[ConsumerMessage[T]]] = getAsyncCallback {
-      case Success(msg) =>
-        logger.debug(s"Message received: $msg")
-        push(out, new CommittableMessageImpl(consumer, msg))
-      case Failure(e) =>
-        logger.warn("Error when receiving message", e)
-        failStage(e)
-    }
+    private var receiveCallback: AsyncCallback[Try[ConsumerMessage[T]]] =
+      getAsyncCallback {
+        case Success(msg) =>
+          logger.debug(s"Message received: $msg")
+          push(out, new CommittableMessageImpl(consumer, msg))
+        case Failure(e) =>
+          logger.warn("Error when receiving message", e)
+          failStage(e)
+      }
     private val stopped: Promise[Done] = Promise()
-    private val stopCallback: AsyncCallback[Unit] = getAsyncCallback(_ => completeStage())
+    private val stopCallback: AsyncCallback[Unit] =
+      getAsyncCallback(_ => completeStage())
 
     override def preStart(): Unit = {
       try {
@@ -122,7 +135,7 @@ class PulsarCommittableSourceGraphStage[T](
     }
 
     override def postStop(): Unit = stopped.success(Done)
-    
+
     override def shutdown()(implicit ec: ExecutionContext): Future[Done] = {
       for {
         _ <- complete()
@@ -133,9 +146,10 @@ class PulsarCommittableSourceGraphStage[T](
     override def stats: ConsumerStats = consumer.stats
   }
 
-  override def createLogicAndMaterializedValue(inheritedAttributes: Attributes): (GraphStageLogic, Control) = {
+  override def createLogicAndMaterializedValue(
+      inheritedAttributes: Attributes
+  ): (GraphStageLogic, Control) = {
     val logic = new PulsarCommittableSourceLogic(shape)
     (logic, logic)
   }
 }
-

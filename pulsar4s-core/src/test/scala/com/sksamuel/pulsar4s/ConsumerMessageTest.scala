@@ -11,10 +11,12 @@ import org.scalatest.matchers.should.Matchers
 
 import scala.util.Try
 
-class ConsumerMessageTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
+class ConsumerMessageTest
+    extends AnyFunSuite
+    with Matchers
+    with BeforeAndAfterAll {
 
   test("ConsumerMessage.toJava should set metadata") {
-
 
     val message = ConsumerMessageWithValueTry(
       key = None,
@@ -30,14 +32,15 @@ class ConsumerMessageTest extends AnyFunSuite with Matchers with BeforeAndAfterA
       schemaVersion = Array.emptyByteArray,
       redeliveryCount = 2,
       replicatedFrom = Some("reppy"),
-      () => new MessageImpl[String](
-        "test",
-        MessageId.latest.toString,
-        Map.empty[String, String].asJava,
-        Unpooled.wrappedBuffer("foo".getBytes),
-        Schema.STRING,
-        new MessageMetadata()
-      )
+      () =>
+        new MessageImpl[String](
+          "test",
+          MessageId.latest.toString,
+          Map.empty[String, String].asJava,
+          Unpooled.wrappedBuffer("foo".getBytes),
+          Schema.STRING,
+          new MessageMetadata()
+        )
     )
     val java = ConsumerMessage.toJava(message, Schema.STRING)
     java.getPublishTime shouldBe 222

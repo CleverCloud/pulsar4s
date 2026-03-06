@@ -11,18 +11,24 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import scala.util.Random
 
-
-class FutureAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
+class FutureAsyncHandlerTest
+    extends AnyFunSuite
+    with Matchers
+    with BeforeAndAfterAll {
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
   implicit val schema: Schema[String] = Schema.STRING
 
-  private val client = PulsarClient(PulsarClientConfig(
-    serviceUrl = "pulsar://localhost:6650",
-    enableTransaction = Some(true)
-  ))
-  private val topic = Topic("persistent://sample/standalone/ns1/futureasync_" + UUID.randomUUID())
+  private val client = PulsarClient(
+    PulsarClientConfig(
+      serviceUrl = "pulsar://localhost:6650",
+      enableTransaction = Some(true)
+    )
+  )
+  private val topic = Topic(
+    "persistent://sample/standalone/ns1/futureasync_" + UUID.randomUUID()
+  )
 
   override def afterAll(): Unit = {
     client.close()
@@ -36,15 +42,27 @@ class FutureAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAft
   }
 
   test("async consumer should bring future effect into scope by default") {
-    val consumer = client.consumer(ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription("mysub_" + UUID.randomUUID)))
+    val consumer = client.consumer(
+      ConsumerConfig(
+        topics = Seq(topic),
+        subscriptionName = Subscription("mysub_" + UUID.randomUUID)
+      )
+    )
     consumer.seekEarliest()
     val f = consumer.receiveAsync
     new String(Await.result(f, Duration.Inf).data) shouldBe "wibble"
     consumer.close()
   }
 
-  test("async consumer getMessageById should bring future effect into scope by default") {
-    val consumer = client.consumer(ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription("mysub_" + UUID.randomUUID)))
+  test(
+    "async consumer getMessageById should bring future effect into scope by default"
+  ) {
+    val consumer = client.consumer(
+      ConsumerConfig(
+        topics = Seq(topic),
+        subscriptionName = Subscription("mysub_" + UUID.randomUUID)
+      )
+    )
     consumer.seekEarliest()
     val receive = consumer.receiveAsync
     val value = Await.result(receive, Duration.Inf)
@@ -56,8 +74,14 @@ class FutureAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAft
   }
 
   test("async producer and consumer can participate in transaction") {
-    val producer = client.producer(ProducerConfig(topic, sendTimeout = Some(Duration.Zero)))
-    val consumer = client.consumer(ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription("mysub_" + UUID.randomUUID)))
+    val producer =
+      client.producer(ProducerConfig(topic, sendTimeout = Some(Duration.Zero)))
+    val consumer = client.consumer(
+      ConsumerConfig(
+        topics = Seq(topic),
+        subscriptionName = Subscription("mysub_" + UUID.randomUUID)
+      )
+    )
     consumer.seekEarliest()
     val msgIdFt = client.transaction.runWith { txn =>
       for {
@@ -73,9 +97,17 @@ class FutureAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAft
     producer.close()
   }
 
-  test("async producer and consumer can participate in manually managed transaction") {
-    val producer = client.producer(ProducerConfig(topic, sendTimeout = Some(Duration.Zero)))
-    val consumer = client.consumer(ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription("mysub_" + UUID.randomUUID)))
+  test(
+    "async producer and consumer can participate in manually managed transaction"
+  ) {
+    val producer =
+      client.producer(ProducerConfig(topic, sendTimeout = Some(Duration.Zero)))
+    val consumer = client.consumer(
+      ConsumerConfig(
+        topics = Seq(topic),
+        subscriptionName = Subscription("mysub_" + UUID.randomUUID)
+      )
+    )
     consumer.seekEarliest()
     val msgIdFt = for {
       txn <- client.transaction.start
@@ -91,19 +123,29 @@ class FutureAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAft
     producer.close()
   }
 
-  test("async producer and consumer can participate in transaction returning either") {
-    val producer = client.producer(ProducerConfig(topic, sendTimeout = Some(Duration.Zero)))
-    val consumer = client.consumer(ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription("mysub_" + UUID.randomUUID)))
+  test(
+    "async producer and consumer can participate in transaction returning either"
+  ) {
+    val producer =
+      client.producer(ProducerConfig(topic, sendTimeout = Some(Duration.Zero)))
+    val consumer = client.consumer(
+      ConsumerConfig(
+        topics = Seq(topic),
+        subscriptionName = Subscription("mysub_" + UUID.randomUUID)
+      )
+    )
     consumer.seekEarliest()
-    val msgIdEitherFt = client.transaction.withTimeout(timeout = 1.second).runWithEither { implicit txn =>
-      for {
-        msg <- consumer.receiveAsync
-        msgId <- producer.tx.sendAsync(msg.value + "_test")
-        _ <- consumer.tx.acknowledgeAsync(msg.messageId)
-      } yield {
-        if (Random.nextBoolean()) Right(msgId) else Left(s"failed: $msgId")
+    val msgIdEitherFt =
+      client.transaction.withTimeout(timeout = 1.second).runWithEither {
+        implicit txn =>
+          for {
+            msg <- consumer.receiveAsync
+            msgId <- producer.tx.sendAsync(msg.value + "_test")
+            _ <- consumer.tx.acknowledgeAsync(msg.messageId)
+          } yield {
+            if (Random.nextBoolean()) Right(msgId) else Left(s"failed: $msgId")
+          }
       }
-    }
     Await.result(msgIdEitherFt, Duration.Inf)
     consumer.close()
     producer.close()

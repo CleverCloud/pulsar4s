@@ -1,7 +1,12 @@
 package com.sksamuel.pulsar4s.pekko.streams
 
 import org.apache.pekko.Done
-import org.apache.pekko.stream.stage.{AsyncCallback, GraphStageLogic, GraphStageWithMaterializedValue, InHandler}
+import org.apache.pekko.stream.stage.{
+  AsyncCallback,
+  GraphStageLogic,
+  GraphStageWithMaterializedValue,
+  InHandler
+}
 import org.apache.pekko.stream.{Attributes, Inlet, SinkShape}
 import com.sksamuel.exts.Logging
 import com.sksamuel.pulsar4s.{Producer, ProducerMessage, Topic}
@@ -10,22 +15,29 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContextExecutor, Future, Promise}
 import scala.util.{Failure, Success, Try}
 
-class PulsarMultiSinkGraphStage[T](createFn: Topic => Producer[T], initTopics: Set[Topic] = Set.empty)
-  extends GraphStageWithMaterializedValue[SinkShape[(Topic, ProducerMessage[T])], Future[Done]]
+class PulsarMultiSinkGraphStage[T](
+    createFn: Topic => Producer[T],
+    initTopics: Set[Topic] = Set.empty
+) extends GraphStageWithMaterializedValue[SinkShape[
+      (Topic, ProducerMessage[T])
+    ], Future[Done]]
     with Logging {
 
   private val in = Inlet.create[(Topic, ProducerMessage[T])]("pulsar.in")
 
   override def shape: SinkShape[(Topic, ProducerMessage[T])] = SinkShape.of(in)
 
-  override def createLogicAndMaterializedValue(inheritedAttributes: Attributes): (GraphStageLogic, Future[Done]) = {
+  override def createLogicAndMaterializedValue(
+      inheritedAttributes: Attributes
+  ): (GraphStageLogic, Future[Done]) = {
 
     val promise = Promise[Done]()
 
     val logic: GraphStageLogic = new GraphStageLogic(shape) with InHandler {
       setHandler(in, this)
 
-      implicit def context: ExecutionContextExecutor = super.materializer.executionContext
+      implicit def context: ExecutionContextExecutor =
+        super.materializer.executionContext
 
       var producers: Map[Topic, Producer[T]] = _
       var produceCallback: AsyncCallback[Try[_]] = _

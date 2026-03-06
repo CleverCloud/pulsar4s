@@ -7,10 +7,13 @@ import org.apache.pulsar.common.schema.{SchemaInfo, SchemaType}
 package object jackson {
   implicit def schema[T: Manifest]: Schema[T] = new Schema[T] {
     override def clone(): Schema[T] = this
-    override def encode(t: T): Array[Byte] = JacksonSupport.mapper.writeValueAsBytes(t)
-    override def decode(bytes: Array[Byte]): T = JacksonSupport.mapper.readValue[T](bytes)
+    override def encode(t: T): Array[Byte] =
+      JacksonSupport.mapper.writeValueAsBytes(t)
+    override def decode(bytes: Array[Byte]): T =
+      JacksonSupport.mapper.readValue[T](bytes)
     override def getSchemaInfo: SchemaInfo =
-      SchemaInfoImpl.builder()
+      SchemaInfoImpl
+        .builder()
         .name(manifest[T].runtimeClass.getCanonicalName)
         .`type`(SchemaType.BYTES)
         .schema(Array.empty[Byte])

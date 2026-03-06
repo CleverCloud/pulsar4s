@@ -8,12 +8,17 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
-class ScalazAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
+class ScalazAsyncHandlerTest
+    extends AnyFunSuite
+    with Matchers
+    with BeforeAndAfterAll {
 
   implicit val schema: Schema[String] = Schema.STRING
 
   val client: PulsarAsyncClient = PulsarClient("pulsar://localhost:6650")
-  val topic: Topic = Topic("persistent://sample/standalone/ns1/scalaz_" + UUID.randomUUID())
+  val topic: Topic = Topic(
+    "persistent://sample/standalone/ns1/scalaz_" + UUID.randomUUID()
+  )
 
   override def afterAll(): Unit = {
     client.close()
@@ -29,7 +34,11 @@ class ScalazAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAft
   }
 
   test("async consumer should use scalaz task") {
-    val consumer = client.consumer(ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription.generate)
+    val consumer = client.consumer(
+      ConsumerConfig(
+        topics = Seq(topic),
+        subscriptionName = Subscription.generate
+      )
     )
     consumer.seekEarliest()
     val t = consumer.receiveAsync
@@ -38,7 +47,11 @@ class ScalazAsyncHandlerTest extends AnyFunSuite with Matchers with BeforeAndAft
   }
 
   test("async consumer getMessageById should use scalaz task") {
-    val consumer = client.consumer(ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription.generate)
+    val consumer = client.consumer(
+      ConsumerConfig(
+        topics = Seq(topic),
+        subscriptionName = Subscription.generate
+      )
     )
     consumer.seekEarliest()
     val receive = consumer.receiveAsync

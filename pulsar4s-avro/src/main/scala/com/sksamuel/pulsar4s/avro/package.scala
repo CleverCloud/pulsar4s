@@ -17,10 +17,9 @@ import org.apache.pulsar.common.schema.{SchemaInfo, SchemaType}
 
 import scala.annotation.implicitNotFound
 
-/**
-  * Automatic Schema derivation using avro4s
+/** Automatic Schema derivation using avro4s
   *
-  * == Examples ==
+  * ==Examples==
   *
   * {{{
   *  import com.sksamuel.pulsar4s.avro._
@@ -36,13 +35,15 @@ import scala.annotation.implicitNotFound
 package object avro {
 
   private class AvroPulsarSchema[T: Manifest: SchemaFor: Encoder: Decoder](
-    // Note that this is a `var` because we need to implement `setSchemaInfoProvider`
-    private var schemaInfoProvider: Option[SchemaInfoProvider] = None
+      // Note that this is a `var` because we need to implement `setSchemaInfoProvider`
+      private var schemaInfoProvider: Option[SchemaInfoProvider] = None
   ) extends Schema[T] {
 
     private val generatedAvroSchema: org.apache.avro.Schema = AvroSchema[T]
 
-    private def avroSchemaByVersion(schemaVersion: Option[Array[Byte]]): org.apache.avro.Schema = {
+    private def avroSchemaByVersion(
+        schemaVersion: Option[Array[Byte]]
+    ): org.apache.avro.Schema = {
       val schemaFromVersion = for {
         provider <- schemaInfoProvider
         version <- schemaVersion
@@ -55,12 +56,15 @@ package object avro {
 
     override def supportSchemaVersioning: Boolean = true
 
-    override def setSchemaInfoProvider(schemaInfoProvider: SchemaInfoProvider): Unit = {
+    override def setSchemaInfoProvider(
+        schemaInfoProvider: SchemaInfoProvider
+    ): Unit = {
       this.schemaInfoProvider = Option(schemaInfoProvider)
     }
 
     override def getSchemaInfo: SchemaInfo = {
-      SchemaInfoImpl.builder()
+      SchemaInfoImpl
+        .builder()
         .name(manifest[T].runtimeClass.getCanonicalName)
         .`type`(SchemaType.AVRO)
         .schema(generatedAvroSchema.toString.getBytes(StandardCharsets.UTF_8))
@@ -70,19 +74,28 @@ package object avro {
     override def encode(t: T): Array[Byte] = {
       val baos = new ByteArrayOutputStream
       val aos = AvroOutputStream.binary[T].to(baos).build()
-      try aos.write(t) finally aos.close()
+      try aos.write(t)
+      finally aos.close()
       baos.toByteArray()
     }
 
-    override def decode(bytes: Array[Byte], schemaVersionNullable: Array[Byte]): T = {
+    override def decode(
+        bytes: Array[Byte],
+        schemaVersionNullable: Array[Byte]
+    ): T = {
       val avroSchema = avroSchemaByVersion(Option(schemaVersionNullable))
-      val ais = AvroInputStream.binary[T].from(new ByteArrayInputStream(bytes)).build(avroSchema)
-      try ais.iterator.next() finally ais.close()
+      val ais = AvroInputStream
+        .binary[T]
+        .from(new ByteArrayInputStream(bytes))
+        .build(avroSchema)
+      try ais.iterator.next()
+      finally ais.close()
     }
 
     override def clone(): Schema[T] = new AvroPulsarSchema(schemaInfoProvider)
   }
 
   @implicitNotFound("No Avro Schema for type ${T} found.")
-  implicit def avroSchema[T: Manifest: SchemaFor: Encoder: Decoder]: Schema[T] = new AvroPulsarSchema[T]()
+  implicit def avroSchema[T: Manifest: SchemaFor: Encoder: Decoder]: Schema[T] =
+    new AvroPulsarSchema[T]()
 }

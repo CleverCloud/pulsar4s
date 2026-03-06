@@ -18,7 +18,9 @@ trait AsyncHandler[F[_]] {
   def createReader[T](builder: api.ReaderBuilder[T]): F[Reader[T]]
 
   @deprecated("Use send(builder) instead", "2.8.0")
-  def send[T](t: T, producer: api.Producer[T]): F[MessageId] = send(producer.newMessage().value(t))
+  def send[T](t: T, producer: api.Producer[T]): F[MessageId] = send(
+    producer.newMessage().value(t)
+  )
 
   def send[T](builder: TypedMessageBuilder[T]): F[MessageId]
   def receive[T](consumer: api.Consumer[T]): F[ConsumerMessage[T]]
@@ -43,23 +45,48 @@ trait AsyncHandler[F[_]] {
 
   def getLastMessageId[T](consumer: api.Consumer[T]): F[MessageId]
 
-  def acknowledgeAsync[T](consumer: api.Consumer[T], messageId: MessageId): F[Unit]
-  def acknowledgeAsync[T](consumer: api.Consumer[T], messageId: MessageId, txn: Transaction): F[Unit]
-  def acknowledgeCumulativeAsync[T](consumer: api.Consumer[T], messageId: MessageId): F[Unit]
-  def acknowledgeCumulativeAsync[T](consumer: api.Consumer[T], messageId: MessageId, txn: Transaction): F[Unit]
-  def negativeAcknowledgeAsync[T](consumer: api.Consumer[T], messageId: MessageId): F[Unit]
-  def reconsumeLaterAsync[T](consumer: api.Consumer[T], message: ConsumerMessage[T], delayTime: Long, unit: TimeUnit): F[Unit]
+  def acknowledgeAsync[T](
+      consumer: api.Consumer[T],
+      messageId: MessageId
+  ): F[Unit]
+  def acknowledgeAsync[T](
+      consumer: api.Consumer[T],
+      messageId: MessageId,
+      txn: Transaction
+  ): F[Unit]
+  def acknowledgeCumulativeAsync[T](
+      consumer: api.Consumer[T],
+      messageId: MessageId
+  ): F[Unit]
+  def acknowledgeCumulativeAsync[T](
+      consumer: api.Consumer[T],
+      messageId: MessageId,
+      txn: Transaction
+  ): F[Unit]
+  def negativeAcknowledgeAsync[T](
+      consumer: api.Consumer[T],
+      messageId: MessageId
+  ): F[Unit]
+  def reconsumeLaterAsync[T](
+      consumer: api.Consumer[T],
+      message: ConsumerMessage[T],
+      delayTime: Long,
+      unit: TimeUnit
+  ): F[Unit]
 
   def withTransaction[E, A](
-    builder: api.transaction.TransactionBuilder,
-    action: TransactionContext => F[Either[E, A]]
+      builder: api.transaction.TransactionBuilder,
+      action: TransactionContext => F[Either[E, A]]
   ): F[Either[E, A]]
-  def startTransaction(builder: api.transaction.TransactionBuilder): F[TransactionContext]
+  def startTransaction(
+      builder: api.transaction.TransactionBuilder
+  ): F[TransactionContext]
   def commitTransaction(txn: Transaction): F[Unit]
   def abortTransaction(txn: Transaction): F[Unit]
 }
 
 object AsyncHandler {
-  def apply[F[_] : AsyncHandler]: AsyncHandler[F] = implicitly[AsyncHandler[F]]
-  implicit def handler(implicit ec: ExecutionContext): AsyncHandler[Future] = new FutureAsyncHandler
+  def apply[F[_]: AsyncHandler]: AsyncHandler[F] = implicitly[AsyncHandler[F]]
+  implicit def handler(implicit ec: ExecutionContext): AsyncHandler[Future] =
+    new FutureAsyncHandler
 }

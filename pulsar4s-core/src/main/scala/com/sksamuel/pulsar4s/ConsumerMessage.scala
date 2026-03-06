@@ -23,40 +23,32 @@ trait ConsumerMessage[T] {
 
   def data: Array[Byte]
 
-  /**
-    * Return the properties attached to the message.
-    * Properties are application defined key/value pairs
-    * that will be attached to the message.
+  /** Return the properties attached to the message. Properties are application
+    * defined key/value pairs that will be attached to the message.
     */
   def props: Map[String, String]
 
-  /**
-    * Get the unique [[MessageId]] associated with this message.
-    * The message id can be used to univocally refer to a message
-    * without having the keep the entire payload in memory.
+  /** Get the unique [[MessageId]] associated with this message. The message id
+    * can be used to univocally refer to a message without having the keep the
+    * entire payload in memory.
     */
   def messageId: MessageId
 
-  /**
-    * Get the sequence id associated with this message.
+  /** Get the sequence id associated with this message.
     */
   def sequenceId: SequenceId
 
   def producerName: ProducerName
 
-  /**
-    * Get the publish time of this message.
-    * The publish time is the timestamp that a client
-    * published the message.
+  /** Get the publish time of this message. The publish time is the timestamp
+    * that a client published the message.
     */
   def publishTime: PublishTime
 
   def redeliveryCount: Int
 
-  /**
-    * Returns the application specified event time
-    * for this message. If no event time was specified
-    * then this will return an event time of 0.
+  /** Returns the application specified event time for this message. If no event
+    * time was specified then this will return an event time of 0.
     */
   def eventTime: EventTime
 
@@ -112,35 +104,38 @@ object ConsumerMessage {
   }
 }
 
-case class ConsumerMessageWithValueTry[T](key: Option[String],
-                                          override val valueTry: Try[T],
-                                          data: Array[Byte],
-                                          props: Map[String, String],
-                                          messageId: MessageId,
-                                          sequenceId: SequenceId,
-                                          producerName: ProducerName,
-                                          publishTime: PublishTime,
-                                          eventTime: EventTime,
-                                          topic: Topic,
-                                          schemaVersion: Array[Byte],
-                                          redeliveryCount: Int,
-                                          replicatedFrom: Option[String],
-                                          getBaseMessage: () => JMessage[T]) extends ConsumerMessage[T] {
+case class ConsumerMessageWithValueTry[T](
+    key: Option[String],
+    override val valueTry: Try[T],
+    data: Array[Byte],
+    props: Map[String, String],
+    messageId: MessageId,
+    sequenceId: SequenceId,
+    producerName: ProducerName,
+    publishTime: PublishTime,
+    eventTime: EventTime,
+    topic: Topic,
+    schemaVersion: Array[Byte],
+    redeliveryCount: Int,
+    replicatedFrom: Option[String],
+    getBaseMessage: () => JMessage[T]
+) extends ConsumerMessage[T] {
   def value: T = valueTry.get
 }
 
-
 @deprecated("Use ConsumerMessageWithValueTry", "2.4.6")
-case class DefaultConsumerMessage[T](key: Option[String],
-                                     value: T,
-                                     data: Array[Byte],
-                                     props: Map[String, String],
-                                     messageId: MessageId,
-                                     sequenceId: SequenceId,
-                                     producerName: ProducerName,
-                                     publishTime: PublishTime,
-                                     eventTime: EventTime,
-                                     topic: Topic,
-                                     schemaVersion: Array[Byte],
-                                     redeliveryCount: Int,
-                                     replicatedFrom: Option[String]) extends ConsumerMessage[T]
+case class DefaultConsumerMessage[T](
+    key: Option[String],
+    value: T,
+    data: Array[Byte],
+    props: Map[String, String],
+    messageId: MessageId,
+    sequenceId: SequenceId,
+    producerName: ProducerName,
+    publishTime: PublishTime,
+    eventTime: EventTime,
+    topic: Topic,
+    schemaVersion: Array[Byte],
+    redeliveryCount: Int,
+    replicatedFrom: Option[String]
+) extends ConsumerMessage[T]

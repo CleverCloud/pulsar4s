@@ -5,11 +5,15 @@ import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.databind.ser.std.NumberSerializers
 import com.fasterxml.jackson.databind.{DeserializationFeature, ObjectMapper}
-import com.fasterxml.jackson.module.scala.{ClassTagExtensions, DefaultScalaModule}
+import com.fasterxml.jackson.module.scala.{
+  ClassTagExtensions,
+  DefaultScalaModule
+}
 
 object JacksonSupport {
 
-  val mapper: ObjectMapper with ClassTagExtensions = new ObjectMapper with ClassTagExtensions
+  val mapper: ObjectMapper with ClassTagExtensions = new ObjectMapper
+    with ClassTagExtensions
   mapper.registerModule(DefaultScalaModule)
 
   mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL)

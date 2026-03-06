@@ -5,7 +5,15 @@ import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.ActorMaterializer
 import org.apache.pekko.stream.scaladsl.Keep
 import org.apache.pekko.stream.scaladsl.Sink
-import com.sksamuel.pulsar4s.{ConsumerMessage, Message, MessageId, ProducerConfig, PulsarClient, ReaderConfig, Topic}
+import com.sksamuel.pulsar4s.{
+  ConsumerMessage,
+  Message,
+  MessageId,
+  ProducerConfig,
+  PulsarClient,
+  ReaderConfig,
+  Topic
+}
 import org.apache.pulsar.client.api.Schema
 
 import scala.concurrent.duration._
@@ -26,7 +34,8 @@ class PulsarReaderSourceTest extends AnyFunSuite with Matchers {
 
   test("pulsar reader source should read messages from a cluster") {
 
-    val topic = Topic("persistent://sample/standalone/ns1/sourcetest_" + UUID.randomUUID)
+    val topic =
+      Topic("persistent://sample/standalone/ns1/sourcetest_" + UUID.randomUUID)
     val config = ProducerConfig(topic)
     val producer = client.producer(config)
     producer.send("a")
@@ -35,10 +44,13 @@ class PulsarReaderSourceTest extends AnyFunSuite with Matchers {
     producer.send("d")
     producer.close()
 
-    val createFn = () => client.reader(ReaderConfig(
-      topic = topic,
-      startMessage = Message(MessageId.earliest)
-    ))
+    val createFn = () =>
+      client.reader(
+        ReaderConfig(
+          topic = topic,
+          startMessage = Message(MessageId.earliest)
+        )
+      )
     val f = sourceReader(createFn, Some(MessageId.earliest))
       .take(4)
       .runWith(Sink.seq[ConsumerMessage[String]])
@@ -48,7 +60,8 @@ class PulsarReaderSourceTest extends AnyFunSuite with Matchers {
 
   test("materialized control value can shut down the reader source") {
 
-    val topic = Topic("persistent://sample/standalone/ns1/sourcetest_" + UUID.randomUUID)
+    val topic =
+      Topic("persistent://sample/standalone/ns1/sourcetest_" + UUID.randomUUID)
     val config = ProducerConfig(topic)
     val producer = client.producer(config)
 
@@ -59,10 +72,13 @@ class PulsarReaderSourceTest extends AnyFunSuite with Matchers {
       }
     }
 
-    val createFn = () => client.reader(ReaderConfig(
-      topic = topic,
-      startMessage = Message(MessageId.earliest)
-    ))
+    val createFn = () =>
+      client.reader(
+        ReaderConfig(
+          topic = topic,
+          startMessage = Message(MessageId.earliest)
+        )
+      )
     val (control, f) = sourceReader(createFn, Some(MessageId.earliest))
       .toMat(Sink.seq[ConsumerMessage[String]])(Keep.both)
       .run()
@@ -83,7 +99,8 @@ class PulsarReaderSourceTest extends AnyFunSuite with Matchers {
 
   test("materialized control value can drain and shut down the source") {
 
-    val topic = Topic("persistent://sample/standalone/ns1/sourcetest_" + UUID.randomUUID)
+    val topic =
+      Topic("persistent://sample/standalone/ns1/sourcetest_" + UUID.randomUUID)
     val config = ProducerConfig(topic)
     val producer = client.producer(config)
 
@@ -94,10 +111,13 @@ class PulsarReaderSourceTest extends AnyFunSuite with Matchers {
       }
     }
 
-    val createFn = () => client.reader(ReaderConfig(
-      topic = topic,
-      startMessage = Message(MessageId.earliest)
-    ))
+    val createFn = () =>
+      client.reader(
+        ReaderConfig(
+          topic = topic,
+          startMessage = Message(MessageId.earliest)
+        )
+      )
     val (control, f) = sourceReader(createFn, Some(MessageId.earliest))
       .toMat(Sink.seq[ConsumerMessage[String]])(Keep.both)
       .run()

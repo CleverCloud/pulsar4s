@@ -35,7 +35,8 @@ class PulsarSourceTest extends AnyFunSuite with Matchers {
 
   test("pulsar source should read messages from a cluster") {
 
-    val topic = Topic("persistent://sample/standalone/ns1/sourcetest_" + UUID.randomUUID)
+    val topic =
+      Topic("persistent://sample/standalone/ns1/sourcetest_" + UUID.randomUUID)
     val config = ProducerConfig(topic)
     val producer = client.producer(config)
     producer.send("a")
@@ -44,7 +45,13 @@ class PulsarSourceTest extends AnyFunSuite with Matchers {
     producer.send("d")
     producer.close()
 
-    val createFn = () => client.consumer(ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription.generate))
+    val createFn = () =>
+      client.consumer(
+        ConsumerConfig(
+          topics = Seq(topic),
+          subscriptionName = Subscription.generate
+        )
+      )
     val f = source(createFn, Some(MessageId.earliest))
       .take(4)
       .runWith(Sink.seq[ConsumerMessage[String]])
@@ -54,25 +61,34 @@ class PulsarSourceTest extends AnyFunSuite with Matchers {
 
   test("pulsar source should acknowledge messages on multiple topics") {
 
-    val topics = (0 to 2).map(_ => Topic("persistent://sample/standalone/ns1/sourcetest_" + UUID.randomUUID))
+    val topics = (0 to 2).map(_ =>
+      Topic("persistent://sample/standalone/ns1/sourcetest_" + UUID.randomUUID)
+    )
     val n = topics.size * 4
-    Await.ready(Future.sequence(topics.map { topic =>
-      Future {
-        val config = ProducerConfig(topic)
-        val producer = client.producer(config)
-        producer.send("a")
-        producer.send("b")
-        producer.send("c")
-        producer.send("d")
-        producer.close()
-      }
-    }), 10.seconds)
+    Await.ready(
+      Future.sequence(topics.map { topic =>
+        Future {
+          val config = ProducerConfig(topic)
+          val producer = client.producer(config)
+          producer.send("a")
+          producer.send("b")
+          producer.send("c")
+          producer.send("d")
+          producer.close()
+        }
+      }),
+      10.seconds
+    )
 
-    val createFn = () => client.consumer(ConsumerConfig(
-      topics = topics,
-      subscriptionName = Subscription.generate,
-      subscriptionInitialPosition = Some(SubscriptionInitialPosition.Earliest)
-    ))
+    val createFn = () =>
+      client.consumer(
+        ConsumerConfig(
+          topics = topics,
+          subscriptionName = Subscription.generate,
+          subscriptionInitialPosition =
+            Some(SubscriptionInitialPosition.Earliest)
+        )
+      )
     val f = source(createFn)
       .take(n)
       .runWith(Sink.seq[ConsumerMessage[String]])
@@ -84,7 +100,8 @@ class PulsarSourceTest extends AnyFunSuite with Matchers {
 
   test("materialized control value can shut down the source") {
 
-    val topic = Topic("persistent://sample/standalone/ns1/sourcetest_" + UUID.randomUUID)
+    val topic =
+      Topic("persistent://sample/standalone/ns1/sourcetest_" + UUID.randomUUID)
     val config = ProducerConfig(topic)
     val producer = client.producer(config)
 
@@ -95,7 +112,13 @@ class PulsarSourceTest extends AnyFunSuite with Matchers {
       }
     }
 
-    val createFn = () => client.consumer(ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription.generate))
+    val createFn = () =>
+      client.consumer(
+        ConsumerConfig(
+          topics = Seq(topic),
+          subscriptionName = Subscription.generate
+        )
+      )
     val (control, f) = source(createFn, Some(MessageId.earliest))
       .toMat(Sink.seq[ConsumerMessage[String]])(Keep.both)
       .run()
@@ -116,7 +139,8 @@ class PulsarSourceTest extends AnyFunSuite with Matchers {
 
   test("materialized control value can drain and shut down the source") {
 
-    val topic = Topic("persistent://sample/standalone/ns1/sourcetest_" + UUID.randomUUID)
+    val topic =
+      Topic("persistent://sample/standalone/ns1/sourcetest_" + UUID.randomUUID)
     val config = ProducerConfig(topic)
     val producer = client.producer(config)
 
@@ -127,7 +151,13 @@ class PulsarSourceTest extends AnyFunSuite with Matchers {
       }
     }
 
-    val createFn = () => client.consumer(ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription.generate))
+    val createFn = () =>
+      client.consumer(
+        ConsumerConfig(
+          topics = Seq(topic),
+          subscriptionName = Subscription.generate
+        )
+      )
     val (control, f) = source(createFn, Some(MessageId.earliest))
       .toMat(Sink.seq[ConsumerMessage[String]])(Keep.both)
       .run()

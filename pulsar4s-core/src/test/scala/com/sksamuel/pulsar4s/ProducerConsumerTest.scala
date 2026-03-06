@@ -24,7 +24,8 @@ class ProducerConsumerTest extends AnyFunSuite with Matchers {
 
   test("producer should return messageId when sending a synchronous message") {
     val client = PulsarClient("pulsar://localhost:6650")
-    val topic = Topic("persistent://sample/standalone/ns1/test_" + UUID.randomUUID)
+    val topic =
+      Topic("persistent://sample/standalone/ns1/test_" + UUID.randomUUID)
 
     val producer = client.producer(ProducerConfig(topic))
     val messageId = producer.send("wibble").get
@@ -37,13 +38,19 @@ class ProducerConsumerTest extends AnyFunSuite with Matchers {
   test("producer and consumer synchronous round trip") {
 
     val client = PulsarClient("pulsar://localhost:6650")
-    val topic = Topic("persistent://sample/standalone/ns1/test_" + UUID.randomUUID)
+    val topic =
+      Topic("persistent://sample/standalone/ns1/test_" + UUID.randomUUID)
 
     val producer = client.producer(ProducerConfig(topic))
     producer.send("wibble")
     producer.close()
 
-    val consumer = client.consumer(ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription.generate))
+    val consumer = client.consumer(
+      ConsumerConfig(
+        topics = Seq(topic),
+        subscriptionName = Subscription.generate
+      )
+    )
     consumer.seek(MessageId.earliest)
     val msg = consumer.receive
     new String(msg.get.data) shouldBe "wibble"
@@ -55,13 +62,20 @@ class ProducerConsumerTest extends AnyFunSuite with Matchers {
   test("producer and consumer synchronous round trip with async consumer") {
 
     val client = PulsarClient("pulsar://localhost:6650")
-    val topic = Topic("persistent://sample/standalone/ns1/test_" + UUID.randomUUID)
+    val topic =
+      Topic("persistent://sample/standalone/ns1/test_" + UUID.randomUUID)
 
-    val producer = Await.result(client.producerAsync(ProducerConfig(topic)), 10.seconds)
+    val producer =
+      Await.result(client.producerAsync(ProducerConfig(topic)), 10.seconds)
     producer.send("wobble")
     producer.close()
 
-    val consumer = client.consumer(ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription.generate))
+    val consumer = client.consumer(
+      ConsumerConfig(
+        topics = Seq(topic),
+        subscriptionName = Subscription.generate
+      )
+    )
     consumer.seek(MessageId.earliest)
     val msg = consumer.receive
     new String(msg.get.data) shouldBe "wobble"
@@ -73,7 +87,8 @@ class ProducerConsumerTest extends AnyFunSuite with Matchers {
   test("producer and consumer synchronous round trip with fixed delay") {
 
     val client = PulsarClient("pulsar://localhost:6650")
-    val topic = Topic("persistent://sample/standalone/ns1/test_" + UUID.randomUUID)
+    val topic =
+      Topic("persistent://sample/standalone/ns1/test_" + UUID.randomUUID)
 
     val start = System.currentTimeMillis
 
@@ -81,11 +96,13 @@ class ProducerConsumerTest extends AnyFunSuite with Matchers {
     val messageId = producer.send(ProducerMessage[String]("wibble", 5.seconds))
     producer.close()
 
-    val consumer = client.consumer(ConsumerConfig(
-      topics = Seq(topic),
-      subscriptionName = Subscription.generate,
-      subscriptionType = Some(SubscriptionType.Shared)
-    ))
+    val consumer = client.consumer(
+      ConsumerConfig(
+        topics = Seq(topic),
+        subscriptionName = Subscription.generate,
+        subscriptionType = Some(SubscriptionType.Shared)
+      )
+    )
     consumer.seek(MessageId.earliest)
 
     val msg = consumer.receive
@@ -109,11 +126,13 @@ class ProducerConsumerTest extends AnyFunSuite with Matchers {
     val messageId = producer.send(ProducerMessage[String]("wibble", deliverAt))
     producer.close()
 
-    val consumer = client.consumer(ConsumerConfig(
-      topics = Seq(topic),
-      subscriptionName = Subscription.generate,
-      subscriptionType = Some(SubscriptionType.Shared)
-    ))
+    val consumer = client.consumer(
+      ConsumerConfig(
+        topics = Seq(topic),
+        subscriptionName = Subscription.generate,
+        subscriptionType = Some(SubscriptionType.Shared)
+      )
+    )
     consumer.seek(MessageId.earliest)
     val msg = consumer.receive
     new String(msg.get.data) shouldBe "wibble"
@@ -137,13 +156,23 @@ class ProducerConsumerTest extends AnyFunSuite with Matchers {
     producer.send("wubble")
     producer.close()
 
-    val consumer1 = client.consumer(ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription.generate))
+    val consumer1 = client.consumer(
+      ConsumerConfig(
+        topics = Seq(topic),
+        subscriptionName = Subscription.generate
+      )
+    )
     consumer1.seek(MessageId.earliest)
     consumer1.receive.get.data shouldBe "wibble".getBytes
     consumer1.receive.get.data shouldBe "wobble".getBytes
     consumer1.receive.get.data shouldBe "wubble".getBytes
 
-    val consumer2 = client.consumer(ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription.generate))
+    val consumer2 = client.consumer(
+      ConsumerConfig(
+        topics = Seq(topic),
+        subscriptionName = Subscription.generate
+      )
+    )
     consumer2.seek(MessageId.earliest)
     consumer2.receive.get.data shouldBe "wibble".getBytes
     consumer2.receive.get.data shouldBe "wobble".getBytes
@@ -184,16 +213,24 @@ class ProducerConsumerTest extends AnyFunSuite with Matchers {
       // let the topics be created
       Thread.sleep(5000)
 
-      val consumer = client.consumer(ConsumerConfig(
-        topicPattern = Some(s"persistent://public/default/multitest$random.*".r),
-        subscriptionName = Subscription.generate)
+      val consumer = client.consumer(
+        ConsumerConfig(
+          topicPattern =
+            Some(s"persistent://public/default/multitest$random.*".r),
+          subscriptionName = Subscription.generate
+        )
       )
 
       try {
-        val set = Iterator.continually(consumer.receive(1.second)).flatMap {
-          case Success(Some(msg)) => List(msg)
-          case _ => Nil
-        }.take(25).map(msg => new String(msg.data)).toSet[String]
+        val set = Iterator
+          .continually(consumer.receive(1.second))
+          .flatMap {
+            case Success(Some(msg)) => List(msg)
+            case _                  => Nil
+          }
+          .take(25)
+          .map(msg => new String(msg.data))
+          .toSet[String]
         if (set == Set("wibble", "bibble"))
           latch.countDown()
       } catch {

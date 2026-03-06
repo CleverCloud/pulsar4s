@@ -2,7 +2,12 @@ package com.sksamuel.pulsar4s.akka.streams
 
 import akka.Done
 import akka.stream.{Attributes, Outlet, SourceShape}
-import akka.stream.stage.{AsyncCallback, GraphStageLogic, GraphStageWithMaterializedValue, OutHandler}
+import akka.stream.stage.{
+  AsyncCallback,
+  GraphStageLogic,
+  GraphStageWithMaterializedValue,
+  OutHandler
+}
 import com.sksamuel.exts.Logging
 import com.sksamuel.pulsar4s.{ConsumerMessage, MessageId, Reader}
 import org.apache.pulsar.client.api.ConsumerStats
@@ -11,34 +16,49 @@ import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
 
-class PulsarReaderSourceGraphStage[T](create: () => Reader[T], seek: Option[MessageId]) extends GraphStageWithMaterializedValue[SourceShape[ConsumerMessage[T]], Control] with Logging {
+class PulsarReaderSourceGraphStage[T](
+    create: () => Reader[T],
+    seek: Option[MessageId]
+) extends GraphStageWithMaterializedValue[SourceShape[
+      ConsumerMessage[T]
+    ], Control]
+    with Logging {
 
   private val out = Outlet[ConsumerMessage[T]]("pulsar.out")
   override def shape: SourceShape[ConsumerMessage[T]] = SourceShape(out)
 
-  override def createLogicAndMaterializedValue(inheritedAttributes: Attributes): (GraphStageLogic, Control) = {
+  override def createLogicAndMaterializedValue(
+      inheritedAttributes: Attributes
+  ): (GraphStageLogic, Control) = {
 
-    val logic: GraphStageLogic with Control = new GraphStageLogic(shape) with OutHandler with Control {
+    val logic: GraphStageLogic with Control = new GraphStageLogic(shape)
+      with OutHandler
+      with Control {
       setHandler(out, this)
 
       implicit def ec: ExecutionContext = materializer.executionContext
 
-      @inline private def reader: Reader[T] = consumerOpt.getOrElse(throw new IllegalStateException("Reader not initialized!"))
+      @inline private def reader: Reader[T] = consumerOpt.getOrElse(
+        throw new IllegalStateException("Reader not initialized!")
+      )
       private var consumerOpt: Option[Reader[T]] = None
-      private val receiveCallback: AsyncCallback[Try[ConsumerMessage[T]]] = getAsyncCallback {
-        case Success(msg) =>
-          push(out, msg)
-        case Failure(e) =>
-          failStage(e)
-      }
+      private val receiveCallback: AsyncCallback[Try[ConsumerMessage[T]]] =
+        getAsyncCallback {
+          case Success(msg) =>
+            push(out, msg)
+          case Failure(e) =>
+            failStage(e)
+        }
       private val stopped: Promise[Done] = Promise()
-      private val stopCallback: AsyncCallback[Unit] = getAsyncCallback { _ => completeStage() }
+      private val stopCallback: AsyncCallback[Unit] = getAsyncCallback { _ =>
+        completeStage()
+      }
 
       override def preStart(): Unit = {
         try {
           val reader = create()
           consumerOpt = Some(reader)
-          stopped.future.onComplete { _ =>close()}
+          stopped.future.onComplete { _ => close() }
           seek foreach reader.seek
         } catch {
           case NonFatal(e) =>

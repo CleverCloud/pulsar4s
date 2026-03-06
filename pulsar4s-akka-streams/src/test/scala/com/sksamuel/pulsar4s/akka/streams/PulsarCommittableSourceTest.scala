@@ -5,7 +5,11 @@ import akka.actor.ActorSystem
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Keep, Sink}
 import com.sksamuel.pulsar4s._
-import org.apache.pulsar.client.api.{PulsarClientException, Schema, SubscriptionInitialPosition}
+import org.apache.pulsar.client.api.{
+  PulsarClientException,
+  Schema,
+  SubscriptionInitialPosition
+}
 import org.apache.pulsar.common.schema.SchemaInfo
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -26,14 +30,17 @@ class PulsarCommittableSourceTest extends AnyFunSuite with Matchers {
 
   private val specialStringSchema: Schema[String] = new Schema[String] {
     override def clone(): Schema[String] = this
-    override def encode(message: String): Array[Byte] = ("message:" + message).getBytes("UTF-8")
-    override def decode(data: Array[Byte]): String = new String(data, "UTF-8").split(":", 2)(1)
+    override def encode(message: String): Array[Byte] =
+      ("message:" + message).getBytes("UTF-8")
+    override def decode(data: Array[Byte]): String =
+      new String(data, "UTF-8").split(":", 2)(1)
     override def getSchemaInfo: SchemaInfo = Schema.STRING.getSchemaInfo
   }
 
   test("pulsar committableSource should read messages from a cluster") {
 
-    val topic = Topic("persistent://sample/standalone/ns1/sourcetest_" + UUID.randomUUID)
+    val topic =
+      Topic("persistent://sample/standalone/ns1/sourcetest_" + UUID.randomUUID)
     val config = ProducerConfig(topic)
     val producer = client.producer(config)
     producer.send("a")
@@ -42,7 +49,13 @@ class PulsarCommittableSourceTest extends AnyFunSuite with Matchers {
     producer.send("d")
     producer.close()
 
-    val createFn = () => client.consumer(ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription.generate))
+    val createFn = () =>
+      client.consumer(
+        ConsumerConfig(
+          topics = Seq(topic),
+          subscriptionName = Subscription.generate
+        )
+      )
     val f = committableSource(createFn, Some(MessageId.earliest), 5.seconds)
       .take(4)
       .runWith(Sink.seq[CommittableMessage[String]])
@@ -50,27 +63,37 @@ class PulsarCommittableSourceTest extends AnyFunSuite with Matchers {
     msgs.map(_.message.value) shouldBe Seq("a", "b", "c", "d")
   }
 
-  test("pulsar committableSource should not fail when schema throws an exception") {
+  test(
+    "pulsar committableSource should not fail when schema throws an exception"
+  ) {
 
-    val topic = Topic("persistent://sample/standalone/ns1/sourcetest_" + UUID.randomUUID)
+    val topic =
+      Topic("persistent://sample/standalone/ns1/sourcetest_" + UUID.randomUUID)
     val config = ProducerConfig(topic)
     val producer = client.producer(config)
     producer.send("test")
     producer.close()
 
-    val createFn = () => client.consumer(
-      ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription.generate
-    ))(using specialStringSchema)
-    val f = committableSource(
-      createFn,
-      Some(MessageId.earliest), 5.seconds).take(1).runWith(Sink.seq[CommittableMessage[String]])
+    val createFn = () =>
+      client.consumer(
+        ConsumerConfig(
+          topics = Seq(topic),
+          subscriptionName = Subscription.generate
+        )
+      )(using specialStringSchema)
+    val f = committableSource(createFn, Some(MessageId.earliest), 5.seconds)
+      .take(1)
+      .runWith(Sink.seq[CommittableMessage[String]])
     val msgs = Await.result(f, 15.seconds)
     msgs.headOption.flatMap(_.message.valueTry.toOption) shouldBe None
   }
 
-  test("pulsar committableSource should fail when creation function throws an exception") {
+  test(
+    "pulsar committableSource should fail when creation function throws an exception"
+  ) {
 
-    val topic = Topic("persistent://sample/standalone/ns1/sourcetest_" + UUID.randomUUID)
+    val topic =
+      Topic("persistent://sample/standalone/ns1/sourcetest_" + UUID.randomUUID)
     val config = ProducerConfig(topic)
     val producer = client.producer(config)
     producer.send("test")
@@ -80,24 +103,31 @@ class PulsarCommittableSourceTest extends AnyFunSuite with Matchers {
     def createFn(shouldThrow: Boolean) = () => {
       if (shouldThrow) throw exception
       client.consumer(
-        ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription.generate))(using specialStringSchema)
+        ConsumerConfig(
+          topics = Seq(topic),
+          subscriptionName = Subscription.generate
+        )
+      )(using specialStringSchema)
     }
     val successFt = committableSource(
       createFn(shouldThrow = false),
-      Some(MessageId.earliest), 5.seconds
+      Some(MessageId.earliest),
+      5.seconds
     ).take(1).runWith(Sink.seq[CommittableMessage[String]])
     val msgs = Await.result(successFt, 15.seconds)
     msgs.headOption.flatMap(_.message.valueTry.toOption) shouldBe None
     val failureFt = committableSource(
       createFn(shouldThrow = true),
-      Some(MessageId.earliest), 5.seconds
+      Some(MessageId.earliest),
+      5.seconds
     ).take(1).runWith(Sink.seq[CommittableMessage[String]])
     Try(Await.result(failureFt, 15.seconds)) shouldBe Failure(exception)
   }
 
   test("shutdown of failed source does not cause an exception") {
 
-    val topic = Topic("persistent://sample/standalone/ns1/sourcetest_" + UUID.randomUUID)
+    val topic =
+      Topic("persistent://sample/standalone/ns1/sourcetest_" + UUID.randomUUID)
     val config = ProducerConfig(topic)
     val producer = client.producer(config)
     producer.send("test")
@@ -105,15 +135,18 @@ class PulsarCommittableSourceTest extends AnyFunSuite with Matchers {
 
     val exception = new RuntimeException
     val createFn = () => throw exception
-    val (control, doneFt) = committableSource(createFn, Some(MessageId.earliest), 5.seconds)
-      .toMat(Sink.ignore)(Keep.both).run()
+    val (control, doneFt) =
+      committableSource(createFn, Some(MessageId.earliest), 5.seconds)
+        .toMat(Sink.ignore)(Keep.both)
+        .run()
     Try(Await.result(doneFt, 15.seconds)) shouldBe Failure(exception)
     Await.result(control.shutdown(), 1.second) shouldBe Done
   }
 
   test("pulsar committableSource should acknowledge messages") {
 
-    val topic = Topic("persistent://sample/standalone/ns1/sourcetest_" + UUID.randomUUID)
+    val topic =
+      Topic("persistent://sample/standalone/ns1/sourcetest_" + UUID.randomUUID)
     val config = ProducerConfig(topic)
     val producer = client.producer(config)
     producer.send("a")
@@ -122,7 +155,13 @@ class PulsarCommittableSourceTest extends AnyFunSuite with Matchers {
     producer.send("d")
     producer.close()
 
-    val createFn = () => client.consumer(ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription.generate))
+    val createFn = () =>
+      client.consumer(
+        ConsumerConfig(
+          topics = Seq(topic),
+          subscriptionName = Subscription.generate
+        )
+      )
     val f = committableSource(createFn, Some(MessageId.earliest), 5.seconds)
       .take(4)
       .mapAsync(10)(msg => msg.ack().map(_ => msg.message))
@@ -134,7 +173,8 @@ class PulsarCommittableSourceTest extends AnyFunSuite with Matchers {
 
   test("pulsar committableSource should negatively acknowledge messages") {
 
-    val topic = Topic("persistent://sample/standalone/ns1/sourcetest_" + UUID.randomUUID)
+    val topic =
+      Topic("persistent://sample/standalone/ns1/sourcetest_" + UUID.randomUUID)
     val config = ProducerConfig(topic)
     val producer = client.producer(config)
     producer.send("a")
@@ -143,11 +183,14 @@ class PulsarCommittableSourceTest extends AnyFunSuite with Matchers {
     producer.send("d")
     producer.close()
 
-    val createFn = () => client.consumer(ConsumerConfig(
-      topics = Seq(topic),
-      subscriptionName = Subscription.generate,
-      negativeAckRedeliveryDelay = Some(5.seconds)
-    ))
+    val createFn = () =>
+      client.consumer(
+        ConsumerConfig(
+          topics = Seq(topic),
+          subscriptionName = Subscription.generate,
+          negativeAckRedeliveryDelay = Some(5.seconds)
+        )
+      )
     val f = committableSource(createFn, Some(MessageId.earliest), 5.seconds)
       .take(4)
       .mapAsync(10) { msg =>
@@ -164,27 +207,38 @@ class PulsarCommittableSourceTest extends AnyFunSuite with Matchers {
     msgs.map(_.value) shouldBe Seq("c", "d")
   }
 
-  test("pulsar committableSource should acknowledge messages on multiple topics") {
+  test(
+    "pulsar committableSource should acknowledge messages on multiple topics"
+  ) {
 
-    val topics = (0 to 2).map(_ => Topic("persistent://sample/standalone/ns1/sourcetest_" + UUID.randomUUID))
+    val topics = (0 to 2).map(_ =>
+      Topic("persistent://sample/standalone/ns1/sourcetest_" + UUID.randomUUID)
+    )
     val n = topics.size * 4
-    Await.ready(Future.sequence(topics.map { topic =>
-      Future {
-        val config = ProducerConfig(topic)
-        val producer = client.producer(config)
-        producer.send("a")
-        producer.send("b")
-        producer.send("c")
-        producer.send("d")
-        producer.close()
-      }
-    }), 10.seconds)
+    Await.ready(
+      Future.sequence(topics.map { topic =>
+        Future {
+          val config = ProducerConfig(topic)
+          val producer = client.producer(config)
+          producer.send("a")
+          producer.send("b")
+          producer.send("c")
+          producer.send("d")
+          producer.close()
+        }
+      }),
+      10.seconds
+    )
 
-    val createFn = () => client.consumer(ConsumerConfig(
-      topics = topics,
-      subscriptionName = Subscription.generate,
-      subscriptionInitialPosition = Some(SubscriptionInitialPosition.Earliest)
-    ))
+    val createFn = () =>
+      client.consumer(
+        ConsumerConfig(
+          topics = topics,
+          subscriptionName = Subscription.generate,
+          subscriptionInitialPosition =
+            Some(SubscriptionInitialPosition.Earliest)
+        )
+      )
     val f = committableSource(createFn)
       .take(n)
       .mapAsync(10)(msg => msg.ack().map(_ => msg.message))
@@ -197,7 +251,8 @@ class PulsarCommittableSourceTest extends AnyFunSuite with Matchers {
 
   test("materialized control value can shut down the source") {
 
-    val topic = Topic("persistent://sample/standalone/ns1/sourcetest_" + UUID.randomUUID)
+    val topic =
+      Topic("persistent://sample/standalone/ns1/sourcetest_" + UUID.randomUUID)
     val config = ProducerConfig(topic)
     val producer = client.producer(config)
 
@@ -208,11 +263,18 @@ class PulsarCommittableSourceTest extends AnyFunSuite with Matchers {
       }
     }
 
-    val createFn = () => client.consumer(ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription.generate))
-    val (control, f) = committableSource(createFn, Some(MessageId.earliest), 5.seconds)
-      .mapAsync(10)(msg => msg.ack().map(_ => msg.message))
-      .toMat(Sink.seq[ConsumerMessage[String]])(Keep.both)
-      .run()
+    val createFn = () =>
+      client.consumer(
+        ConsumerConfig(
+          topics = Seq(topic),
+          subscriptionName = Subscription.generate
+        )
+      )
+    val (control, f) =
+      committableSource(createFn, Some(MessageId.earliest), 5.seconds)
+        .mapAsync(10)(msg => msg.ack().map(_ => msg.message))
+        .toMat(Sink.seq[ConsumerMessage[String]])(Keep.both)
+        .run()
 
     Future {
       Thread.sleep(1000)
@@ -230,7 +292,8 @@ class PulsarCommittableSourceTest extends AnyFunSuite with Matchers {
 
   test("materialized control value can drain and shut down the source") {
 
-    val topic = Topic("persistent://sample/standalone/ns1/sourcetest_" + UUID.randomUUID)
+    val topic =
+      Topic("persistent://sample/standalone/ns1/sourcetest_" + UUID.randomUUID)
     val config = ProducerConfig(topic)
     val producer = client.producer(config)
 
@@ -241,11 +304,18 @@ class PulsarCommittableSourceTest extends AnyFunSuite with Matchers {
       }
     }
 
-    val createFn = () => client.consumer(ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription.generate))
-    val (control, f) = committableSource(createFn, Some(MessageId.earliest), 5.seconds)
-      .mapAsync(10)(msg => msg.ack().map(_ => msg.message))
-      .toMat(Sink.seq[ConsumerMessage[String]])(Keep.both)
-      .run()
+    val createFn = () =>
+      client.consumer(
+        ConsumerConfig(
+          topics = Seq(topic),
+          subscriptionName = Subscription.generate
+        )
+      )
+    val (control, f) =
+      committableSource(createFn, Some(MessageId.earliest), 5.seconds)
+        .mapAsync(10)(msg => msg.ack().map(_ => msg.message))
+        .toMat(Sink.seq[ConsumerMessage[String]])(Keep.both)
+        .run()
 
     Thread.sleep(1000)
     val drained = control.drainAndShutdown(f)
@@ -257,9 +327,12 @@ class PulsarCommittableSourceTest extends AnyFunSuite with Matchers {
     producer.close()
   }
 
-  test("consumer is already closed when drainAndShutdown completes successfully") {
+  test(
+    "consumer is already closed when drainAndShutdown completes successfully"
+  ) {
 
-    val topic = Topic("persistent://sample/standalone/ns1/sourcetest_" + UUID.randomUUID)
+    val topic =
+      Topic("persistent://sample/standalone/ns1/sourcetest_" + UUID.randomUUID)
     val config = ProducerConfig(topic)
     val producer = client.producer(config)
 
@@ -270,12 +343,18 @@ class PulsarCommittableSourceTest extends AnyFunSuite with Matchers {
       }
     }
 
-    val consumer = client.consumer(ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription.generate))
+    val consumer = client.consumer(
+      ConsumerConfig(
+        topics = Seq(topic),
+        subscriptionName = Subscription.generate
+      )
+    )
     val createFn = () => consumer
-    val (control, f) = committableSource(createFn, Some(MessageId.earliest), 5.seconds)
-      .mapAsync(10)(msg => msg.ack().map(_ => msg.message))
-      .toMat(Sink.seq[ConsumerMessage[String]])(Keep.both)
-      .run()
+    val (control, f) =
+      committableSource(createFn, Some(MessageId.earliest), 5.seconds)
+        .mapAsync(10)(msg => msg.ack().map(_ => msg.message))
+        .toMat(Sink.seq[ConsumerMessage[String]])(Keep.both)
+        .run()
 
     Thread.sleep(1000)
     val drained = control.drainAndShutdown(f)
@@ -291,7 +370,8 @@ class PulsarCommittableSourceTest extends AnyFunSuite with Matchers {
 
   test("consumer closes after delay when stopped") {
 
-    val topic = Topic("persistent://sample/standalone/ns1/sourcetest_" + UUID.randomUUID)
+    val topic =
+      Topic("persistent://sample/standalone/ns1/sourcetest_" + UUID.randomUUID)
     val config = ProducerConfig(topic)
     val producer = client.producer(config)
 
@@ -302,9 +382,18 @@ class PulsarCommittableSourceTest extends AnyFunSuite with Matchers {
       }
     }
 
-    val consumer = client.consumer(ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription.generate))
+    val consumer = client.consumer(
+      ConsumerConfig(
+        topics = Seq(topic),
+        subscriptionName = Subscription.generate
+      )
+    )
     val createFn = () => consumer
-    val (control, f) = committableSource(createFn, Some(MessageId.earliest), closeDelay = 2.seconds)
+    val (control, f) = committableSource(
+      createFn,
+      Some(MessageId.earliest),
+      closeDelay = 2.seconds
+    )
       .mapAsync(10)(msg => msg.ack().map(_ => msg.message))
       .toMat(Sink.seq[ConsumerMessage[String]])(Keep.both)
       .run()

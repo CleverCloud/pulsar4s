@@ -14,19 +14,15 @@ trait ProducerMessage[T] {
 
   def value: T
 
-  /**
-    * Return the properties attached to the message.
-    * Properties are application defined key/value pairs
-    * that will be attached to the message.
+  /** Return the properties attached to the message. Properties are application
+    * defined key/value pairs that will be attached to the message.
     */
   def props: Map[String, String]
 
   def sequenceId: Option[SequenceId]
 
-  /**
-    * Returns the application specified event time
-    * for this message. If no event time has been set, then
-    * returns None
+  /** Returns the application specified event time for this message. If no event
+    * time has been set, then returns None
     */
   def eventTime: Option[EventTime]
 
@@ -43,19 +39,32 @@ object ProducerMessage {
 
   def apply[T](t: T): ProducerMessage[T] = DefaultProducerMessage[T](None, t)
 
-  def apply[T](key: String, t: T): ProducerMessage[T] = DefaultProducerMessage[T](Some(key), t)
+  def apply[T](key: String, t: T): ProducerMessage[T] =
+    DefaultProducerMessage[T](Some(key), t)
 
   def apply[T](t: T, deliverAt: Instant): ProducerMessage[T] =
     DefaultProducerMessage[T](None, t, deliverAt = Some(deliverAt.toEpochMilli))
 
   def apply[T](t: T, deliverAfter: Duration): ProducerMessage[T] =
-    DefaultProducerMessage[T](None, t, deliverAt = Some(System.currentTimeMillis + deliverAfter.toMillis))
+    DefaultProducerMessage[T](
+      None,
+      t,
+      deliverAt = Some(System.currentTimeMillis + deliverAfter.toMillis)
+    )
 
   def apply[T](key: String, t: T, deliverAt: Instant): ProducerMessage[T] =
-    DefaultProducerMessage[T](Some(key), t, deliverAt = Some(deliverAt.toEpochMilli))
+    DefaultProducerMessage[T](
+      Some(key),
+      t,
+      deliverAt = Some(deliverAt.toEpochMilli)
+    )
 
   def apply[T](key: String, t: T, deliverAfter: Duration): ProducerMessage[T] =
-    DefaultProducerMessage[T](Some(key), t, deliverAt = Some(System.currentTimeMillis + deliverAfter.toMillis))
+    DefaultProducerMessage[T](
+      Some(key),
+      t,
+      deliverAt = Some(System.currentTimeMillis + deliverAfter.toMillis)
+    )
 
   def fromJava[T](msg: JMessage[T]): ProducerMessage[T] = {
     DefaultProducerMessage[T](
@@ -70,17 +79,26 @@ object ProducerMessage {
   def toJava[T](msg: ProducerMessage[T], schema: Schema[T]): JMessage[T] = {
     val metadata = new MessageMetadata()
     metadata.setNullValue(msg.value == null)
-    val javaMsg = new MessageImpl(null, null, msg.props.asJava, Unpooled.wrappedBuffer(schema.encode(msg.value)), schema, metadata)
+    val javaMsg = new MessageImpl(
+      null,
+      null,
+      msg.props.asJava,
+      Unpooled.wrappedBuffer(schema.encode(msg.value)),
+      schema,
+      metadata
+    )
     msg.deliverAt foreach javaMsg.getMessageBuilder.setDeliverAtTime
     javaMsg
   }
 }
 
-case class DefaultProducerMessage[T](key: Option[String],
-                                     value: T,
-                                     props: Map[String, String] = Map.empty,
-                                     sequenceId: Option[SequenceId] = None,
-                                     eventTime: Option[EventTime] = None,
-                                     disableReplication: Boolean = false,
-                                     replicationClusters: List[String] = Nil,
-                                     deliverAt: Option[Long] = None) extends ProducerMessage[T]
+case class DefaultProducerMessage[T](
+    key: Option[String],
+    value: T,
+    props: Map[String, String] = Map.empty,
+    sequenceId: Option[SequenceId] = None,
+    eventTime: Option[EventTime] = None,
+    disableReplication: Boolean = false,
+    replicationClusters: List[String] = Nil,
+    deliverAt: Option[Long] = None
+) extends ProducerMessage[T]

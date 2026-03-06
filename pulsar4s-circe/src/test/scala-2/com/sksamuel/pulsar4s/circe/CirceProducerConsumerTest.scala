@@ -16,14 +16,20 @@ class CirceProducerConsumerTest extends AnyFunSuite with Matchers {
   test("producer and consumer synchronous round trip") {
 
     val client = PulsarClient("pulsar://localhost:6650")
-    val topic = Topic("persistent://sample/standalone/ns1/test_" + UUID.randomUUID)
+    val topic =
+      Topic("persistent://sample/standalone/ns1/test_" + UUID.randomUUID)
 
     val producer = client.producer[Cafe](ProducerConfig(topic))
     val cafe = Cafe("le table", Place(1, "Paris"))
     val messageId = producer.send(cafe)
     producer.close()
 
-    val consumer = client.consumer[Cafe](ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription.generate))
+    val consumer = client.consumer[Cafe](
+      ConsumerConfig(
+        topics = Seq(topic),
+        subscriptionName = Subscription.generate
+      )
+    )
     consumer.seek(MessageId.earliest)
     val msg = consumer.receive
     msg.get.value shouldBe cafe
@@ -32,19 +38,29 @@ class CirceProducerConsumerTest extends AnyFunSuite with Matchers {
     client.close()
   }
 
-  test("producer and consumer synchronous round trip with failed deserialization") {
+  test(
+    "producer and consumer synchronous round trip with failed deserialization"
+  ) {
 
     val client = PulsarClient("pulsar://localhost:6650")
-    val topic = Topic("persistent://sample/standalone/ns1/test_" + UUID.randomUUID)
+    val topic =
+      Topic("persistent://sample/standalone/ns1/test_" + UUID.randomUUID)
 
     val producer = client.producer[String](ProducerConfig(topic))
     val messageId = producer.send("""{"foo": "bar"}""")
     producer.close()
 
-    val consumer = client.consumer[Cafe](ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription.generate))
+    val consumer = client.consumer[Cafe](
+      ConsumerConfig(
+        topics = Seq(topic),
+        subscriptionName = Subscription.generate
+      )
+    )
     consumer.seek(MessageId.earliest)
     val msg = consumer.receive
-    msg.get.valueTry shouldBe Failure(DecodingFailure(MissingField, List(DownField("name"))))
+    msg.get.valueTry shouldBe Failure(
+      DecodingFailure(MissingField, List(DownField("name")))
+    )
     consumer.close()
 
     client.close()

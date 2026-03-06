@@ -11,10 +11,9 @@ import java.nio.charset.StandardCharsets
 import scala.annotation.implicitNotFound
 import scala.reflect.{ClassTag, classTag}
 
-/**
-  * Automatic MessageWriter and MessageReader derivation
+/** Automatic MessageWriter and MessageReader derivation
   *
-  * == Examples ==
+  * ==Examples==
   *
   * {{{
   *  import io.circe.generic.auto._
@@ -31,17 +30,23 @@ import scala.reflect.{ClassTag, classTag}
 package object circe {
 
   @implicitNotFound(
-    "No Encoder for type ${T} found. Use 'import io.circe.generic.auto._' or provide an implicit Encoder instance ")
+    "No Encoder for type ${T} found. Use 'import io.circe.generic.auto._' or provide an implicit Encoder instance "
+  )
   implicit def circeSchema[T: ClassTag](implicit
-                                        encoder: Encoder[T],
-                                        decoder: Decoder[T],
-                                        printer: Json => String = Printer.noSpaces.print): Schema[T] = new Schema[T] {
+      encoder: Encoder[T],
+      decoder: Decoder[T],
+      printer: Json => String = Printer.noSpaces.print
+  ): Schema[T] = new Schema[T] {
     override def clone(): Schema[T] = this
-    override def encode(t: T): Array[Byte] = printer(encoder(t)).getBytes(StandardCharsets.UTF_8)
+    override def encode(t: T): Array[Byte] =
+      printer(encoder(t)).getBytes(StandardCharsets.UTF_8)
     override def decode(bytes: Array[Byte]): T =
-      io.circe.jawn.decode[T](new String(bytes, StandardCharsets.UTF_8)).fold(throw _, identity)
+      io.circe.jawn
+        .decode[T](new String(bytes, StandardCharsets.UTF_8))
+        .fold(throw _, identity)
     override def getSchemaInfo: SchemaInfo = {
-      SchemaInfoImpl.builder()
+      SchemaInfoImpl
+        .builder()
         .name(classTag[T].runtimeClass.getCanonicalName)
         .`type`(SchemaType.BYTES)
         .schema(Array.empty[Byte])

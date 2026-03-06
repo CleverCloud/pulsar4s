@@ -3,10 +3,28 @@ package com.sksamuel.pulsar4s.monixs
 import java.util.concurrent.{CompletableFuture, TimeUnit}
 import com.sksamuel.pulsar4s
 import com.sksamuel.pulsar4s.conversions.collections._
-import com.sksamuel.pulsar4s.{AsyncHandler, ConsumerMessage, ConsumerMessageWithValueTry, DefaultConsumer, DefaultProducer, DefaultReader, MessageId, Producer, TransactionContext}
+import com.sksamuel.pulsar4s.{
+  AsyncHandler,
+  ConsumerMessage,
+  ConsumerMessageWithValueTry,
+  DefaultConsumer,
+  DefaultProducer,
+  DefaultReader,
+  MessageId,
+  Producer,
+  TransactionContext
+}
 import monix.eval.Task
 import org.apache.pulsar.client.api
-import org.apache.pulsar.client.api.{Consumer, ConsumerBuilder, ProducerBuilder, PulsarClient, Reader, ReaderBuilder, TypedMessageBuilder}
+import org.apache.pulsar.client.api.{
+  Consumer,
+  ConsumerBuilder,
+  ProducerBuilder,
+  PulsarClient,
+  Reader,
+  ReaderBuilder,
+  TypedMessageBuilder
+}
 import org.apache.pulsar.client.api.transaction.Transaction
 
 import scala.compat.java8.FutureConverters
@@ -21,57 +39,94 @@ class MonixAsyncHandler extends AsyncHandler[Task] {
   implicit def completableTToFuture[T](f: => CompletableFuture[T]): Future[T] =
     FutureConverters.toScala(f)
 
-  implicit def completableVoidToTask(f: => CompletableFuture[Void]): Task[Unit] =
+  implicit def completableVoidToTask(
+      f: => CompletableFuture[Void]
+  ): Task[Unit] =
     Task.deferFuture(FutureConverters.toScala(f)).map(_ => ())
 
   override def failed(e: Throwable): Task[Nothing] = Task.raiseError(e)
 
-  override def createProducer[T](builder: ProducerBuilder[T]): Task[Producer[T]] =
-    Task.deferFuture(FutureConverters.toScala(builder.createAsync())).map(new DefaultProducer(_))
+  override def createProducer[T](
+      builder: ProducerBuilder[T]
+  ): Task[Producer[T]] =
+    Task
+      .deferFuture(FutureConverters.toScala(builder.createAsync()))
+      .map(new DefaultProducer(_))
 
-  override def createConsumer[T](builder: ConsumerBuilder[T]): Task[pulsar4s.Consumer[T]] =
-    Task.deferFuture(FutureConverters.toScala(builder.subscribeAsync())).map(new DefaultConsumer(_))
+  override def createConsumer[T](
+      builder: ConsumerBuilder[T]
+  ): Task[pulsar4s.Consumer[T]] =
+    Task
+      .deferFuture(FutureConverters.toScala(builder.subscribeAsync()))
+      .map(new DefaultConsumer(_))
 
-  override def createReader[T](builder: ReaderBuilder[T]): Task[pulsar4s.Reader[T]] =
-    Task.deferFuture(FutureConverters.toScala(builder.createAsync())).map(new DefaultReader(_))
+  override def createReader[T](
+      builder: ReaderBuilder[T]
+  ): Task[pulsar4s.Reader[T]] =
+    Task
+      .deferFuture(FutureConverters.toScala(builder.createAsync()))
+      .map(new DefaultReader(_))
 
-  override def receive[T](consumer: api.Consumer[T]): Task[ConsumerMessage[T]] = {
-    Task.deferFuture {
-      val future = consumer.receiveAsync()
-      FutureConverters.toScala(future)
-    }.map(ConsumerMessage.fromJava)
+  override def receive[T](
+      consumer: api.Consumer[T]
+  ): Task[ConsumerMessage[T]] = {
+    Task
+      .deferFuture {
+        val future = consumer.receiveAsync()
+        FutureConverters.toScala(future)
+      }
+      .map(ConsumerMessage.fromJava)
   }
 
-  override def receiveBatch[T](consumer: Consumer[T]): Task[Vector[ConsumerMessage[T]]] =
-    Task.deferFuture {
-      FutureConverters.toScala(consumer.batchReceiveAsync())
-    }.map(_.asScala.map(ConsumerMessage.fromJava).toVector)
+  override def receiveBatch[T](
+      consumer: Consumer[T]
+  ): Task[Vector[ConsumerMessage[T]]] =
+    Task
+      .deferFuture {
+        FutureConverters.toScala(consumer.batchReceiveAsync())
+      }
+      .map(_.asScala.map(ConsumerMessage.fromJava).toVector)
 
-  override def getLastMessageId[T](consumer: api.Consumer[T]): Task[MessageId] = {
-    Task.deferFuture {
-      val future = consumer.getLastMessageIdAsync
-      FutureConverters.toScala(future)
-    }.map(MessageId.fromJava)
+  override def getLastMessageId[T](
+      consumer: api.Consumer[T]
+  ): Task[MessageId] = {
+    Task
+      .deferFuture {
+        val future = consumer.getLastMessageIdAsync
+        FutureConverters.toScala(future)
+      }
+      .map(MessageId.fromJava)
   }
 
-  def unsubscribeAsync(consumer: api.Consumer[_]): Task[Unit] = consumer.unsubscribeAsync()
+  def unsubscribeAsync(consumer: api.Consumer[_]): Task[Unit] =
+    consumer.unsubscribeAsync()
 
-  override def close(producer: api.Producer[_]): Task[Unit] = producer.closeAsync()
+  override def close(producer: api.Producer[_]): Task[Unit] =
+    producer.closeAsync()
 
-  override def close(consumer: api.Consumer[_]): Task[Unit] = consumer.closeAsync()
+  override def close(consumer: api.Consumer[_]): Task[Unit] =
+    consumer.closeAsync()
 
-  override def seekAsync(consumer: api.Consumer[_], messageId: MessageId): Task[Unit] =
+  override def seekAsync(
+      consumer: api.Consumer[_],
+      messageId: MessageId
+  ): Task[Unit] =
     consumer.seekAsync(messageId)
 
-  override def seekAsync(consumer: api.Consumer[_], timestamp: Long): Task[Unit] =
+  override def seekAsync(
+      consumer: api.Consumer[_],
+      timestamp: Long
+  ): Task[Unit] =
     consumer.seekAsync(timestamp)
 
-  override def seekAsync(reader: api.Reader[_], messageId: MessageId): Task[Unit] =
+  override def seekAsync(
+      reader: api.Reader[_],
+      messageId: MessageId
+  ): Task[Unit] =
     reader.seekAsync(messageId)
 
   override def seekAsync(reader: api.Reader[_], timestamp: Long): Task[Unit] =
     reader.seekAsync(timestamp)
-
 
   override def transform[A, B](t: Task[A])(fn: A => Try[B]): Task[B] =
     t.flatMap { a =>
@@ -81,20 +136,36 @@ class MonixAsyncHandler extends AsyncHandler[Task] {
       }
     }
 
-  override def acknowledgeAsync[T](consumer: api.Consumer[T], messageId: MessageId): Task[Unit] =
+  override def acknowledgeAsync[T](
+      consumer: api.Consumer[T],
+      messageId: MessageId
+  ): Task[Unit] =
     consumer.acknowledgeAsync(messageId)
 
-  override def acknowledgeAsync[T](consumer: api.Consumer[T], messageId: MessageId, txn: Transaction): Task[Unit] =
+  override def acknowledgeAsync[T](
+      consumer: api.Consumer[T],
+      messageId: MessageId,
+      txn: Transaction
+  ): Task[Unit] =
     consumer.acknowledgeAsync(messageId, txn)
 
-  override def acknowledgeCumulativeAsync[T](consumer: api.Consumer[T], messageId: MessageId): Task[Unit] =
+  override def acknowledgeCumulativeAsync[T](
+      consumer: api.Consumer[T],
+      messageId: MessageId
+  ): Task[Unit] =
     consumer.acknowledgeCumulativeAsync(messageId)
 
-  override def acknowledgeCumulativeAsync[T](consumer: api.Consumer[T], messageId: MessageId,
-                                             txn: Transaction): Task[Unit] =
+  override def acknowledgeCumulativeAsync[T](
+      consumer: api.Consumer[T],
+      messageId: MessageId,
+      txn: Transaction
+  ): Task[Unit] =
     consumer.acknowledgeCumulativeAsync(messageId, txn)
 
-  override def negativeAcknowledgeAsync[T](consumer: Consumer[T], messageId: MessageId): Task[Unit] =
+  override def negativeAcknowledgeAsync[T](
+      consumer: Consumer[T],
+      messageId: MessageId
+  ): Task[Unit] =
     Task {
       consumer.negativeAcknowledge(messageId)
     }
@@ -103,7 +174,8 @@ class MonixAsyncHandler extends AsyncHandler[Task] {
 
   override def close(client: PulsarClient): Task[Unit] = client.closeAsync()
 
-  override def flush(producer: api.Producer[_]): Task[Unit] = producer.flushAsync()
+  override def flush(producer: api.Producer[_]): Task[Unit] =
+    producer.flushAsync()
 
   override def nextAsync[T](reader: Reader[T]): Task[ConsumerMessage[T]] =
     Task.deferFuture(reader.readNextAsync()).map(ConsumerMessage.fromJava)
@@ -115,17 +187,22 @@ class MonixAsyncHandler extends AsyncHandler[Task] {
     Task.deferFuture(builder.sendAsync()).map(MessageId.fromJava)
 
   override def withTransaction[E, A](
-                                      builder: api.transaction.TransactionBuilder,
-                                      action: TransactionContext => Task[Either[E, A]]
-                                    ): Task[Either[E, A]] = {
+      builder: api.transaction.TransactionBuilder,
+      action: TransactionContext => Task[Either[E, A]]
+  ): Task[Either[E, A]] = {
     startTransaction(builder).bracketCase { txn =>
       action(txn).flatMap { result =>
-        (if (result.isRight) txn.commit(using this) else txn.abort(using this)).map(_ => result)
+        (if (result.isRight) txn.commit(using this) else txn.abort(using this))
+          .map(_ => result)
       }
-    }((txn, exitCase) => if (exitCase == ExitCase.Completed) Task.unit else txn.abort(using this))
+    }((txn, exitCase) =>
+      if (exitCase == ExitCase.Completed) Task.unit else txn.abort(using this)
+    )
   }
 
-  override def startTransaction(builder: api.transaction.TransactionBuilder): Task[TransactionContext] =
+  override def startTransaction(
+      builder: api.transaction.TransactionBuilder
+  ): Task[TransactionContext] =
     Task.deferFuture(builder.build()).map(TransactionContext(_))
 
   override def commitTransaction(txn: Transaction): Task[Unit] =
@@ -135,11 +212,11 @@ class MonixAsyncHandler extends AsyncHandler[Task] {
     Task.deferFuture(txn.abort()).map(_ => ())
 
   override def reconsumeLaterAsync[T](
-                                       consumer: Consumer[T],
-                                       message: ConsumerMessage[T],
-                                       delayTime: Long,
-                                       unit: TimeUnit
-                                     ): Task[Unit] =
+      consumer: Consumer[T],
+      message: ConsumerMessage[T],
+      delayTime: Long,
+      unit: TimeUnit
+  ): Task[Unit] =
     Task
       .fromEither {
         message match {
@@ -153,7 +230,9 @@ class MonixAsyncHandler extends AsyncHandler[Task] {
             )
         }
       }
-      .flatMap(pulsarMessage => Task(consumer.reconsumeLater(pulsarMessage, delayTime, unit)))
+      .flatMap(pulsarMessage =>
+        Task(consumer.reconsumeLater(pulsarMessage, delayTime, unit))
+      )
 }
 
 object MonixAsyncHandler {
