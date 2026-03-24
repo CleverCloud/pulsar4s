@@ -56,6 +56,8 @@ trait Consumer[T] extends Closeable with TransactionalConsumerOps[T] {
     * Please note that this does not simply mean that the consumer is caught up with the last message published by
     * producers, rather the topic needs to be explicitly "terminated".
     */
+  def isConnected: Boolean
+
   def hasReachedEndOfTopic: Boolean
 
   def redeliverUnacknowledgedMessages(): Unit
@@ -156,6 +158,8 @@ class DefaultConsumer[T](consumer: JConsumer[T]) extends Consumer[T] with Loggin
   override def stats: ConsumerStats = consumer.getStats
   override def subscription: Subscription = Subscription(consumer.getSubscription)
   override def topic: Topic = Topic(consumer.getTopic)
+
+  override def isConnected: Boolean = consumer.isConnected
 
   override def hasReachedEndOfTopic: Boolean = consumer.hasReachedEndOfTopic
 
