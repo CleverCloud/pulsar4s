@@ -13,7 +13,7 @@ else "0.0.0-LOCAL"
 val org = "com.clever-cloud.pulsar4s"
 val AkkaStreamVersion = "2.6.20" // compatible with Akka 2.5.x and 2.6.x
 val CatsEffectVersion = "3.6.3"
-val CirceVersion = "0.14.15"
+val CirceVersion = "0.14.17"
 val CommonsIoVersion = "2.4"
 val ExtsVersion = "1.61.1"
 val JacksonVersion = "2.18.6"
